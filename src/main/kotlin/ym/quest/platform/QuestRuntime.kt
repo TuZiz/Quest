@@ -21,8 +21,9 @@ import java.util.logging.Level
 class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, private val service: QuestService,
                    private val files: QuestFiles, private val thread: GameThread, settings: Settings) : Listener, AutoCloseable {
     private val text = TextRenderer(settings.language)
-    private val notices = StoryNotices(text,settings.notices)
     private val integrations = Integrations(plugin,service,::notify,::failure)
+    private val hud = ym.quest.hud.QuestHud(plugin,service,integrations,thread,::failure,settings.hud)
+    private val notices = StoryNotices(text,settings.notices,hud::popup)
     private val custom = if(plugin.server.pluginManager.isPluginEnabled("CraftEngine")) CraftEngineItemProvider() else null
     private val items = ItemFactory(listOfNotNull(custom))
     private val delivery = MailboxDelivery(service,integrations,items,text,thread,::failure)
@@ -38,8 +39,8 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
         plugin.server.pluginManager.registerEvents(this,plugin)
         val commands = QuestCommands(text,service,integrations,thread,delivery,{ if(!closed) menus.open(it) else text.send(it,"unavailable") },::reload,::failure)
         plugin.getCommand("quest")!!.apply { setExecutor(commands); tabCompleter=commands }
-        plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=2; YAML schema=1; quests=${settings.quests.size}; chapters=${settings.chapters.size}; Paper ownership; Folia=false")
-        listOf("DreamSkyblock","Genlite","CraftEngine").forEach { id ->
+        plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=2; task/chapter YAML schema=2; quests=${settings.quests.size}; chapters=${settings.chapters.size}; Paper ownership; Folia=false; Xerr HUD=${settings.hud.getBoolean("enabled")}")
+        listOf("DreamSkyblock","Genlite","CraftEngine","Xerr").forEach { id ->
             plugin.logger.info("Integration $id=${plugin.server.pluginManager.getPlugin(id)?.pluginMeta?.version ?: "missing"}")
         }
     }
@@ -108,7 +109,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
                 reloading=false
                 if(configureError != null) { failure(configureError); text.send(sender,"error"); return@run }
                 menus.close(); menus.settings=settings; text.language=settings.language; notices.profiles=settings.notices
-                integrations.refresh(); text.send(sender,"reloaded")
+                hud.reload(settings.hud); integrations.refresh(); text.send(sender,"reloaded")
             } }
         } }
     }
@@ -119,6 +120,6 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     }
     override fun close() {
         if(closed) return
-        closed=true; service.claimChanges = {}; heartbeat.cancel(); menus.close(); delivery.close(); integrations.close(); claiming.clear()
+        closed=true; service.claimChanges = {}; heartbeat.cancel(); hud.close(); menus.close(); delivery.close(); integrations.close(); claiming.clear()
     }
 }

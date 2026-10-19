@@ -1,0 +1,10 @@
+schema-version: 1
+# 这里只控制 Quest 行为；贴图、字体、布局全部由服务端 Xerr 文件夹维护。
+enabled: true
+tracker: true
+notifications: true
+# 只读查询间隔，单位 tick；同空岛合并查询，允许范围 20 至 1200。
+refresh-ticks: 40
+tracker-layout: quest_tracker
+popup-prefix: quest_
+

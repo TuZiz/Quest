@@ -45,6 +45,7 @@ public final class QuestSmoke extends JavaPlugin {
                 var plan=MailboxDelivery.Companion.plan(full,addition);
                 if(plan==null || plan[5]==null || full[5]!=null) throw new AssertionError("Delivery plan invalid");
                 checkChapterMenus(runtime,items);
+                if(getServer().getPluginManager().isPluginEnabled("Xerr")) checkXerr();
                 getLogger().info("QUEST_SMOKE_PASSED: API readiness, 5 CE identities, real inventory capacity planner");
             } catch(Throwable error) {getLogger().log(java.util.logging.Level.SEVERE,"QUEST_SMOKE_FAILED",error);}
         },100L);
@@ -52,6 +53,27 @@ public final class QuestSmoke extends JavaPlugin {
     private void checkText(Component text) {
         if(text.decoration(TextDecoration.ITALIC)!=TextDecoration.State.FALSE) throw new AssertionError("Italic item text");
         for(Component child:text.children()) checkText(child);
+    }
+    private void checkXerr() {
+        var api=com.hiusers.xerr.api.XerrAPI.get();
+        if(!api.layouts().exists("quest_tracker")) throw new AssertionError("Quest tracker layout missing");
+        for(String event:List.of("chapter-start","chapter-complete","task-start","task-complete","next-task"))
+            if(!api.popups().ids().contains("quest_"+event)) throw new AssertionError("Popup ID missing: "+api.popups().ids());
+        var id=UUID.randomUUID();
+        var player=(Player)Proxy.newProxyInstance(Player.class.getClassLoader(),new Class<?>[]{Player.class},(proxy,method,args)->{
+            return switch(method.getName()) {
+                case "getUniqueId" -> id;
+                case "getName" -> "HudProbe";
+                case "getWorld" -> getServer().getWorlds().getFirst();
+                case "getLocale" -> "zh_cn";
+                case "locale" -> java.util.Locale.SIMPLIFIED_CHINESE;
+                default -> method.getReturnType()==boolean.class ? true : null;
+            };
+        });
+        var vars=Map.of("chapter","章节探针","task","生产探针","objective","原石","current","7","target","32","progress","7 / 32","completed","2","total","3","pending","2");
+        String raw=api.layouts().renderString(player,"quest_tracker",vars,false,"quest:smoke");
+        if(raw==null || !raw.contains("章节探针") || !raw.contains("7")) throw new AssertionError("HUD variable render failed: "+raw);
+        getLogger().info("XERR_API_PASSED: five popup IDs, tracker and real Xerr font/image/variable render; proxy player, no client packets");
     }
     private void checkChapterMenus(Object runtime,ItemFactory original) throws Exception {
         var menus=(QuestMenus)field(runtime,"menus");

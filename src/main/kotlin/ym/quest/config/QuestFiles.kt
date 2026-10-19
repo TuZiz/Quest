@@ -9,13 +9,13 @@ import java.nio.file.Files
 data class Settings(val quests: List<QuestDefinition>, val language: YamlConfiguration,
                     val center: YamlConfiguration, val detail: YamlConfiguration,
                     val chapters: List<ChapterDefinition>, val chapterMenu: YamlConfiguration, val chapterDetail: YamlConfiguration,
-                    val notices: Map<String,NoticeProfile>)
+                    val notices: Map<String,NoticeProfile>, val hud: YamlConfiguration)
 
 /** IO executor only. No save of existing YAML: comments/unknown fields remain byte-for-byte intact. */
 class QuestFiles(private val plugin: JavaPlugin, private val conditions: ConditionRegistry) {
     private val defaults = listOf("config.yml","lang/zh_cn.yml","gui/main.yml","gui/detail.yml",
         "quests/星海启航.yml","quests/能源启动.yml","quests/第一批资源.yml",
-        "提示.yml","gui/chapters.yml","gui/chapter-detail.yml")
+        "提示.yml","显示.yml","gui/chapters.yml","gui/chapter-detail.yml")
     fun load(): Settings {
         ResourceUpgrade.relocateLayout(plugin.dataFolder.toPath())
         ResourceUpgrade.renameQuests(plugin.dataFolder.toPath())
@@ -68,7 +68,11 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             require(language.isString("notices.$event.$field")) { "lang/zh_cn.yml:notices.$event.$field missing" }
         } }
         ChapterStatus.entries.forEach { require(language.isString("chapter-status.$it")) { "lang/zh_cn.yml:chapter-status.$it missing" } }
-        return Settings(ordered,language,center,detail,chapters,chapterMenu,chapterDetail,notices)
+        val hud = yaml("显示.yml")
+        listOf("enabled","tracker","notifications").forEach { require(hud.isBoolean(it)) { "显示.yml:$it=${hud.get(it)} expected boolean" } }
+        require(hud.isInt("refresh-ticks") && hud.getInt("refresh-ticks") in 20..1200) { "显示.yml:refresh-ticks=${hud.get("refresh-ticks")} expected 20..1200" }
+        listOf("tracker-layout","popup-prefix").forEach { require(!hud.getString(it).isNullOrBlank()) { "显示.yml:$it missing" } }
+        return Settings(ordered,language,center,detail,chapters,chapterMenu,chapterDetail,notices,hud)
     }
     private fun parse(file: String, y: YamlConfiguration): QuestDefinition {
         fun text(s: ConfigurationSection, key: String) = s.getString(key)?.takeIf { it.isNotBlank() }

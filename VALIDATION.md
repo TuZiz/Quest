@@ -72,3 +72,12 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 本轮 Neuron：task_1262a9b3c507498eafa1，validation_id=check_9bacda95279d4f31b514。本地检查和 MCP 检查均 passed，91 条文本、98 个真实 TextRenderer 组件样本，issues/pending 为空。报告为 target/verification/chain-neuron-report.json；检查范围为提交源码、资源与真实测试组件，不代表客户端实测。
 
 最终 JAR 再次启动同一隔离服通过；迁移幂等，schema-migration 审计仍只有一条，baseline=100/progress=12、原完成/领奖/SENDING 记录不变。初次升级日志为 upgrade-smoke-console.log，最终重启日志为 smoke-console.log。
+# Xerr HUD 增量验证 · 2026-10-19
+
+- Maven package 成功，29 项 JUnit 测试零失败（含只读跟踪、未领奖继续追踪、全部领取后隐藏）。
+- Leaf 26.3 隔离服：Xerr 2.1.0 + PacketEvents 2.14.0，五类弹窗 ID 与实际字体/图片/变量渲染通过；原章节菜单、物品奖励及非法配置重载保留旧状态回归通过。服务器正常退出。
+- Xerr 生成资源包、CraftEngine 26.9.2 原生目录合并/验证/压缩通过；8 张 Quest PNG 解码后逐像素和透明度一致。CraftEngine 会优化 PNG 编码，不使用压缩文件字节相等代替视觉数据检查。
+- 缺少所有可选依赖（含 Xerr）的隔离服启动及关闭通过。Quest JAR 不包含 Xerr 类、图片或字体；服务端材质由 Xerr 独立维护。
+- 初次测试下载语言文件等待、未暂存 PacketEvents 的测试环境缺类、Xerr 多字号复制同一 TTF 的竞争均已定位；最终测试使用缓存、完整依赖及单字体配置通过。原 Windows OSHI 性能计数器警告仍属已有环境问题。
+- 未执行真人 Java/Geyser 客户端显示、点击或资源包拒绝/重新加载操作；API 渲染代理不作为客户端验收。没有操作正式玩家数据库。
+
