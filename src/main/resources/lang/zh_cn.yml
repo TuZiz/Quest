@@ -1,4 +1,22 @@
 schema-version: 1
+hud-controls:
+  shown: '<#75D6BB>任务HUD已显示。'
+  hidden: '<#A6B2C0>任务HUD已隐藏，可用 /quest hud on 恢复。'
+  usage: '<#A6B2C0>用法：/quest hud [on|off]'
+hud-notices:
+  next: '<#A6B2C0>下一任务：<next>'
+  task-start:
+    heading: '<#82B7EF>新任务已解锁'
+    detail: '<#A6B2C0>新的目标已开启'
+  task-complete:
+    heading: '<#88D3A0>任务完成'
+    detail: '<#A6B2C0>奖励自动发放'
+  chapter-start:
+    heading: '<#DDB66D>新章节已开启'
+    detail: '<#A6B2C0>新的旅程开始了'
+  chapter-complete:
+    heading: '<#E8C477>章节完成'
+    detail: '<#A6B2C0>章节奖励自动发放'
 hud-completed:
   task: '<#A8FF78>章节已完成'
   objective: '<#E0F7FA>期待新的冒险'

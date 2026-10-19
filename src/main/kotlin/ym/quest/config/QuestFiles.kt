@@ -17,6 +17,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         "quests/星海启航.yml","quests/能源启动.yml","quests/第一批资源.yml",
         "提示.yml","显示.yml","奖励.yml","gui/chapters.yml")
     fun load(): Settings {
+        HudConfigUpgrade.migrate(plugin.dataFolder.toPath(),checkNotNull(plugin.getResource("显示.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
         ResourceUpgrade.relocateLayout(plugin.dataFolder.toPath())
         GuiConfigUpgrade.migrate(plugin.dataFolder.toPath(),checkNotNull(plugin.getResource("gui/main.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
         ResourceUpgrade.renameQuests(plugin.dataFolder.toPath())
@@ -40,7 +41,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             val text = Files.readString(plugin.dataFolder.toPath().resolve(name))
             return YamlConfiguration().apply {
                 try { loadFromString(text) } catch(e: Exception) { throw IllegalArgumentException("$name: YAML解析失败",e) }
-                val expected = if(name.startsWith("quests/") || name.startsWith("chapters/") || name == "gui/main.yml") 2 else 1
+                val expected = if(name.startsWith("quests/") || name.startsWith("chapters/") || name in setOf("gui/main.yml","显示.yml")) 2 else 1
                 require(get("schema-version") == expected) { "$name:schema-version=${get("schema-version")} expected $expected; original preserved" }
             }
         }
@@ -74,9 +75,10 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         } }
         ChapterStatus.entries.forEach { require(language.isString("chapter-status.$it")) { "lang/zh_cn.yml:chapter-status.$it missing" } }
         val hud = yaml("显示.yml")
+        ym.quest.hud.HudSettings.parse(hud)
         listOf("enabled","tracker","notifications").forEach { require(hud.isBoolean(it)) { "显示.yml:$it=${hud.get(it)} expected boolean" } }
         require(hud.isInt("refresh-ticks") && hud.getInt("refresh-ticks") in 20..1200) { "显示.yml:refresh-ticks=${hud.get("refresh-ticks")} expected 20..1200" }
-        listOf("tracker-layout","popup-prefix").forEach { require(!hud.getString(it).isNullOrBlank()) { "显示.yml:$it missing" } }
+        require(!hud.getString("tracker-layout").isNullOrBlank()) { "显示.yml:tracker-layout missing" }
         return Settings(ordered,language,center,chapters,chapterMenu,notices,hud,rewards)
     }
     private fun parse(file: String, y: YamlConfiguration): QuestDefinition {

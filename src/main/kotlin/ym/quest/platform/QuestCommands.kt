@@ -11,11 +11,19 @@ import java.util.UUID
 class QuestCommands(private val text: TextRenderer, private val service: QuestService,
                     private val integrations: Integrations, private val thread: GameThread,
                     private val delivery: MailboxDelivery, private val open: (Player) -> Unit,
-                    private val reload: (CommandSender) -> Unit, private val failure: (Throwable) -> Unit) : CommandExecutor, TabCompleter {
+                    private val reload: (CommandSender) -> Unit, private val failure: (Throwable) -> Unit,
+                    private val hud: (Player,String?) -> Unit) : CommandExecutor, TabCompleter {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if(args.isEmpty()) {
             if(!sender.hasPermission("quest.use")) text.send(sender,"no-permission")
             else if(sender is Player) open(sender) else text.send(sender,"player-only")
+            return true
+        }
+        if(args[0] == "hud") {
+            if(!sender.hasPermission("quest.use")) text.send(sender,"no-permission")
+            else if(sender !is Player) text.send(sender,"player-only")
+            else if(args.size > 2 || args.getOrNull(1)?.let { it !in setOf("on","off") } == true) text.send(sender,"hud-controls.usage")
+            else hud(sender,args.getOrNull(1))
             return true
         }
         if(args[0] != "admin" || !sender.hasPermission("quest.admin")) { text.send(sender,"no-permission"); return true }
@@ -55,10 +63,14 @@ class QuestCommands(private val text: TextRenderer, private val service: QuestSe
         return true
     }
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> {
-        if(!sender.hasPermission("quest.admin")) return emptyList()
-        val choices = when(args.size) { 1 -> listOf("admin"); 2 -> listOf("reload","reset","debug","resolve")
+        if(!sender.hasPermission("quest.use")) return emptyList()
+        val choices = when {
+            args.size == 1 -> listOf("hud") + if(sender.hasPermission("quest.admin")) listOf("admin") else emptyList()
+            args.size == 2 && args[0] == "hud" -> listOf("on","off")
+            !sender.hasPermission("quest.admin") -> emptyList()
+            else -> when(args.size) { 2 -> listOf("reload","reset","debug","resolve")
             4 -> if(args[1] == "reset") service.definitions.map { it.id } else if(args[1] == "resolve") listOf("delivered","retry") else emptyList()
-            else -> emptyList() }
+            else -> emptyList() } }
         return choices.filter { it.startsWith(args.lastOrNull() ?: "") }
     }
 }

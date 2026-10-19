@@ -6,8 +6,9 @@ Quest 仅增加可选显示适配，不修改任务推进、累计基线、SQLit
 
 - `plugins/Quest/显示.yml`：总开关、常驻面板开关、弹窗开关、只读刷新间隔与布局 ID。
 - `plugins/Xerr/core/layout/quest_tracker.yml`：常驻面板布局、文案、位置与字体。
-- `plugins/Xerr/core/layout/quest_notifications.yml`：五类动态通知布局。
-- `plugins/Xerr/core/display/popups/quest.yml`：右上角三个显示槽位、排队数量、时长、进出动画。
+- `plugins/Xerr/core/layout/quest_notifications.yml`：四类动态通知布局，共用一个通知槽位。
+- `plugins/Xerr/core/display/popups/quest.yml`：空文件，停用旧多槽位弹窗，避免重复叠加。
+- `plugins/Xerr/design/quest/布局.yml`：紧凑面板尺寸、右上偏移、间距和背景透明度；修改后运行 `tools/install_compact_hud.py`。
 - `plugins/Xerr/core/assets/image/quest/`：两张面板、六张图标及材质配置。
 - `plugins/Xerr/design/quest/`：生成原图、提示词、素材排版预览和移除记录。使用用户指定接口的 flare / sunburst 模型；没有保存密钥。
 - `plugins/Xerr/backups/Quest接入前-20261019-173124.zip`：原始 Xerr 配置完整备份；另存原文件 SHA256 清单及 CraftEngine 原配置备份。
@@ -26,7 +27,11 @@ Quest 仅增加可选显示适配，不修改任务推进、累计基线、SQLit
 
 任务目标完成、后续任务解锁、章节开始/完成时使用原有语言文案产生动态弹窗，文字不烘焙入图。原聊天、ActionBar、Title 和声音开关仍由 `提示.yml` 控制，弹窗独立由 `显示.yml` 控制。
 
-常驻面板显示第一个已解锁且进行中的任务、章节完成数及当前目标进度，不显示待领奖数或玩家菜单指令。上一任务未领奖不阻止跟踪下一任务。全部完成后保留章节完成状态，文案来自 `lang/zh_cn.yml:hud-completed`。进度来自异步只读查询；每个空岛合并请求并限制一个查询在途，返回时重新验证玩家、权限、空岛与重载代次。只移除 Quest 自己的布局，不清空其他插件 HUD。
+常驻面板只显示章节、当前任务、一个目标、数值及细进度条。上一任务未领奖不阻止跟踪下一任务。默认没有进行中任务或全部完成后隐藏；`hide-completed: false` 可恢复旧完成状态。`/quest hud on|off` 控制个人显示，选择保存在玩家 PDC，不改 Quest 数据库。进度来自异步只读查询；每个空岛合并请求并限制一个查询在途，返回时重新验证玩家、权限、空岛与重载代次。只移除 Quest 自己的布局，不清空其他插件 HUD。
+
+通知最多一条可见，默认显示 80 tick，等待队列最多 4 条，近期重复事件去重；完成与下一任务解锁可合并，章节完成优先替代同批最后一个任务通知。采用同一 Xerr HUD 槽位更新，进出各轻滑 8 tick，保持阶段不反复重建。通知区域自动位于追踪面板底部加间距，追踪隐藏后也不移到中央。
+
+新版服务端素材默认追踪 144×64、通知 160×44 **GUI单位**；右边距 6、顶部 24，通知顶部 98。实际物理像素随 Minecraft GUI 缩放变化，不能等同于固定屏幕像素。文字采用同一左边界，数值靠右；超长文案省略。详细变更和验收见 [HUD-REDESIGN.md](HUD-REDESIGN.md)。下文旧尺寸及居中说明仅为历史故障记录，新布局以当前服务器文件为准。
 
 仅在玩家资源包加载成功后显示，同时补读 Paper 当前成功状态，避免启动晚于成功事件而漏收。未安装/禁用 Xerr、拒绝资源包或基岩端未加载 Java 包时，仍保留原任务箱子菜单和原提示。基岩端专属常驻 HUD 不在本次范围。中途热启用 Quest 时已有成功状态也可恢复；未加载成功仍不强行显示。
 

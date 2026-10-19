@@ -23,7 +23,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     private val text = TextRenderer(settings.language)
     private val integrations = Integrations(plugin,service,::notify,::failure)
     private val hud = ym.quest.hud.QuestHud(plugin,service,integrations,thread,::failure,settings.hud,text)
-    private val notices = StoryNotices(text,settings.notices,hud::popup)
+    private val notices = StoryNotices(text,settings.notices)
     private val custom = if(plugin.server.pluginManager.isPluginEnabled("CraftEngine")) CraftEngineItemProvider() else null
     private val items = ItemFactory(listOfNotNull(custom))
     private val delivery = MailboxDelivery(service,integrations,items,text,thread,::failure)
@@ -42,7 +42,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
             if(closed) text.send(it,"unavailable")
             else if(it.hasPermission("quest.admin") || menus.settings.center.getBoolean("player-access",false)) menus.open(it)
             else text.send(it,"automatic-rewards")
-        },::reload,::failure)
+        },::reload,::failure,hud::visibility)
         plugin.getCommand("quest")!!.apply { setExecutor(commands); tabCompleter=commands }
         plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=2; task/chapter YAML schema=2; quests=${settings.quests.size}; chapters=${settings.chapters.size}; Paper ownership; Folia=false; Xerr HUD=${settings.hud.getBoolean("enabled")}")
         listOf("DreamSkyblock","Genlite","CraftEngine","Xerr").forEach { id ->
@@ -92,6 +92,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
                 integrations.islands?.byId(id)?.members?.forEach { member ->
                     plugin.server.getPlayer(member)?.takeIf { it.hasPermission("quest.use") }?.let { player ->
                         list.forEach { notices.send(player,it,service.definitions,service.chapters) }
+                        hud.changes(player,list,service.definitions,service.chapters)
                     }
                 }
                 menus.refreshHome(id)

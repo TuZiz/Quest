@@ -4,10 +4,11 @@ import ym.quest.domain.*
 
 /** Read-only projection: the HUD cannot change objective baselines, completions or rewards. */
 object TrackerSnapshot {
-    fun values(journal: JournalView, completedText: Map<String,String>): Map<String,String>? {
+    @JvmOverloads fun values(journal: JournalView, completedText: Map<String,String>, hideCompleted: Boolean = true): Map<String,String>? {
         val pending = journal.quests.count { it.status == QuestStatus.COMPLETE } +
             journal.chapters.count { it.status == ChapterStatus.COMPLETE && !it.claimed }
         val task = journal.quests.firstOrNull { it.status == QuestStatus.ACTIVE }
+        if(task == null && hideCompleted) return null
         val chapter = journal.chapters.firstOrNull { task?.definition?.id in it.definition.quests }
             ?: journal.chapters.lastOrNull { it.status == ChapterStatus.COMPLETE }
         if(task == null && chapter == null) return null

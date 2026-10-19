@@ -17,11 +17,13 @@ class TrackerSnapshotTest {
         assertEquals(q.name,values["task"]); assertEquals("0",values["pending"])
         assertEquals(7,journal.quests.single().progress.single().progress)
     }
-    @Test fun `completed chapter stays visible regardless of automatic reward delivery`() {
+    @Test fun `completed chapter hides regardless of automatic reward delivery unless explicitly retained`() {
         val unpaid = JournalView(listOf(QuestView(q,QuestStatus.COMPLETE,emptyList())),listOf(ChapterView(ch,ChapterStatus.COMPLETE,1,false)))
-        assertEquals("完成状态",TrackerSnapshot.values(unpaid,completedText)!!["task"])
+        assertNull(TrackerSnapshot.values(unpaid,completedText))
+        assertEquals("完成状态",TrackerSnapshot.values(unpaid,completedText,false)!!["task"])
         val paid = JournalView(listOf(QuestView(q,QuestStatus.CLAIMED,emptyList())),listOf(ChapterView(ch,ChapterStatus.COMPLETE,1,true)))
-        val values = TrackerSnapshot.values(paid,completedText)!!
+        assertNull(TrackerSnapshot.values(paid,completedText))
+        val values = TrackerSnapshot.values(paid,completedText,false)!!
         assertEquals("完成状态",values["task"])
         assertEquals("完成说明",values["objective"])
         assertEquals("1 / 1",values["progress"])
@@ -37,7 +39,8 @@ class TrackerSnapshotTest {
         val future = ch.copy(id="future",name="后续章节")
         val journal = JournalView(listOf(QuestView(q,QuestStatus.CLAIMED,emptyList())),listOf(
             ChapterView(ch,ChapterStatus.COMPLETE,1,true), ChapterView(future,ChapterStatus.LOCKED,0,false)))
-        assertEquals(ch.name,TrackerSnapshot.values(journal,completedText)!!["chapter"])
+        assertNull(TrackerSnapshot.values(journal,completedText))
+        assertEquals(ch.name,TrackerSnapshot.values(journal,completedText,false)!!["chapter"])
     }
     @Test fun `empty or entirely locked journal has no completed fallback`() {
         assertNull(TrackerSnapshot.values(JournalView(emptyList(),emptyList()),completedText))

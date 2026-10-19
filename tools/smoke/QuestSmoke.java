@@ -82,8 +82,8 @@ public final class QuestSmoke extends JavaPlugin {
     private void checkXerr() {
         var api=com.hiusers.xerr.api.XerrAPI.get();
         if(!api.layouts().exists("quest_tracker")) throw new AssertionError("Quest tracker layout missing");
-        for(String event:List.of("chapter-start","chapter-complete","task-start","task-complete","next-task"))
-            if(!api.popups().ids().contains("quest_"+event)) throw new AssertionError("Popup ID missing: "+api.popups().ids());
+        for(String event:List.of("chapter-start","chapter-complete","task-start","task-complete"))
+            if(!api.layouts().exists("quest_notice_"+event)) throw new AssertionError("Notice layout missing: "+event);
         var id=UUID.randomUUID();
         var player=(Player)Proxy.newProxyInstance(Player.class.getClassLoader(),new Class<?>[]{Player.class},(proxy,method,args)->{
             return switch(method.getName()) {
@@ -95,13 +95,29 @@ public final class QuestSmoke extends JavaPlugin {
                 default -> method.getReturnType()==boolean.class ? true : null;
             };
         });
-        var vars=Map.of("chapter","章节探针","task","生产探针","objective","原石","current","7","target","32","progress","7 / 32","completed","2","total","3","pending","2");
+        var vars=Map.of("chapter","章节探针","task","生产探针","objective","原石","current","7","target","32","progress","7 / 32","completed","2","total","3","pending","2","show_bar","true");
         String raw=api.layouts().renderString(player,"quest_tracker",vars,true,"quest:smoke");
         try { java.nio.file.Files.writeString(java.nio.file.Path.of("../verification/xerr-tracker-render.txt"),raw); }
         catch(java.io.IOException error) { throw new IllegalStateException("Cannot export Xerr render evidence",error); }
         if(raw==null || !raw.contains("章节探针") || !raw.contains("7")) throw new AssertionError("HUD variable render failed: "+raw);
         if(!raw.contains("font=xerr_img:quest/panels/gui") || !raw.contains("font=xerr_position:space"))
             throw new AssertionError("HUD missing anchored bitmap font or positioning markers: "+raw);
+        if(!raw.contains("font=xerr_progress:")) throw new AssertionError("Native progress image did not render");
+        var barVars=new HashMap<String,String>(vars);
+        barVars.put("show_bar","false");
+        if(api.layouts().renderString(player,"quest_tracker",barVars,true,"quest:smoke").contains("font=xerr_progress:"))
+            throw new AssertionError("Disabled progress bar still rendered");
+        var progressFrames=new HashSet<String>();
+        barVars.put("show_bar","true");
+        for(String count:List.of("0","18","32")) {
+            barVars.put("current",count);
+            String value=api.layouts().renderString(player,"quest_tracker",barVars,true,"quest:smoke");
+            // Ignore the numeric label: compare the native bar suffix only.
+            int at=value.indexOf("font=xerr_progress:");
+            if(at<0) throw new AssertionError("Missing native bar at "+count);
+            progressFrames.add(value.substring(at));
+        }
+        if(progressFrames.size()!=3) throw new AssertionError("Progress fill does not change with cumulative count");
         try {
             var layouts=api.layouts();
             var method=com.hiusers.xerr.api.layout.XerrLayoutAPI.class.getMethod("render",Player.class,String.class,Map.class,boolean.class,String.class);
@@ -123,14 +139,15 @@ public final class QuestSmoke extends JavaPlugin {
                 }));
             if(raw.contains("/quest") || raw.contains("待领奖励")) throw new AssertionError("Legacy manual reward HUD");
             var config=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/layout/quest_tracker.yml"));
-            if(config.getInt("quest_tracker.panel.x")!=-151 || config.getInt("quest_tracker.panel.y")!=-44) throw new AssertionError("Tracker not right-flush below notice");
-            for(String row:List.of("chapter","count","task","objective","progress"))
-                if(!"center".equals(config.getString("quest_tracker."+row+".align"))) throw new AssertionError("Tracker row not centered: "+row);
-            var popup=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/display/popups/quest.yml"));
-            if(popup.getMapList("quest.slots").size()!=1 || !popup.getMapList("quest.slots").getFirst().get("y").equals(0))
-                throw new AssertionError("Notifications must queue in one top slot");
+            if(config.getInt("quest_tracker.panel.x")!=-150 || config.getInt("quest_tracker.panel.y")!=-24) throw new AssertionError("Compact tracker anchor mismatch");
+            for(String row:List.of("chapter","task","objective"))
+                if(!"left".equals(config.getString("quest_tracker."+row+".align"))) throw new AssertionError("Tracker left alignment: "+row);
+            if(!"right".equals(config.getString("quest_tracker.progress.align"))) throw new AssertionError("Progress must align right");
+            var notices=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/layout/quest_notifications.yml"));
+            if(notices.getInt("quest_notice_task-complete.panel.y")!=-98) throw new AssertionError("Notice must remain below tracker plus gap");
+            if(api.popups().ids().stream().anyMatch(key->key.startsWith("quest_"))) throw new AssertionError("Retired Quest popup group still active");
         } catch(ReflectiveOperationException | java.io.IOException error) { throw new IllegalStateException("Xerr component verification failed",error); }
-        getLogger().info("XERR_API_PASSED: five popup IDs, anchored tracker bitmap/markers and variables; proxy player, no client packets");
+        getLogger().info("XERR_API_PASSED: four notice layouts, compact nonoverlapping bounds, native progress and variables; proxy player, no client packets");
     }
     private void checkHudComponent(String json) {
         var tree=com.google.gson.JsonParser.parseString(json);
@@ -149,8 +166,8 @@ public final class QuestSmoke extends JavaPlugin {
                 object.entrySet().forEach(e->{if(e.getValue().isJsonObject() || e.getValue().isJsonArray()) pending.add(e.getValue());});
             }
         }
-        if(!colors.containsAll(List.of("#ffcc80","#89f7fe","#a8ff78","#ffd700"))) throw new AssertionError("HUD lacks actual RGB style properties: "+colors);
-        for(String expected:List.of("章节探针","章节进度 2 / 3","生产探针","原石","7 / 32","完成后奖励自动发放"))
+        if(!colors.containsAll(List.of("#ddb66d","#eef3f5","#a6b2c0","#75d6bb"))) throw new AssertionError("HUD lacks actual RGB style properties: "+colors);
+        for(String expected:List.of("章节探针","生产探针","原石","7/32"))
             if(!texts.contains(expected)) throw new AssertionError("HUD visible row differs from plain text: "+expected+" / "+texts);
     }
     private void checkFinalHud(Player player,Map<String,String> vars) throws ReflectiveOperationException,java.io.IOException {
@@ -192,8 +209,15 @@ public final class QuestSmoke extends JavaPlugin {
                     object.entrySet().forEach(e->{if(e.getValue().isJsonObject() || e.getValue().isJsonArray())pending.add(e.getValue());});
                 }
             }
-            if(!rgb.containsAll(List.of(0xffcc80,0x89f7fe,0xa8ff78,0xffd700))) throw new AssertionError("Final HUD shader RGB missing: "+rgb);
+            if(!rgb.containsAll(List.of(0xddb66d,0xeef3f5,0xa6b2c0,0x75d6bb))) throw new AssertionError("Final HUD shader RGB missing: "+rgb);
             java.nio.file.Files.writeString(java.nio.file.Path.of("../verification/xerr-tracker-final.json"),json);
+            for(String event:List.of("task-start","task-complete","chapter-start","chapter-complete")) {
+                display.getMethod("update",Player.class,String.class,Map.class,int.class,String.class)
+                    .invoke(display.getConstructor().newInstance(),player,"quest_notice_"+event,Map.of("heading","通知探针","name","任务探针","detail","下一任务"),6,"quest_notice");
+                if(components.size()!=2 || !components.containsKey("quest_notice")) throw new AssertionError("Notifications stacked instead of replacing the shared slot");
+            }
+            display.getMethod("remove",Player.class,String.class).invoke(display.getConstructor().newInstance(),player,"quest_notice");
+            if(components.size()!=1 || !components.containsKey("quest_tracker")) throw new AssertionError("Closing notice changed the tracker");
             getLogger().info("XERR_FINAL_HUD_PASSED: actual Quest update captured; carrier fonts, RGB shader payload and positioning markers; no client packets");
         } finally {contexts.remove(player.getUniqueId());}
     }
