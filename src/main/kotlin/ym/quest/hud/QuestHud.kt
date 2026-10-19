@@ -13,12 +13,14 @@ import org.bukkit.plugin.java.JavaPlugin
 import ym.quest.domain.QuestService
 import ym.quest.integration.Integrations
 import ym.quest.platform.GameThread
+import ym.quest.text.TextRenderer
 import java.util.UUID
 
 /** Paper owner thread; database reads are asynchronous and grouped by island, one in-flight read each. */
 class QuestHud(private val plugin: JavaPlugin, private val service: QuestService,
                private val islands: Integrations, private val thread: GameThread,
-               private val failure: (Throwable) -> Unit, initial: YamlConfiguration) : Listener, AutoCloseable {
+               private val failure: (Throwable) -> Unit, initial: YamlConfiguration,
+               private val text: TextRenderer) : Listener, AutoCloseable {
     private var settings = initial
     private val loaded = mutableSetOf<UUID>()
     private val shown = mutableSetOf<UUID>()
@@ -36,6 +38,8 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
     }
     private fun tick() = safe {
         if(closed) return@safe
+        // Runtime is assembled asynchronously. A successful pack event may predate this listener.
+        plugin.server.onlinePlayers.forEach { packReady(it) }
         val api = display() ?: return@safe
         val layout = settings.getString("tracker-layout")!!
         if(!api.ready(layout)) {
@@ -57,7 +61,10 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
                     if(closed || epoch != generation) return@run
                     pending.remove(home)
                     if(error != null) { failure(error); return@run }
-                    val values = TrackerSnapshot.values(journal)?.mapValues { plain(it.value) }
+                    val complete = listOf("task","objective").associateWith {
+                        PlainTextComponentSerializer.plainText().serialize(text.format("hud-completed.$it"))
+                    }
+                    val values = TrackerSnapshot.values(journal,complete)?.mapValues { plain(it.value) }
                     safe {
                         val current = display() ?: return@safe
                         members.forEach { id ->
@@ -70,12 +77,16 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
             }
     }
     fun popup(player: Player, event: String, title: Component, message: Component) = safe {
-        if(closed || !settings.getBoolean("notifications") || player.uniqueId !in loaded) return@safe
+        if(closed || !settings.getBoolean("notifications") || !packReady(player)) return@safe
         display()?.popup(player,settings.getString("popup-prefix")!!+event,
             mapOf("title" to PlainTextComponentSerializer.plainText().serialize(title),
                 "message" to PlainTextComponentSerializer.plainText().serialize(message)))?.whenComplete { _,error -> if(error != null) failure(error) }
     }
     private fun plain(value: String) = PlainTextComponentSerializer.plainText().serialize(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(value))
+    private fun packReady(player: Player): Boolean {
+        if(player.resourcePackStatus == PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED) loaded.add(player.uniqueId)
+        return player.uniqueId in loaded
+    }
     fun reload(next: YamlConfiguration) { clear(); settings=next; counter=0; warned=false }
     private fun clear() {
         generation++; pending.clear()

@@ -122,4 +122,6 @@ rewards:
 
 HUD 材质与布局仅配置在服务端 `plugins/Xerr/core/`：常驻面板贴右边缘、文字居中并分层配色；通知固定最右上角单槽排队，面板留在通知区下方。移除待领奖数与 `/quest` 帮助。修改布局后必须重建 Xerr 资源包并由 CraftEngine 合并。
 
+章节全部完成后仍保留常驻面板，显示章节完成状态和章节进度，不受奖励是否发放影响；完成文案配置在 `lang/zh_cn.yml:hud-completed`，升级时只补充缺失区块。启动和重载后会补读玩家当前资源包成功状态，避免异步装配错过加载事件；客户端尚未加载成功时仍不显示贴图 HUD。此次仅更新 Quest 逻辑与语言，无需重新生成材质包。
+
 GUI 只保留 `gui/main.yml` 与 `gui/chapters.yml`，严格按用户 Shape 渲染按钮；未放入 Shape 的组件不会补回。默认主界面沿用 5 行、21 个任务位布局。Lore 中整行 `<description>`、`<objectives>`、`<rewards>` 分别展开任务说明、条件进度和奖励列表；根级 `reward-format` 配置每条奖励的 `<reward>` 真实名称及 `<amount>` 数量。文案统一以 YAML 单引号包裹。章节列表原返回入口改为关闭，主界面返回章节列表。

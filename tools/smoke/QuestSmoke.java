@@ -45,6 +45,7 @@ public final class QuestSmoke extends JavaPlugin {
                 var plan=MailboxDelivery.Companion.plan(full,addition);
                 if(plan==null || plan[5]==null || full[5]!=null) throw new AssertionError("Delivery plan invalid");
                 checkChapterMenus(runtime,items);
+                checkHudStartup(runtime);
                 if(getServer().getPluginManager().isPluginEnabled("Xerr")) checkXerr();
                 getLogger().info("QUEST_SMOKE_PASSED: API readiness, 5 CE identities, real inventory capacity planner");
             } catch(Throwable error) {getLogger().log(java.util.logging.Level.SEVERE,"QUEST_SMOKE_FAILED",error);}
@@ -55,6 +56,28 @@ public final class QuestSmoke extends JavaPlugin {
         for(Component child:text.children()) checkText(child);
         if(text instanceof net.kyori.adventure.text.TranslatableComponent translated)
             for(var argument:translated.arguments()) if(argument.value() instanceof Component child) checkText(child);
+    }
+    private void checkHudStartup(Object runtime) throws Exception {
+        var hud=(ym.quest.hud.QuestHud)field(runtime,"hud");
+        var status=new java.util.concurrent.atomic.AtomicReference<org.bukkit.event.player.PlayerResourcePackStatusEvent.Status>();
+        var id=UUID.randomUUID();
+        var player=(Player)Proxy.newProxyInstance(Player.class.getClassLoader(),new Class<?>[]{Player.class},(proxy,method,args)->switch(method.getName()) {
+            case "getUniqueId" -> id;
+            case "getResourcePackStatus" -> status.get();
+            default -> null;
+        });
+        var ready=hud.getClass().getDeclaredMethod("packReady",Player.class);ready.setAccessible(true);
+        if((boolean)ready.invoke(hud,player)) throw new AssertionError("HUD allowed before pack acknowledgement");
+        status.set(org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.ACCEPTED);
+        if((boolean)ready.invoke(hud,player)) throw new AssertionError("Accepted pack is not loaded yet");
+        status.set(org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED);
+        if(!(boolean)ready.invoke(hud,player)) throw new AssertionError("Missed startup pack event not recovered");
+        hud.reload(((QuestMenus)field(runtime,"menus")).getSettings().getHud());
+        if(!(boolean)ready.invoke(hud,player)) throw new AssertionError("HUD reload lost loaded player");
+        hud.quit(new org.bukkit.event.player.PlayerQuitEvent(player,Component.empty(),org.bukkit.event.player.PlayerQuitEvent.QuitReason.DISCONNECTED));
+        status.set(null);
+        if((boolean)ready.invoke(hud,player)) throw new AssertionError("Quit leaked resource pack readiness");
+        getLogger().info("HUD_STARTUP_PASSED: current pack success recovers missed event, accepted gated, reload and quit lifecycle; proxy player");
     }
     private void checkXerr() {
         var api=com.hiusers.xerr.api.XerrAPI.get();

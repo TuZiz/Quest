@@ -126,3 +126,13 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 - 服务端旧 GUI 已完整备份到 Quest/backups/gui-two-pages-20261019-190532，再部署用户当前的两页布局；新 JAR 放入 plugins/update。未改动玩家数据库，也未停止或重启正式服。
 - 未重复验收未修改的 Xerr 资源包；真人 Java/Geyser 客户端点击仍待重启后确认，代理渲染不代表客户端验收。
 - 本次证据：`target/verification/gui-evidence.json`、`gui-deployment.json`、`gui-neuron.json`、`components.json`、`smoke-console.log` 和 surefire-reports。
+
+
+## 常驻 HUD 完成状态与启动恢复（2026-10-19）
+
+- 只读查询正式服状态确认三任务、章节和奖励均已完成；旧投影在没有 ACTIVE 任务时返回空值，主动移除面板。此次完成章节保留常驻状态，文案来自语言文件，不重置进度或领奖记录。
+- JDK25 Maven package 和 37 项 JUnit 通过，零失败/错误。覆盖完成后已领/未领奖、进行中任务优先、后续锁定章、空任务以及新增语言区块幂等补齐与自定义文案保留。
+- 最终 JAR 在 Leaf26.3 隔离服通过 HUD_STARTUP_PASSED：代理玩家模拟既有 SUCCESSFULLY_LOADED 状态补读、ACCEPTED 不显示、重载保留与退出清理；原菜单/五种 CE 物品/API 及非法重载保留回归通过，服务端正常退出。
+- Neuron 本地与任务绑定验证通过；实际共享 TextRenderer 导出 48 项语言 Component。新增完成文案 RGB、单引号；JAR 不含服务端 API、测试源码或材质。
+- 正式服旧 JAR 已备份，新 JAR 暂存 plugins/update/Quest-1.0.0.jar；语言区块由启动加载器仅补缺失项。未修改正式玩家数据库、未停服或重启、未改动 Xerr 材质，因此无需重新生成资源包。
+- 真人客户端重启后的实际显示仍待确认；代理生命周期验证不等于客户端像素验收。证据见 target/verification/startup-hud-*.json、smoke-console.log 和 surefire-reports。

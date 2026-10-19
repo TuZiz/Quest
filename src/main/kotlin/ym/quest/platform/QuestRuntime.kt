@@ -22,7 +22,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
                    private val files: QuestFiles, private val thread: GameThread, settings: Settings) : Listener, AutoCloseable {
     private val text = TextRenderer(settings.language)
     private val integrations = Integrations(plugin,service,::notify,::failure)
-    private val hud = ym.quest.hud.QuestHud(plugin,service,integrations,thread,::failure,settings.hud)
+    private val hud = ym.quest.hud.QuestHud(plugin,service,integrations,thread,::failure,settings.hud,text)
     private val notices = StoryNotices(text,settings.notices,hud::popup)
     private val custom = if(plugin.server.pluginManager.isPluginEnabled("CraftEngine")) CraftEngineItemProvider() else null
     private val items = ItemFactory(listOfNotNull(custom))

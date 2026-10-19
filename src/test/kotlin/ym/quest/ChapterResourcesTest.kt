@@ -61,6 +61,11 @@ class ChapterResourcesTest {
         assertTrue(upgraded.startsWith("# 自定义中文注释\nschema-version: 1\nunknown: 原值\n"))
         val y=YamlConfiguration().apply { loadFromString(upgraded) }
         assertTrue(y.isString("notices.chapter-complete.title"));assertTrue(y.isString("chapter-status.COMPLETE"))
+        assertTrue(y.isString("hud-completed.task")); assertTrue(y.isString("hud-completed.objective"))
+        val custom=upgraded.replace(y.getString("hud-completed.task")!!,"<#123456>自定义完成提示")
+        Files.writeString(language,custom)
+        ResourceUpgrade.appendLanguage(language,bundled)
+        assertEquals(custom,Files.readString(language))
         Files.writeString(root.resolve("quests/sky_start.yml"),"冲突文件")
         assertThrows(IllegalArgumentException::class.java) { ResourceUpgrade.renameQuests(root) }
         assertEquals(original,Files.readString(root.resolve("quests/星海启航.yml")))

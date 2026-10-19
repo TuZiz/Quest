@@ -56,6 +56,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         }
         validateGraph(quests)
         val language = yaml("lang/zh_cn.yml")
+        listOf("task","objective").forEach { require(language.isString("hud-completed.$it")) { "lang/zh_cn.yml:hud-completed.$it missing" } }
         requiredMessages.forEach { require(language.isString(it)) { "lang/zh_cn.yml:$it missing" } }
         val center = yaml("gui/main.yml")
         validateMenu("gui/main.yml",center)

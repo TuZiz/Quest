@@ -1,4 +1,7 @@
 schema-version: 1
+hud-completed:
+  task: '<#A8FF78>章节已完成'
+  objective: '<#E0F7FA>期待新的冒险'
 automatic-rewards: '<#89F7FE>任务进度会自动追踪，<#A8FF78>完成奖励自动发放<#89F7FE>，无需打开任务菜单。'
 no-permission: '<#FCA5A5>你没有使用此功能的权限。'
 unavailable: '<#FCA5A5>相关插件或物品尚未就绪，请稍后再试。'
