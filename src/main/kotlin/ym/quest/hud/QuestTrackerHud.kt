@@ -23,6 +23,7 @@ internal class QuestTrackerHud(private val plain: (String) -> String) {
         if(session.target != null) session.state.observe(session.target,now,settings)
     }
     fun canTrack(player: Player, quest: String) = quest in (sessions[player.uniqueId]?.available ?: emptySet())
+    fun compact(player: Player) { sessions[player.uniqueId]?.state?.compact() }
     fun invalidate(player: Player) { sessions[player.uniqueId]?.frame=null }
     fun tick(players: Collection<Player>, api: XerrDisplay?, settings: HudSettings, enabled: Boolean, now: Long,
              eligible: (Player) -> Boolean, home: (Player) -> String?, preference: (Player) -> HudPreference?) {
@@ -39,11 +40,11 @@ internal class QuestTrackerHud(private val plain: (String) -> String) {
                 if(target != null && target.home != home(player)) { session.target=null; session.state.observe(null,now,settings) }
                 return@forEach
             }
-            val values=if(state == HudState.COMPACT) mapOf("compact_task" to HudText.fit(plain(target!!.values.getValue("task")),settings.compactUnits),
+            val values=if(state == HudState.COMPACT) mapOf("compact_task" to HudText.fit(HudText.label(plain(target!!.values.getValue("task"))),settings.compactUnits),
                 "current" to target.current.toString(),"target" to target.target.toString())
             else target!!.values.mapValues { (key,value) ->
                 val raw=plain(value)
-                when(key) { "chapter","task" -> HudText.fit(raw,settings.textUnits)
+                when(key) { "chapter","task" -> HudText.fit(HudText.label(raw),settings.textUnits)
                     "objective" -> HudText.fit(raw,(settings.textUnits-8).coerceAtLeast(8)); else -> raw }
             } + ("show_bar" to settings.bar.toString())
             val frame=Frame(if(state == HudState.COMPACT) settings.compactLayout else settings.expandedLayout,values)

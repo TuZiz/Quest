@@ -25,7 +25,8 @@ internal class HudControls(private val preferences: HudPreferenceSessions, priva
             else -> { text.send(player,"smart-hud.usage"); return }
         }
         preferences.update(player,next) {
-            if(next.mode != HudMode.OFF) tracker.request(player,now(),settings())
+            if(next.mode == HudMode.SMART && next.mode != current.mode || choice in setOf("smart","on")) tracker.compact(player)
+            if(choice == "track") tracker.request(player,now(),settings())
             refresh(player)
             text.send(player,"smart-hud.saved",TextRenderer.values("mode" to next.mode.name.lowercase(),"notifications" to next.notifications.toString()))
         }

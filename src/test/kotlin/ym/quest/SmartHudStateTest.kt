@@ -52,6 +52,14 @@ class SmartHudStateTest {
         first.observe(null,4,settings)
         assertEquals(HudState.HIDDEN,first.state(HudMode.ALWAYS,false,4))
     }
+    @Test fun `explicit smart selection collapses immediately without replaying current progress`() {
+        val state=SmartHudState();state.observe(target(0),0,settings);state.observe(target(10),2,settings)
+        state.compact();state.observe(target(10),4,settings)
+        assertEquals(HudState.COMPACT,state.state(HudMode.SMART,true,4))
+        assertEquals(HudState.EXPANDED,state.state(HudMode.ALWAYS,true,4))
+        assertEquals("第一章 · 星海初醒",HudText.label("✦ 第一章 · 星海初醒"))
+        assertEquals("第一批资源",HudText.label("  ✦ 第一批资源"))
+    }
     @Test fun `duration and milestone configuration rejects unsupported values`() {
         for(raw in listOf("expand-ticks: 99","expand-ticks: 161","expand-milestones: [10, 10]","expand-milestones: [100]"))
             assertThrows(IllegalArgumentException::class.java) { HudSettings.parse(YamlConfiguration().apply { loadFromString(raw) }) }

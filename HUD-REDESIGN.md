@@ -7,7 +7,7 @@
 - `/quest help`：玩家帮助；管理员额外显示管理帮助。
 - `/quest reload`：重载配置，保留 `quest.admin` 权限；旧 `/quest admin reload` 兼容。
 - `/quest hud`：切换 smart → always → off。
-- `/quest hud smart`：默认一行任务及进度，首次推进、10/25/50/75/90%节点或新任务激活时短暂展开。
+- `/quest hud smart`：明确选择smart立即收起为单行；首次推进、10/25/50/75/90%节点或新任务激活时短暂展开。
 - `/quest hud always`：完整显示当前有效任务。
 - `/quest hud off`：关闭追踪，保留重要通知。
 - `/quest hud view`：请求临时展开；`/quest hud track <任务ID>`：切换当前已激活任务。
@@ -50,3 +50,5 @@
 6. 全部任务完成后隐藏；新任务激活重新显示。加载资源包、Quest配置重载或Xerr重载后，不应因缓存误判而永久丢失有效HUD。
 
 自动验证不等于客户端动画、字形、边缘位置和GUI缩放已验收，以客户端加载最新托管包后的结果为准。
+
+2026-10-19截图回归：明确切smart不再先展开，notifications仅改通知开关。任务与章节HUD名称去掉菜单装饰前缀（字体cmap无✦），图标仍走资源包图片。未修改任务名称配置；客户端文字/进度条实际对齐仍待复核。

@@ -10,6 +10,7 @@ class SmartHudState {
     private var blockedUntil = 0L
     private var requested = false
     fun request() { requested = true }
+    fun compact() { until=0; requested=false }
     fun observe(target: TrackerTarget?, now: Long, settings: HudSettings) {
         if(target == null) { key=null; lastProgress=0; seen=emptySet(); until=0; requested=false; return }
         val crossed=settings.milestones.filter { target.current.toDouble() / target.target.coerceAtLeast(1) * 100 >= it }.toSet()
