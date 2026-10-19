@@ -23,8 +23,11 @@ class ResourcesTest {
             val yaml=YamlConfiguration().apply { loadFromString(raw) }
             assertFalse(raw.contains('\t'),p.toString())
             assertFalse(Regex("[&§][0-9a-fk-or]",RegexOption.IGNORE_CASE).containsMatchIn(raw),p.toString())
-            if(p.fileName.toString() != "plugin.yml") assertEquals(if(p.parent.fileName.toString() in setOf("quests","chapters")) 2 else 1,yaml.getInt("schema-version"),p.toString())
-            if(p.parent.fileName.toString() == "gui") QuestFiles.validateMenu(p.toString(),yaml)
+            if(p.fileName.toString() != "plugin.yml") assertEquals(if(p.parent.fileName.toString() in setOf("quests","chapters") || p == root.resolve("gui/main.yml")) 2 else 1,yaml.getInt("schema-version"),p.toString())
+            if(p.parent.fileName.toString() == "gui") {
+                QuestFiles.validateMenu(p.toString(),yaml)
+                assertEquals(yaml.getStringList("Shape").joinToString("").filter { it != ' ' }.map { it.toString() }.toSet(),yaml.getConfigurationSection("components")!!.getKeys(false))
+            }
         } }
         val lang=YamlConfiguration().apply { loadFromString(Files.readString(this@ResourcesTest.root.resolve("lang/zh_cn.yml"))) }
         QuestFiles.requiredMessages.forEach { assertTrue(lang.isString(it),it) }
@@ -40,17 +43,17 @@ class ResourcesTest {
         assertNull(text.clickEvent())
         val evidence=Path.of("target/verification/components.json"); Files.createDirectories(evidence.parent)
         val samples=JsonArray()
-        val values=listOf("quest","status","page","pages","info","amount","description","progress","target","chapter").associateWith {
+        val values=listOf("quest","status","page","pages","info","amount","description","objectives","rewards","reward","progress","target","chapter").associateWith {
             renderer.render("<#7DD3FC>实际动态参数")
         }
-        for(name in listOf("lang/zh_cn.yml","gui/main.yml","gui/detail.yml","gui/chapters.yml","gui/chapter-detail.yml","chapters/第一章·星海初醒.yml")) {
+        for(name in listOf("lang/zh_cn.yml","gui/main.yml","gui/chapters.yml","chapters/第一章·星海初醒.yml")) {
             val yaml=YamlConfiguration().apply { loadFromString(Files.readString(this@ResourcesTest.root.resolve(name))) }
             fun record(path: String, value: Any?) {
                 when(value) {
                     is ConfigurationSection -> value.getValues(false).forEach { (k,v) -> record(if(path.isEmpty()) k else "$path.$k",v) }
                     is List<*> -> value.forEachIndexed { i,v -> record("$path.$i",v) }
                     is String -> {
-                        val item=name.startsWith("gui/") && path.split('.').any { it in setOf("name","lore") }
+                        val item=name.startsWith("gui/") && (path == "reward-format" || path.split('.').any { it in setOf("name","lore") })
                         if(name.startsWith("gui/") && !item && path != "title") return
                         val final=if(item) renderer.item(value,values) else renderer.render(value,values)
                         val hash=java.security.MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }

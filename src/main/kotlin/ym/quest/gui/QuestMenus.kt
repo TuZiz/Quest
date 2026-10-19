@@ -14,7 +14,6 @@ import ym.quest.domain.*
 import ym.quest.integration.Integrations
 import ym.quest.platform.GameThread
 import ym.quest.reward.ItemFactory
-import ym.quest.reward.MailboxDelivery
 import ym.quest.text.TextRenderer
 import java.util.UUID
 
@@ -22,15 +21,15 @@ import java.util.UUID
 class QuestMenus(private val plugin: JavaPlugin, private val service: QuestService,
                  private val integrations: Integrations, private val items: ItemFactory,
                  private val text: TextRenderer, private val thread: GameThread,
-                 private val delivery: MailboxDelivery, private val claim: (Player,UUID,String) -> Unit,
+                 private val claim: (Player,UUID,String) -> Unit,
                  private val failure: (Throwable) -> Unit, var settings: Settings) : Listener, AutoCloseable {
     private val renderer = JournalMenuRenderer(items,text)
     private val sessions = mutableMapOf<UUID,MenuSession>()
-    fun open(player: Player, quest: String? = null, page: Int = 0, chapter: String? = null, chapters: Boolean = true) {
+    fun open(player: Player, page: Int = 0, chapter: String? = null) {
         if(!player.hasPermission("quest.use")) { text.send(player,"no-permission"); return }
         val island = integrations.island(player.uniqueId)
         if(island == null) { text.send(player,if(integrations.islands?.ready() == true) "no-island" else "unavailable"); return }
-        val session = MenuSession(player.uniqueId,island.id,quest,page,chapter,chapters)
+        val session = MenuSession(player.uniqueId,island.id,page,chapter)
         val y = renderer.layout(settings,session)
         session.menu = plugin.server.createInventory(session,y.getStringList("Shape").size*9,text.render(y.getString("title")!!))
         player.openInventory(session.menu); sessions[player.uniqueId]=session
@@ -40,7 +39,6 @@ class QuestMenus(private val plugin: JavaPlugin, private val service: QuestServi
     fun refreshHome(home: UUID) { sessions.values.filter { it.home == home }.toList().forEach { s ->
         plugin.server.getPlayer(s.player)?.let { refresh(it,s) }
     } }
-    fun refreshPlayer(player: Player) { sessions[player.uniqueId]?.let { refresh(player,it) } }
     private fun refresh(player: Player, s: MenuSession) {
         val request = ++s.request
         service.journal(s.home.toString()).whenComplete { views,error -> thread.run {
@@ -60,20 +58,13 @@ class QuestMenus(private val plugin: JavaPlugin, private val service: QuestServi
         thread.run {
             if(sessions[player.uniqueId] !== s) return@run
             when {
-                action.startsWith("quest:") -> open(player,action.substringAfter(':'),chapter=s.chapter)
-                action.startsWith("chapter:") -> open(player,chapter=action.substringAfter(':'),chapters=true)
-                action == "chapters" -> open(player,chapters=true)
-                action == "back" -> when {
-                    s.quest != null && s.chapter != null -> open(player,chapter=s.chapter,chapters=true)
-                    s.chapters && s.chapter != null -> open(player,chapters=true)
-                    else -> open(player,chapters=false)
-                }
-                action == "previous" -> open(player,page=s.page-1,chapter=s.chapter,chapters=s.chapters)
-                action == "next" -> open(player,page=s.page+1,chapter=s.chapter,chapters=s.chapters)
+                action.startsWith("chapter:") -> open(player,chapter=action.substringAfter(':'))
+                action == "back" -> if(s.chapter != null) open(player) else player.closeInventory()
+                action == "close" -> player.closeInventory()
+                action == "previous" -> open(player,page=s.page-1,chapter=s.chapter)
+                action == "next" -> open(player,page=s.page+1,chapter=s.chapter)
                 action == "refresh" -> { integrations.syncIsland(s.home); refresh(player,s) }
-                action == "mailbox" -> delivery.collect(player,s.home) { refreshPlayer(player) }
                 action == "chapter-claim" && s.chapter != null -> claim(player,s.home,"chapter:${s.chapter}")
-                action == "claim" && s.quest != null -> claim(player,s.home,s.quest)
             }
         }
     }

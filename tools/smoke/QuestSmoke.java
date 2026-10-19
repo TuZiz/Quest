@@ -53,6 +53,8 @@ public final class QuestSmoke extends JavaPlugin {
     private void checkText(Component text) {
         if(text.decoration(TextDecoration.ITALIC)!=TextDecoration.State.FALSE) throw new AssertionError("Italic item text");
         for(Component child:text.children()) checkText(child);
+        if(text instanceof net.kyori.adventure.text.TranslatableComponent translated)
+            for(var argument:translated.arguments()) if(argument.value() instanceof Component child) checkText(child);
     }
     private void checkXerr() {
         var api=com.hiusers.xerr.api.XerrAPI.get();
@@ -119,16 +121,35 @@ public final class QuestSmoke extends JavaPlugin {
             q.getObjectives().stream().map(o->new ObjectiveProgress(o,o.getTarget())).toList())).toList();
         var journal=new JournalView(questViews,List.of(new ChapterView(chapter,ChapterStatus.COMPLETE,3,false)));
         String chapterId=chapter.getId();
-        for(String mode:List.of("chapters","chapter","task")) {
-            var session=new MenuSession(UUID.randomUUID(),UUID.randomUUID(),mode.equals("task")?"sky_start":null,0,
-                mode.equals("chapters")?null:chapterId,true);
+        for(String mode:List.of("chapters","chapter")) {
+            var session=new MenuSession(UUID.randomUUID(),UUID.randomUUID(),0,mode.equals("chapters")?null:chapterId);
             var layout=renderer.layout(settings,session);
             session.setMenu(getServer().createInventory(session,layout.getStringList("Shape").size()*9,Component.empty()));
             renderer.render(player,session,journal,settings,true);
             var actions=session.getActions().values();
             if(mode.equals("chapters") && !actions.contains("chapter:"+chapterId)) throw new AssertionError("No chapter link");
-            if(mode.equals("chapter") && (!actions.contains("chapter-claim") || actions.stream().filter(a->a.startsWith("quest:")).count()!=3 || !actions.contains("chapter-preview"))) throw new AssertionError("Chapter layout incomplete");
-            if(mode.equals("task") && actions.stream().filter(a->a.equals("preview")).count()!=4) throw new AssertionError("Original task reward previews lost");
+            if(mode.equals("chapter")) {
+                if(!actions.contains("chapter-claim") || actions.stream().filter(a->a.equals("quest")).count()!=3)
+                    throw new AssertionError("Chapter task layout incomplete");
+                var taskSlots=session.getActions().entrySet().stream().filter(e->e.getValue().equals("quest")).map(Map.Entry::getKey).toList();
+                for(int index=0;index<taskSlots.size();index++) {
+                    String taskId=chapter.getQuests().get(index);
+                    var quest=questViews.stream().filter(q->q.getDefinition().getId().equals(taskId)).findFirst().orElseThrow();
+                    var lines=session.getMenu().getItem(taskSlots.get(index)).getItemMeta().lore();
+                    String plain=lines.stream().map(net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()::serialize).collect(java.util.stream.Collectors.joining("\n"));
+                    for(var objective:quest.getProgress()) {
+                        String description=net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(text.render(objective.getObjective().getDescription(),Map.of()));
+                        if(!plain.contains(description) || !plain.contains(Long.toString(objective.getObjective().getTarget()))) throw new AssertionError("Task objective missing from lore: "+plain);
+                    }
+                    for(var reward:quest.getDefinition().getRewards()) {
+                        String name=net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(items.build(reward.getItem(),null).effectiveName());
+                        if(!plain.contains(name) || !plain.contains("×"+reward.getAmount())) throw new AssertionError("Reward name/count missing from lore: "+plain);
+                    }
+                    if(plain.contains("<rewards>") || plain.contains("<objectives>") || plain.contains("点击查看条件")) throw new AssertionError("Unexpanded task lore: "+plain);
+                }
+                if(actions.contains("mailbox") || actions.contains("chapter-preview") || actions.stream().anyMatch(a->a.startsWith("quest:")))
+                    throw new AssertionError("Retired button/detail route restored");
+            }
             for(var item:session.getMenu().getContents()) if(item!=null) {
                 var meta=item.getItemMeta();
                 if(meta.hasDisplayName()) checkText(meta.displayName());
@@ -144,7 +165,7 @@ public final class QuestSmoke extends JavaPlugin {
         notices.setProfiles(disabled);calls.clear();
         notices.send(player,new ProgressChange("A",chapterId,true,false,true),settings.getQuests(),settings.getChapters());
         if(!calls.isEmpty()) throw new AssertionError("Disabled channels invoked: "+calls);
-        getLogger().info("CHAPTER_GUI_PASSED: chapter list/detail/task rewards, actual ItemStack non-italic rendering, title/sound/chat dispatch and all-off switches; player is a proxy, no client click claim");
+        getLogger().info("CHAPTER_GUI_PASSED: two screens, inline task objectives and actual CE/vanilla reward names/counts, no task detail/mailbox/preview buttons, ItemStack non-italic rendering; proxy player, no client click claim");
     }
 
 }

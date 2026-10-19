@@ -36,13 +36,11 @@ plugins/Quest/
   quests/能源启动.yml
   quests/第一批资源.yml
   gui/main.yml
-  gui/detail.yml
   gui/chapters.yml
-  gui/chapter-detail.yml
   data/quest.db
 ```
 
-普通玩家默认使用常驻任务 HUD，不开放 `/quest` 菜单；管理员仍可打开全部章节作检查。`gui/main.yml:player-access` 缺省为 false。章节列表展示状态和完成数量，章节详情展示任务链、完成奖励及独立领取入口；任务详情显示条件和原任务奖励。所有列表支持分页。菜单仍为原版箱子。没有 Java 客户端专用输入、MOD、聊天点击或依赖玩家名称的逻辑；可供 Geyser/Floodgate 映射使用。基岩客户端点击及材质展示仍需实际客户端验收。
+普通玩家默认使用常驻任务 HUD，不开放 `/quest` 菜单；管理员仍可打开全部章节作检查。`gui/main.yml:player-access` 缺省为 false。`chapters.yml` 展示全部章节，`main.yml` 展示单章任务链。任务说明、实时目标进度及奖励物品真实名称/数量直接显示在任务 Lore 中，点击任务不会再打开详情页。所有列表支持分页。菜单仍为原版箱子。没有 Java 客户端专用输入、MOD、聊天点击或依赖玩家名称的逻辑；可供 Geyser/Floodgate 映射使用。基岩客户端点击及材质展示仍需实际客户端验收。
 
 ## 默认玩法与物品证据
 
@@ -84,7 +82,7 @@ plugins/Quest/
 
 ## 配置和扩展
 
-任务和章节 YAML 使用 `schema-version: 2`，其余资源保持 1，SQLite 保持 `user_version=2`。升级边界见 [UPGRADE.md](UPGRADE.md)。加载前校验完整任务与章节 DAG、重复 ID、缺失引用、目标、菜单及物品；reload 失败保留上一份有效运行配置。
+任务、章节及 `gui/main.yml` 使用 `schema-version: 2`，其余资源保持 1，SQLite 保持 `user_version=2`。升级边界见 [UPGRADE.md](UPGRADE.md)。加载前校验完整任务与章节 DAG、重复 ID、缺失引用、目标、菜单及物品；reload 失败保留上一份有效运行配置。
 
 `quests/` 只放任务内容，一个文件一个任务；不再配置 `prerequisites`。`chapters/` 一个文件一个章节，文件名可使用中文，引用始终使用稳定 ID。默认是 `chapters/第一章·星海初醒.yml`：
 
@@ -123,3 +121,5 @@ rewards:
 验证结果、已知上游警告和待实机验收范围见 [VALIDATION.md](VALIDATION.md)。
 
 HUD 材质与布局仅配置在服务端 `plugins/Xerr/core/`：常驻面板贴右边缘、文字居中并分层配色；通知固定最右上角单槽排队，面板留在通知区下方。移除待领奖数与 `/quest` 帮助。修改布局后必须重建 Xerr 资源包并由 CraftEngine 合并。
+
+GUI 只保留 `gui/main.yml` 与 `gui/chapters.yml`，严格按用户 Shape 渲染按钮；未放入 Shape 的组件不会补回。默认主界面沿用 5 行、21 个任务位布局。Lore 中整行 `<description>`、`<objectives>`、`<rewards>` 分别展开任务说明、条件进度和奖励列表；根级 `reward-format` 配置每条奖励的 `<reward>` 真实名称及 `<amount>` 数量。文案统一以 YAML 单引号包裹。章节列表原返回入口改为关闭，主界面返回章节列表。

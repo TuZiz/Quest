@@ -4,7 +4,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import java.util.UUID
 
-class MenuSession(val player: UUID, val home: UUID, val quest: String?, var page: Int, val chapter: String? = null, val chapters: Boolean = false) : InventoryHolder {
+class MenuSession(val player: UUID, val home: UUID, var page: Int, val chapter: String? = null) : InventoryHolder {
     lateinit var menu: Inventory
     val actions = mutableMapOf<Int,String>()
     var request = 0L

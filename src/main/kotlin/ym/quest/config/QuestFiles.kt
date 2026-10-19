@@ -7,17 +7,18 @@ import ym.quest.domain.*
 import java.nio.file.Files
 
 data class Settings(val quests: List<QuestDefinition>, val language: YamlConfiguration,
-                    val center: YamlConfiguration, val detail: YamlConfiguration,
-                    val chapters: List<ChapterDefinition>, val chapterMenu: YamlConfiguration, val chapterDetail: YamlConfiguration,
+                    val center: YamlConfiguration,
+                    val chapters: List<ChapterDefinition>, val chapterMenu: YamlConfiguration,
                     val notices: Map<String,NoticeProfile>, val hud: YamlConfiguration, val rewards: RewardSettings)
 
 /** IO executor only. No save of existing YAML: comments/unknown fields remain byte-for-byte intact. */
 class QuestFiles(private val plugin: JavaPlugin, private val conditions: ConditionRegistry) {
-    private val defaults = listOf("config.yml","lang/zh_cn.yml","gui/main.yml","gui/detail.yml",
+    private val defaults = listOf("config.yml","lang/zh_cn.yml","gui/main.yml",
         "quests/星海启航.yml","quests/能源启动.yml","quests/第一批资源.yml",
-        "提示.yml","显示.yml","奖励.yml","gui/chapters.yml","gui/chapter-detail.yml")
+        "提示.yml","显示.yml","奖励.yml","gui/chapters.yml")
     fun load(): Settings {
         ResourceUpgrade.relocateLayout(plugin.dataFolder.toPath())
+        GuiConfigUpgrade.migrate(plugin.dataFolder.toPath(),checkNotNull(plugin.getResource("gui/main.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
         ResourceUpgrade.renameQuests(plugin.dataFolder.toPath())
         ResourceUpgrade.updateProgressionText(plugin.dataFolder.toPath())
         val chapterDefault = checkNotNull(plugin.getResource(ChapterConfigUpgrade.defaultFile)).bufferedReader(Charsets.UTF_8).use { it.readText() }
@@ -39,7 +40,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             val text = Files.readString(plugin.dataFolder.toPath().resolve(name))
             return YamlConfiguration().apply {
                 try { loadFromString(text) } catch(e: Exception) { throw IllegalArgumentException("$name: YAML解析失败",e) }
-                val expected = if(name.startsWith("quests/") || name.startsWith("chapters/")) 2 else 1
+                val expected = if(name.startsWith("quests/") || name.startsWith("chapters/") || name == "gui/main.yml") 2 else 1
                 require(get("schema-version") == expected) { "$name:schema-version=${get("schema-version")} expected $expected; original preserved" }
             }
         }
@@ -56,15 +57,16 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         validateGraph(quests)
         val language = yaml("lang/zh_cn.yml")
         requiredMessages.forEach { require(language.isString(it)) { "lang/zh_cn.yml:$it missing" } }
-        val center = yaml("gui/main.yml"); val detail = yaml("gui/detail.yml")
-        validateMenu("gui/main.yml",center); validateMenu("gui/detail.yml",detail)
+        val center = yaml("gui/main.yml")
+        validateMenu("gui/main.yml",center)
+        require(center.isString("reward-format")) { "gui/main.yml:reward-format missing" }
         val chapters = ChapterConfigUpgrade.files(plugin.dataFolder.toPath().resolve("chapters")).map { path ->
             val name = "chapters/${path.fileName}"
             ChapterFiles.parse(yaml(name),name)
         }
         val ordered = ChapterGraph.prepare(quests,chapters)
-        val chapterMenu = yaml("gui/chapters.yml"); val chapterDetail = yaml("gui/chapter-detail.yml")
-        validateMenu("gui/chapters.yml",chapterMenu); validateMenu("gui/chapter-detail.yml",chapterDetail)
+        val chapterMenu = yaml("gui/chapters.yml")
+        validateMenu("gui/chapters.yml",chapterMenu)
         val notices = NoticeFiles.parse(yaml("提示.yml"))
         NoticeFiles.events.forEach { event -> listOf("message","title","subtitle").forEach { field ->
             require(language.isString("notices.$event.$field")) { "lang/zh_cn.yml:notices.$event.$field missing" }
@@ -74,7 +76,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         listOf("enabled","tracker","notifications").forEach { require(hud.isBoolean(it)) { "显示.yml:$it=${hud.get(it)} expected boolean" } }
         require(hud.isInt("refresh-ticks") && hud.getInt("refresh-ticks") in 20..1200) { "显示.yml:refresh-ticks=${hud.get("refresh-ticks")} expected 20..1200" }
         listOf("tracker-layout","popup-prefix").forEach { require(!hud.getString(it).isNullOrBlank()) { "显示.yml:$it missing" } }
-        return Settings(ordered,language,center,detail,chapters,chapterMenu,chapterDetail,notices,hud,rewards)
+        return Settings(ordered,language,center,chapters,chapterMenu,notices,hud,rewards)
     }
     private fun parse(file: String, y: YamlConfiguration): QuestDefinition {
         fun text(s: ConfigurationSection, key: String) = s.getString(key)?.takeIf { it.isNotBlank() }
@@ -123,7 +125,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             shape.joinToString("").filter { it != ' ' }.toSet().forEach { ch ->
                 require(y.isConfigurationSection("components.$ch")) { "$file:components.$ch missing mapping" }
                 val action=y.getString("components.$ch.action","")
-                require(action in setOf("","quest","summary","objectives","preview","claim","mailbox","back","previous","next","refresh","chapters","chapter","chapter-summary","chapter-claim","chapter-preview")) { "$file:components.$ch.action=$action invalid" }
+                require(action in setOf("","quest","back","previous","next","refresh","close","chapter","chapter-summary","chapter-claim")) { "$file:components.$ch.action=$action invalid" }
                 require(y.isString("components.$ch.item")) { "$file:components.$ch.item missing" }
             }
             require(y.isString("title")) { "$file:title missing" }

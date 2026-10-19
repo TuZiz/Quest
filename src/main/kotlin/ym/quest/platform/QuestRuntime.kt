@@ -27,7 +27,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     private val custom = if(plugin.server.pluginManager.isPluginEnabled("CraftEngine")) CraftEngineItemProvider() else null
     private val items = ItemFactory(listOfNotNull(custom))
     private val delivery = MailboxDelivery(service,integrations,items,text,thread,::failure)
-    private val menus = QuestMenus(plugin,service,integrations,items,text,thread,delivery,::claim,::failure,settings)
+    private val menus = QuestMenus(plugin,service,integrations,items,text,thread,::claim,::failure,settings)
     private val automatic = AutomaticRewards(plugin,service,integrations,items,{ custom?.id(it) },delivery,thread,::failure,settings.rewards) { !closed && !reloading }
     private val claiming = mutableSetOf<UUID>()
     private var reloading = false
@@ -107,7 +107,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
             if(error != null) { reloading=false; failure(error); text.send(sender,"error"); return@run }
             try {
                 (settings.quests.flatMap { listOf(it.icon)+it.rewards.map { r -> r.item } } + settings.chapters.flatMap { listOf(it.icon)+it.rewards.map { r -> r.item } }).distinct().forEach { items.build(it) }
-                listOf(settings.center,settings.detail,settings.chapterMenu,settings.chapterDetail).forEach { y ->
+                listOf(settings.center,settings.chapterMenu).forEach { y ->
                     y.getConfigurationSection("components")!!.getKeys(false).forEach { ch -> items.build(y.getString("components.$ch.item")!!) }
                 }
             } catch(e: Exception) { reloading=false; failure(e); text.send(sender,"error"); return@run }

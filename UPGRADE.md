@@ -1,18 +1,18 @@
 # 章节任务系统升级说明
 
-本次为现有 Quest 增量升级，保留 Kotlin/Maven、SQLite、原任务与奖励引擎、箱子菜单及三个联动适配器。没有增加默认任务数量，没有修改 DreamSkyblock/Genlite API，没有操作正式服务器或玩家文件。
+本次为现有 Quest 增量升级，保留 Kotlin/Maven、SQLite、原任务与奖励引擎、箱子菜单及三个联动适配器。没有增加默认任务数量，没有修改 DreamSkyblock/Genlite API，不改写玩家任务数据库；服务端 GUI 部署均先备份。
 
 ## 配置与内容
 
 - 默认章 `sky_awakening`：第一章 · 星海初醒。
 - 任务 ID 继续为 `sky_start`、`first_fuel`、`first_resources`，奖励物品和数量全部保留；任务文件改为 `星海启航.yml`、`能源启动.yml`、`第一批资源.yml`。
-- 新增 `chapters/第一章·星海初醒.yml` 与根目录 `提示.yml`，以及独立菜单 `gui/chapters.yml`、`gui/chapter-detail.yml`。章节奖励默认 2 个原版钻石，可自由配置。
-- 默认奖励自动发放，玩家无需 `/quest` 或邮箱。管理员保留章节 → 任务列表 → 详情作为检查入口；原 claims/parcels 仅作为内部兼容、防重复与恢复记录。
+- 新增 `chapters/第一章·星海初醒.yml` 与根目录 `提示.yml`，以及独立菜单 `gui/chapters.yml`、`gui/main.yml`。章节奖励默认 2 个原版钻石，可自由配置。
+- 默认奖励自动发放，玩家无需 `/quest` 或邮箱。管理员保留章节 → 任务列表（Lore 展示要求和奖励）作为检查入口；原 claims/parcels 仅作为内部兼容、防重复与恢复记录。
 - 完成前置目标后自动推进；不需要先领任务奖励。未领取的任务完成资格、已生成的奖励载荷均持久保存。
 
 ## 文件布局调整
 
-GUI 文件名保持英文：`gui/chapters.yml`、`gui/chapter-detail.yml`；玩家可见文案保留中文。任务中文文件位于 `quests/`，章节中文文件位于 `chapters/`，不放根目录。
+GUI 文件名保持英文：`gui/chapters.yml`、`gui/main.yml`；玩家可见文案保留中文。任务中文文件位于 `quests/`，章节中文文件位于 `chapters/`，不放根目录。
 
 任务和章节资源升级到 `schema-version: 2`，其他资源仍为 1。`quests/` 只保留任务 ID、内容、条件和奖励；每章单独一个 YAML，通过 `tasks` 列表中的 `quest` 和 `requires` 配置依赖。列表顺序只控制展示；多个 `requires` 为 AND。`sequential` 和任务文件的 `prerequisites` 被移除；章节自己的 `prerequisites` 继续引用章节 ID。每个任务归属一章，任务前置限定在本章。
 
@@ -53,3 +53,9 @@ SQLite 与玩家存档仍没有跨存储原子提交；崩溃窗口的 SENDING �
 ## 自动发奖升级
 
 新增 `奖励.yml`（schema-version: 1），默认 `automatic: true`，在线空岛每 100 tick 自动检查及重试。无需数据库结构升级，不删除任何旧进度、claims 或 parcels；历史 WAITING 自动补发，SENDING 保留待核对，已发奖励不重复创建。旧版默认领奖说明只作精确文字替换，未知键、自定义颜色及注释保留；自动发奖关闭时不执行该文案迁移。
+
+## 两页 GUI 升级
+
+`gui/chapter-detail.yml` 的自定义 Shape 和组件迁入 `gui/main.yml`（schema-version: 2），原任务中心和任务详情页面退休；不再导出 `detail.yml` 或 `chapter-detail.yml`。旧 main、detail、chapter-detail 的完整原文及目标文件先写入 `.migrations/gui-v2/`，随后发布新 main 并移除旧页面；中断可重放，用户并发修改发生冲突时拒绝覆盖。已有新 main 与旧 chapter-detail 并存且无恢复记录时拒绝猜测，以免覆盖用户配置。
+
+仅保留 Shape 使用的组件；退休的邮箱和预览动作从旧布局中移出，不恢复已删除按钮。任务不再可点击进入详情，要求和奖励改由 Lore 的整行展开标记显示。迁移保留注释、未知根字段、现存普通玩家菜单开关和剩余按钮位置。数据库及自动发奖流程不变。

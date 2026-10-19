@@ -117,3 +117,12 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 - 正式服 Xerr 的 19 个输入文件与隔离服 SHA256 一致后，同步已验证的 51 个生成文件并备份旧包。奖励配置默认开启、普通玩家菜单关闭、旧领取提示精确替换；不改写玩家数据库。材质和布局仅在服务器 Xerr 文件夹。
 - 新 Quest JAR 已放入 `plugins/update/Quest-1.0.0.jar`，没有停止或重启正式服，也没有发送 CE 重载命令。需要完整重启并重新合并/发送资源包。真人客户端最终像素位置及在线自动入包尚待验证；代理测试不代表实机验收。Neuron 对已提交检查无问题，因该实机范围未执行记录为 pending。
 - 证据：`target/verification/auto-rewards-evidence.json`、`auto-rewards-deployment.json`、`xerr-tracker-components.json`、`auto-rewards-neuron.json` 及两份隔离服日志。
+
+## GUI 精简与单引号文案（2026-10-19）
+
+- `mvn -q -o clean package -Dkotlin.compiler.daemon=false`（JDK25）通过，35 项 JUnit 零失败、错误或跳过。新增 GUI 迁移测试覆盖原文备份、Shape/注释/未知字段保留、未使用组件清理、幂等、中断恢复及冲突拒绝。
+- 隔离 Leaf26.3 新安装与旧 GUI 升级两种启动均通过。真实 ItemStack 探针逐项验证三任务目标文本和数量、CraftEngine/原版奖励真实名称与数量、所有 Lore 及嵌套翻译参数非斜体；任务不再产生详情页链接，没有邮箱或奖励预览按钮。错误配置重载保留当前有效任务，服务端正常退出。
+- YAML AST 检查两个 GUI 的字符串均使用单引号，数值和布尔值仍保持原类型；最终 JAR 的 GUI 资源仅为 `gui/main.yml`、`gui/chapters.yml`，不含退役页面、服务端 API、测试代码、源码或材质。
+- 服务端旧 GUI 已完整备份到 Quest/backups/gui-two-pages-20261019-190532，再部署用户当前的两页布局；新 JAR 放入 plugins/update。未改动玩家数据库，也未停止或重启正式服。
+- 未重复验收未修改的 Xerr 资源包；真人 Java/Geyser 客户端点击仍待重启后确认，代理渲染不代表客户端验收。
+- 本次证据：`target/verification/gui-evidence.json`、`gui-deployment.json`、`gui-neuron.json`、`components.json`、`smoke-console.log` 和 surefire-reports。

@@ -17,7 +17,7 @@ plugins=server/'plugins';plugins.mkdir(exist_ok=True)
 shutil.copy2(root/'target/Quest-1.0.0.jar',plugins/'Quest-1.0.0.jar')
 quest=plugins/'Quest';quest.mkdir(exist_ok=True)
 shutil.copy2(root/'src/main/resources/config.yml',quest/'config.yml')
-for folder in ('quests','gui','lang'):
+for folder in ('quests','chapters','gui','lang'):
     shutil.copytree(root/'src/main/resources'/folder,quest/folder,dirs_exist_ok=True)
 for name,jar in [('Genlite','Genlite-1.0.0.jar'),('DreamSkyblock','DreamSkyblock-1.0-SNAPSHOT.jar')]:
     shutil.copy2(root/'.build/dependencies'/name/'target'/jar,plugins/jar)
