@@ -57,6 +57,7 @@ with log.open('w', encoding='utf-8') as output:
                 elif isinstance(value,list):
                     for child in value: collect(child)
             collect(rendered)
+            collect(json.loads((root/'target/verification/xerr-compact-final.json').read_text(encoding='utf-8')))
             for font in fonts:
                 namespace,relative=font.split(':',1)
                 name='assets/'+namespace+'/font/'+relative+'.json'
@@ -104,7 +105,7 @@ with log.open('w', encoding='utf-8') as output:
         print('XERR_PACK_AND_CE_NATIVE_MERGE_PASSED: ' + str(len(textures)) + ' Quest textures', flush=True)
         print('XERR_BITMAP_ATLAS_PASSED: ' + str(checked) + ' providers', flush=True)
         print('XERR_RENDERED_FONTS_AND_SHADERS_PASSED: '+str(len(fonts))+' fonts, '+str(len(shaders))+' shaders',flush=True)
-        command('quest admin reload')
+        command('quest reload')
         time.sleep(2)
         command('stop')
         process.wait(timeout=40)

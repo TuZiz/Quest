@@ -17,14 +17,14 @@ class HudConfigUpgradeTest {
         val path=root.resolve("显示.yml"); Files.writeString(path,old)
         HudConfigUpgrade.migrate(root,bundled)
         val result=Files.readString(path); val y=YamlConfiguration().apply { loadFromString(result) }
-        assertEquals(2,y.getInt("schema-version")); assertFalse(y.getBoolean("enabled"))
+        assertEquals(3,y.getInt("schema-version")); assertFalse(y.getBoolean("enabled"))
         assertEquals("custom",y.getString("tracker-layout")); assertEquals(42,y.getInt("custom"));assertTrue(result.contains("# 自定义保留"))
-        assertFalse(HudSettings.parse(y).hideCompleted)
-        assertEquals(old,Files.readString(root.resolve(".migrations/hud-v2/0.before")))
+        assertEquals(120,HudSettings.parse(y).expandTicks)
+        assertEquals(old,Files.readString(root.resolve(".migrations/hud-v3/0.before")))
         HudConfigUpgrade.migrate(root,bundled);assertEquals(result,Files.readString(path))
     }
     @Test fun `invalid or future config never overwritten`() {
-        val path=root.resolve("显示.yml");val old="schema-version: 3\ncustom: 1\n";Files.writeString(path,old)
+        val path=root.resolve("显示.yml");val old="schema-version: 4\ncustom: 1\n";Files.writeString(path,old)
         assertThrows(IllegalArgumentException::class.java) { HudConfigUpgrade.migrate(root,bundled) }
         assertEquals(old,Files.readString(path))
         assertThrows(IllegalArgumentException::class.java) { HudSettings.parse(YamlConfiguration().apply { loadFromString("notification-limit: 999") }) }

@@ -1,4 +1,4 @@
-schema-version: 2
+schema-version: 3
 # 这里只控制 Quest 行为；贴图、字体、布局全部由服务端 Xerr 文件夹维护。
 enabled: true
 tracker: true
@@ -7,15 +7,28 @@ notifications: true
 refresh-ticks: 40
 tracker-layout: quest_tracker
 
-# 默认常驻：全部完成后保留章节完成状态；设为 true 可自动隐藏。
-hide-completed: false
 progress-bar: true
 # 通知最多一条可见；下列时长单位均为 tick（20 tick = 1秒）。
 merge-notifications: true
-notification-ticks: 80
+notification-ticks: 60
 notification-limit: 4
 notification-merge-ticks: 6
 notification-slide-ticks: 8
 # 12px等宽字体的半字宽预算；20 = 120 GUI单位，超长文案省略。
 text-half-em-limit: 20
 
+
+# 默认 smart：精简一行；always 展开；off 仅关闭追踪。个人选择存入SQLite。
+compact-layout: quest_tracker_compact
+# 允许100–160 tick（5–8秒），默认6秒；同次展开最多持续8秒。
+expand-ticks: 120
+# 自动展开节流，允许180–1200 tick；已越过的节点不会延迟重放。
+expand-cooldown-ticks: 200
+expand-milestones:
+  - 10
+  - 25
+  - 50
+  - 75
+  - 90
+# 精简任务名宽度预算，单位为12px字体的半字宽；数值单独右对齐。
+compact-name-half-em-limit: 14

@@ -23,7 +23,7 @@ class Database(private val file: Path, private val log: Logger) : AutoCloseable 
             s.execute("PRAGMA journal_mode=WAL"); s.execute("PRAGMA synchronous=FULL")
             s.execute("PRAGMA foreign_keys=ON"); s.execute("PRAGMA busy_timeout=5000")
             val version = s.executeQuery("PRAGMA user_version").use { it.next(); it.getInt(1) }
-            require(version in 0..2) { "$file: schema-version=$version unsupported" }
+            require(version in 0..3) { "$file: schema-version=$version unsupported" }
             s.execute("CREATE TABLE IF NOT EXISTS facts(home TEXT,metric TEXT,value INTEGER NOT NULL CHECK(value>=0),PRIMARY KEY(home,metric))")
             s.execute("CREATE TABLE IF NOT EXISTS objectives(home TEXT,quest TEXT,objective TEXT,baseline INTEGER NOT NULL,progress INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(home,quest,objective))")
             s.execute("CREATE TABLE IF NOT EXISTS completions(home TEXT,quest TEXT,completed INTEGER NOT NULL,PRIMARY KEY(home,quest))")
@@ -39,7 +39,10 @@ class Database(private val file: Path, private val log: Logger) : AutoCloseable 
                 val previous = c.number("PRAGMA user_version")
                 if(previous < 2) c.update("INSERT INTO audit VALUES(?,?,?,?)",System.currentTimeMillis(),"Quest","schema-migration",
                     "SQLite $previous->2; all existing objective baselines/progress and reward rows retained; new cumulative objectives await first live snapshot")
-                s.execute("PRAGMA user_version=2")
+                s.execute("CREATE TABLE IF NOT EXISTS hud_preferences(player TEXT PRIMARY KEY,mode TEXT NOT NULL CHECK(mode IN ('SMART','ALWAYS','OFF')),notifications INTEGER NOT NULL CHECK(notifications IN (0,1)),tracked_quest TEXT)")
+                if(previous < 3) c.update("INSERT INTO audit VALUES(?,?,?,?)",System.currentTimeMillis(),"Quest","hud-schema-migration",
+                    "SQLite $previous->3; additive player UUID HUD preferences; task and reward rows retained")
+                s.execute("PRAGMA user_version=3")
             }
             Unit
         }

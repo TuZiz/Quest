@@ -14,8 +14,8 @@ internal class QuestNotificationHud(private val text: TextRenderer, private val 
         val queue=queues.getOrPut(player.uniqueId) { HudNoticeQueue(settings.capacity,settings.duration,settings.merge,settings.settle,settings.slide) }
         notices.forEach { queue.offer(it,clock) }
     }
-    fun tick(players: Collection<Player>, api: XerrDisplay?, enabled: Boolean, eligible: (Player) -> Boolean, home: (Player) -> String?) {
-        clock+=2
+    fun tick(players: Collection<Player>, api: XerrDisplay?, enabled: Boolean, eligible: (Player) -> Boolean, home: (Player) -> String?, now: Long) {
+        clock=now
         val online=players.associateBy { it.uniqueId }
         queues.keys.toList().forEach { id ->
             val player=online[id]
@@ -30,13 +30,13 @@ internal class QuestNotificationHud(private val text: TextRenderer, private val 
             }
             if(frame == null) {
                 if(frames.remove(id) != null) api.remove(player,LAYOUT)
-            } else if(frames[id] != frame) {
+            } else if(frames[id] != frame || !api.present(player,LAYOUT)) {
                 val notice=frame.notice
                 val values=TextRenderer.values("name" to HudText.fit(plain(notice.name),20),"next" to HudText.fit(plain(notice.next ?: ""),12))
                 fun line(field: String) = PlainTextComponentSerializer.plainText().serialize(text.format("hud-notices.${notice.event}.$field",values))
                 val detail=if(notice.next == null) line("detail") else PlainTextComponentSerializer.plainText().serialize(text.format("hud-notices.next",values))
-                api.update(player,"${LAYOUT}_${notice.event}",mapOf("heading" to HudText.fit(line("heading"),20),"name" to HudText.fit(plain(notice.name),20),
-                    "detail" to HudText.fit(detail,20)),frame.offset,LAYOUT)
+                api.update(player,"${LAYOUT}_${notice.event}",mapOf("heading" to HudText.fit(if(notice.next == null) line("heading") else PlainTextComponentSerializer.plainText().serialize(text.format("smart-hud.notice-merged",TextRenderer.values("heading" to line("heading"),"name" to plain(notice.name)))),20),"name" to HudText.fit(plain(notice.name),20),
+                    "detail" to HudText.fit(if(notice.next == null) plain(notice.name) else detail,20)),frame.offset,LAYOUT)
                 frames[id]=frame
             }
         }

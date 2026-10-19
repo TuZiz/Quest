@@ -33,7 +33,7 @@ with log.open('w',encoding='utf-8') as output:
             original=config.read_text(encoding='utf-8')
             try:
                 config.write_text('schema-version: 2\nid: [\n',encoding='utf-8')
-                process.stdin.write('quest admin reload\n');process.stdin.flush();time.sleep(2)
+                process.stdin.write('quest reload\n');process.stdin.flush();time.sleep(2)
                 process.stdin.write('quest admin debug 00000000-0000-0000-0000-000000000001\n');process.stdin.flush();time.sleep(1)
                 diagnostic=log.read_text(encoding='utf-8',errors='replace')
                 rollback='Quest operation failed' in diagnostic and all(name+':' in diagnostic for name in ('sky_start','first_fuel','first_resources'))
@@ -41,7 +41,7 @@ with log.open('w',encoding='utf-8') as output:
                 print('INVALID_RELOAD_PRESERVES_QUESTS: '+str(rollback),flush=True)
             finally:
                 config.write_text(original,encoding='utf-8')
-            process.stdin.write('quest admin reload\n');process.stdin.flush();time.sleep(3)
+            process.stdin.write('quest reload\n');process.stdin.flush();time.sleep(3)
             process.stdin.write('stop\n');process.stdin.flush()
             process.wait(timeout=40)
         print('Server exited: '+str(process.returncode),flush=True)

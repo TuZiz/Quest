@@ -1,6 +1,8 @@
 # Quest × Xerr 部署
 
-Quest 仅增加可选显示适配，不修改任务推进、累计基线、SQLite 或奖励发放流程。目标版本：Leaf/Paper 26.3、Java 25、Xerr 2.1.0、PacketEvents 2.14.0、CraftEngine 26.9.2；不声明 Folia 兼容。
+Quest 仅增加可选显示适配，不修改任务推进、累计基线、既有任务数据或奖励发放流程。目标版本：Leaf/Paper 26.3、Java 25、Xerr 2.1.0、PacketEvents 2.14.0、CraftEngine 26.9.2；不声明 Folia 兼容。
+
+当前智能模式、配置和验收步骤见 [HUD-REDESIGN.md](HUD-REDESIGN.md)。下文保留资源管线与历史修复证据。
 
 ## 文件归属
 
@@ -19,7 +21,7 @@ Quest 仅增加可选显示适配，不修改任务推进、累计基线、SQLit
 
 已在 CraftEngine 的 `resource-pack.merge-external-folders` 中添加 `Xerr/generated/resource_pack`，保留原合并项、配置字段及注释。使用 CraftEngine 本身的合并、验证、压缩和发送能力，没有增加第二套发送器或下载服务。
 
-首次部署或修改 Xerr 材质/字体后：执行 `xerr reload`，再执行 `xerr pack async` 并等待成功，最后执行 `ce reload pack`。后续 CraftEngine 打包会自动合并已生成的 Xerr 包。修改布局、字体或位置后也必须重打包；修改 Quest 显示行为使用 `quest admin reload`。这里的自动合并不等于 CraftEngine 会替 Xerr 重新生成源资源包。
+首次部署或修改 Xerr 材质/字体后：执行 `xerr reload`，再执行 `xerr pack async` 并等待成功，最后执行 `ce reload pack`。后续 CraftEngine 打包会自动合并已生成的 Xerr 包。修改布局、字体或位置后也必须重打包；修改 Quest 显示行为使用 `quest reload`。这里的自动合并不等于 CraftEngine 会替 Xerr 重新生成源资源包。
 
 默认血条、快捷栏、罗盘、演示屏幕、通知和 Stack 已备份后移除；保留空分类目录，避免 Xerr 重新导出示例。关闭默认原版生命/饥饿隐藏与外部 BossBar 接管。只保留 Quest 使用的一个 `ui` 字体定义，规避 Xerr 2.1 同一个 TTF 被多字号并发复制时的 Windows 文件竞争。
 
@@ -27,7 +29,7 @@ Quest 仅增加可选显示适配，不修改任务推进、累计基线、SQLit
 
 任务目标完成、后续任务解锁、章节开始/完成时使用原有语言文案产生动态弹窗，文字不烘焙入图。原聊天、ActionBar、Title 和声音开关仍由 `提示.yml` 控制，弹窗独立由 `显示.yml` 控制。
 
-常驻面板只显示章节、当前任务、一个目标、数值及细进度条。上一任务未领奖不阻止跟踪下一任务。默认任务完成后仍常驻显示章节完成状态；`hide-completed: true` 可选择自动隐藏。`/quest hud on|off` 控制个人显示，选择保存在玩家 PDC，不改 Quest 数据库。进度来自异步只读查询；每个空岛合并请求并限制一个查询在途，返回时重新验证玩家、权限、空岛与重载代次。只移除 Quest 自己的布局，不清空其他插件 HUD。
+默认 smart 为单行任务与进度，重要事件短暂展开；always 显示完整有效任务，off 只关闭追踪。没有有效任务时所有模式隐藏，旧 hide-completed 不再控制此行为。SQLite schema 3 仅新增 UUID 玩家偏好表，异步保存模式、通知开关和追踪 ID；首次加载迁移旧 PDC 隐藏标记。进度来自异步只读查询；每个空岛合并请求并限制一个查询在途，返回时重新验证玩家、权限、空岛与重载代次。只移除 Quest 自己的布局，不清空其他插件 HUD。
 
 通知最多一条可见，默认显示 80 tick，等待队列最多 4 条，近期重复事件去重；完成与下一任务解锁可合并，章节完成优先替代同批最后一个任务通知。采用同一 Xerr HUD 槽位更新，进出各轻滑 8 tick，保持阶段不反复重建。通知区域自动位于追踪面板底部加间距，追踪隐藏后也不移到中央。
 

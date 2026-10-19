@@ -1,6 +1,7 @@
 package ym.quest.hud
 
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+import org.bukkit.NamespacedKey
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -9,62 +10,65 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerResourcePackStatusEvent
 import org.bukkit.plugin.java.JavaPlugin
-import ym.quest.domain.QuestService
+import ym.quest.domain.*
 import ym.quest.integration.Integrations
 import ym.quest.platform.GameThread
+import ym.quest.storage.HudPreferenceStore
 import ym.quest.text.TextRenderer
-import ym.quest.domain.ProgressChange
-import ym.quest.domain.QuestDefinition
-import ym.quest.domain.ChapterDefinition
-import org.bukkit.NamespacedKey
-import org.bukkit.persistence.PersistentDataType
 import java.util.UUID
 
-/** Paper owner thread; database reads are asynchronous and grouped by island, one in-flight read each. */
+/** Paper owner coordinator. SQLite reads are async, grouped by island, at most one in flight. */
 class QuestHud(private val plugin: JavaPlugin, private val service: QuestService,
                private val islands: Integrations, private val thread: GameThread,
                private val failure: (Throwable) -> Unit, initial: YamlConfiguration,
-               private val text: TextRenderer) : Listener, AutoCloseable {
-    private var settings = initial
-    private var options = HudSettings.parse(initial)
-    private val preference = NamespacedKey(plugin,"hud-hidden")
-    private val notifications = QuestNotificationHud(text,::plain)
-    private val lastValues = mutableMapOf<UUID,Map<String,String>>()
-    private val loaded = mutableSetOf<UUID>()
-    private val shown = mutableSetOf<UUID>()
-    private val pending = mutableSetOf<UUID>()
-    private var generation = 0
-    private var closed = false
-    private var counter = 0
-    private var warned = false
-    private val timer = plugin.server.scheduler.runTaskTimer(plugin,Runnable { tick() },20,20)
-    private val notificationTimer = plugin.server.scheduler.runTaskTimer(plugin,Runnable {
-        safe { if(!closed) notifications.tick(plugin.server.onlinePlayers,display(),settings.getBoolean("notifications"),::eligible) { islands.island(it.uniqueId)?.id?.toString() } }
-    },2,2)
+               private val text: TextRenderer, store: HudPreferenceStore) : Listener, AutoCloseable {
+    private var settings=initial
+    private var options=HudSettings.parse(initial)
+    private val preferences=HudPreferenceSessions(store,thread,NamespacedKey(plugin,"hud-hidden"),text,failure)
+    private val tracker=QuestTrackerHud(::plain)
+    private val notifications=QuestNotificationHud(text,::plain)
+    private val controls=HudControls(preferences,tracker,text,{ clock },{ options },::refreshPlayer)
+    private val journals=mutableMapOf<UUID,Pair<String,JournalView>>()
+    private val loaded=mutableSetOf<UUID>()
+    private val pending=mutableSetOf<UUID>()
+    private var generation=0
+    private var closed=false
+    private var counter=0
+    private var clock=0L
+    private var warned=false
+    private val timer=plugin.server.scheduler.runTaskTimer(plugin,Runnable { tick() },20,20)
+    private val displayTimer=plugin.server.scheduler.runTaskTimer(plugin,Runnable { safe {
+        if(!closed) { clock+=2; render() }
+    } },2,2)
     init { plugin.server.pluginManager.registerEvents(this,plugin) }
     private fun display(): XerrDisplay? = if(settings.getBoolean("enabled") && plugin.server.pluginManager.isPluginEnabled("Xerr")) XerrDisplay() else null
     private fun safe(action: () -> Unit) {
         try { action() } catch(e: Exception) { if(!warned) { warned=true; failure(e) } }
         catch(e: LinkageError) { if(!warned) { warned=true; failure(e) } }
     }
+    private fun home(player: Player) = islands.island(player.uniqueId)?.id?.toString()
+    private fun eligible(player: Player) = player.hasPermission("quest.use") && packReady(player)
+    private fun render() {
+        val players=plugin.server.onlinePlayers
+        val api=display()
+        tracker.tick(players,api,options,settings.getBoolean("tracker"),clock,::eligible,::home,preferences::get)
+        notifications.tick(players,api,settings.getBoolean("notifications"),{
+            eligible(it) && preferences.get(it)?.notifications == true
+        },::home,clock)
+    }
     private fun tick() = safe {
         if(closed) return@safe
-        // Runtime is assembled asynchronously. A successful pack event may predate this listener.
-        plugin.server.onlinePlayers.forEach { packReady(it) }
-        val api = display() ?: return@safe
-        val layout = settings.getString("tracker-layout")!!
-        if(!api.ready(layout)) {
-            if(!warned) { warned=true; plugin.logger.warning("Xerr layout=$layout missing; configure plugins/Xerr/core/layout; Quest chat/title fallback remains active") }
+        plugin.server.onlinePlayers.forEach { player -> preferences.ensure(player) { counter=settings.getInt("refresh-ticks") }; packReady(player) }
+        val api=display() ?: return@safe
+        if(!api.ready(options.expandedLayout) || !api.ready(options.compactLayout)) {
+            if(!warned) { warned=true; plugin.logger.warning("Xerr tracker/compact layout missing: ${options.expandedLayout}, ${options.compactLayout}; rebuild server Xerr layouts and resource pack") }
             return@safe
         }
-        plugin.server.onlinePlayers.filter { it.uniqueId in shown && (!eligible(it) || !settings.getBoolean("tracker") || islands.island(it.uniqueId) == null) }
-            .forEach { api.remove(it,layout); shown.remove(it.uniqueId); lastValues.remove(it.uniqueId) }
-        counter += 20
+        counter+=20
         if(counter < settings.getInt("refresh-ticks")) return@safe
-        counter = 0
-        if(!settings.getBoolean("tracker")) return@safe
-        val epoch = generation
-        plugin.server.onlinePlayers.filter(::eligible)
+        counter=0
+        val epoch=generation
+        plugin.server.onlinePlayers.filter { eligible(it) && preferences.get(it) != null }
             .mapNotNull { p -> islands.island(p.uniqueId)?.id?.let { it to p.uniqueId } }.groupBy({ it.first },{ it.second })
             .forEach { (home,members) ->
                 if(!pending.add(home)) return@forEach
@@ -72,42 +76,32 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
                     if(closed || epoch != generation) return@run
                     pending.remove(home)
                     if(error != null) { failure(error); return@run }
-                    val complete = listOf("task","objective").associateWith {
-                        PlainTextComponentSerializer.plainText().serialize(text.format("hud-completed.$it"))
+                    members.forEach { id ->
+                        val player=plugin.server.getPlayer(id)?.takeIf { it.isOnline && eligible(it) && this.home(it) == home.toString() } ?: return@forEach
+                        journals[id]=home.toString() to journal
+                        project(player,home.toString(),journal)
                     }
-                    val values = TrackerSnapshot.values(journal,complete,options.hideCompleted)?.mapValues {
-                        val value=plain(it.value)
-                        if(it.key in setOf("chapter","task")) HudText.fit(value,options.textUnits)
-                        else if(it.key == "objective") HudText.fit(value,(options.textUnits-8).coerceAtLeast(8)) else value
-                    }?.plus("show_bar" to options.bar.toString())
-                    safe {
-                        val current = display() ?: return@safe
-                        members.forEach { id ->
-                            val p = plugin.server.getPlayer(id)?.takeIf { it.isOnline && eligible(it) && islands.island(id)?.id == home } ?: return@forEach
-                            if(values == null) { if(shown.remove(id)) current.remove(p,layout); lastValues.remove(id) }
-                            else if(lastValues[id] != values || !current.present(p,layout)) { current.update(p,layout,values); shown.add(id); lastValues[id]=values }
-                        }
-                    }
+                    safe { render() }
                 } }
             }
     }
-    private fun eligible(player: Player) = player.hasPermission("quest.use") && packReady(player) &&
-        player.persistentDataContainer.get(preference,PersistentDataType.BYTE) != 1.toByte()
-    fun visibility(player: Player, value: String?) {
-        val hidden=player.persistentDataContainer.get(preference,PersistentDataType.BYTE) == 1.toByte()
-        val show=when(value) { "on" -> true; "off" -> false; else -> hidden }
-        if(show) player.persistentDataContainer.remove(preference)
-        else player.persistentDataContainer.set(preference,PersistentDataType.BYTE,1.toByte())
-        if(!show) {
-            display()?.let { it.remove(player,settings.getString("tracker-layout")!!) }
-            shown.remove(player.uniqueId); lastValues.remove(player.uniqueId); notifications.remove(player,display())
-        }
-        text.send(player,if(show) "hud-controls.shown" else "hud-controls.hidden")
-        counter=settings.getInt("refresh-ticks")
+    private fun project(player: Player, home: String, journal: JournalView) {
+        val preference=preferences.get(player) ?: return
+        tracker.accept(player,TrackerSnapshot.target(home,journal,preference.trackedQuest),
+            journal.quests.filter { it.status == QuestStatus.ACTIVE }.map { it.definition.id }.toSet(),clock,options)
     }
+    private fun refreshPlayer(player: Player) {
+        if(closed || !player.isOnline) return
+        journals[player.uniqueId]?.takeIf { it.first == home(player) }?.let { project(player,it.first,it.second) }
+        counter=settings.getInt("refresh-ticks")
+        safe { render() }
+    }
+    fun control(player: Player, args: List<String>) { if(!closed) controls.execute(player,args) }
     fun changes(player: Player, changes: List<ProgressChange>, quests: List<QuestDefinition>, chapters: List<ChapterDefinition>) = safe {
-        if(closed || !settings.getBoolean("notifications") || !eligible(player) || display() == null) return@safe
-        notifications.offer(player,HudNoticePlanner.plan(changes,quests,chapters,options.merge),options)
+        if(closed) return@safe
+        if(changes.any { !it.chapter && it.started }) tracker.request(player,clock,options)
+        if(settings.getBoolean("notifications") && eligible(player) && preferences.get(player)?.notifications == true && display() != null)
+            notifications.offer(player,HudNoticePlanner.plan(changes,quests,chapters,options.merge),options)
         counter=settings.getInt("refresh-ticks")
     }
     private fun plain(value: String) = PlainTextComponentSerializer.plainText().serialize(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(value))
@@ -117,18 +111,17 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
     }
     fun reload(next: YamlConfiguration) { clear(); settings=next; options=HudSettings.parse(next); counter=0; warned=false }
     private fun clear() {
-        generation++; pending.clear()
-        safe { display()?.let { api -> shown.forEach { id -> plugin.server.getPlayer(id)?.let { api.remove(it,settings.getString("tracker-layout")!!) } } } }
-        shown.clear()
-        lastValues.clear(); notifications.clear(plugin.server.onlinePlayers,display())
+        generation++; pending.clear(); journals.clear(); preferences.clear()
+        safe { tracker.clear(plugin.server.onlinePlayers,display()); notifications.clear(plugin.server.onlinePlayers,display()) }
     }
     @EventHandler fun pack(e: PlayerResourcePackStatusEvent) {
         if(e.status == PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED) {
-            loaded.add(e.player.uniqueId)
-            lastValues.remove(e.player.uniqueId)
-            counter=settings.getInt("refresh-ticks")
+            loaded.add(e.player.uniqueId); tracker.invalidate(e.player); counter=settings.getInt("refresh-ticks")
         }
     }
-    @EventHandler fun quit(e: PlayerQuitEvent) { loaded.remove(e.player.uniqueId); shown.remove(e.player.uniqueId); lastValues.remove(e.player.uniqueId); notifications.remove(e.player,display()) }
-    override fun close() { if(closed) return; closed=true; timer.cancel(); notificationTimer.cancel(); clear(); loaded.clear(); HandlerList.unregisterAll(this) }
+    @EventHandler fun quit(e: PlayerQuitEvent) {
+        loaded.remove(e.player.uniqueId); journals.remove(e.player.uniqueId); preferences.remove(e.player.uniqueId)
+        tracker.remove(e.player,display()); notifications.remove(e.player,display())
+    }
+    override fun close() { if(closed) return; closed=true; timer.cancel(); displayTimer.cancel(); clear(); loaded.clear(); HandlerList.unregisterAll(this) }
 }

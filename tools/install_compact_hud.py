@@ -22,7 +22,7 @@ master=root/'design/quest/布局.yml'
 default="""schema-version: 1
 # 坐标/大小是 Minecraft GUI 单位，随原版 GUI 缩放；不是屏幕物理像素。
 right: 6
-top: 24
+top: 2
 tracker-width: 144
 tracker-height: 64
 notice-width: 160
@@ -63,7 +63,8 @@ for name,color,kind in [('active','#82B7EF','diamond'),('complete','#88D3A0','ti
     else:d.polygon([(6,0),(8,4),(11,6),(8,8),(6,11),(4,8),(1,6),(4,4)],fill=color)
     png(f'core/assets/image/quest/icons/textures/{name}.png',im)
 dump('core/assets/image/quest/icons/config.yml',{'img':{name:{'path':name,'height':12} for name in ['active','complete','chapter-complete','next']}})
-width=settings['tracker-width']-24
+# Keep the left text inset; filled track reaches the two-unit right inner border.
+width=settings['tracker-width']-14
 for name,color in [('empty','#414C57'),('full','#75D6BB')]:
     im=Image.new('RGBA',(width,3),color);png(f'core/assets/image/quest/bars/textures/{name}.png',im)
 dump('core/assets/image/quest/bars/config.yml',{'img':{name:{'path':name,'height':3} for name in ['empty','full']}})
@@ -82,6 +83,11 @@ tracker={
         'image':{'empty':'empty','full':'full'},'fill':{'direction':'left-to-right','steps':'40'}})
 }
 dump('core/layout/quest_tracker.yml',{'defaults':{'font':'ui'},'quest_tracker':tracker})
+compact={
+    'icon':element(left,top,layer=10,image=image('chapter-complete','icons')),
+    'task':element(left+14,top,layer=10,value='<#EEF3F5>{{ get compact_task }}',align='left'),
+    'progress':element(-settings['right'],top,layer=10,value='<#75D6BB>{{ get current }}/{{ get target }}',align='right')}
+dump('core/layout/quest_tracker_compact.yml',{'defaults':{'font':'ui'},'quest_tracker_compact':compact})
 notice_top=top+settings['tracker-height']+settings['gap']
 left=-settings['right']-settings['notice-width']
 layouts={'defaults':{'font':'ui'}}
@@ -89,9 +95,8 @@ for event,color,icon in [('task-start','#82B7EF','active'),('task-complete','#88
     layouts['quest_notice_'+event]={
         'panel':element(left,notice_top,image=image('notification','panels')),
         'icon':element(left+8,notice_top+15,layer=10,image=image(icon,'icons')),
-        'heading':element(left+28,notice_top+4,layer=10,value=f'<{color}>{{{{ get heading }}}}',align='left'),
-        'name':element(left+28,notice_top+17,layer=10,value='<#EEF3F5>{{ get name }}',align='left'),
-        'detail':element(left+28,notice_top+30,layer=10,value='<#A6B2C0>{{ get detail }}',align='left')}
+        'heading':element(left+28,notice_top+8,layer=10,value=f'<{color}>{{{{ get heading }}}}',align='left'),
+        'detail':element(left+28,notice_top+25,layer=10,value='<#A6B2C0>{{ get detail }}',align='left')}
 dump('core/layout/quest_notifications.yml',layouts)
 # Keep the group for compatibility, but retire its layouts: Quest owns a single shared HUD slot.
 # This prevents old popup IDs from independently stacking over the new notice surface.

@@ -45,6 +45,7 @@ public final class QuestSmoke extends JavaPlugin {
                 var plan=MailboxDelivery.Companion.plan(full,addition);
                 if(plan==null || plan[5]==null || full[5]!=null) throw new AssertionError("Delivery plan invalid");
                 checkChapterMenus(runtime,items);
+                checkCommands();
                 checkHudStartup(runtime);
                 if(getServer().getPluginManager().isPluginEnabled("Xerr")) checkXerr();
                 getLogger().info("QUEST_SMOKE_PASSED: API readiness, 5 CE identities, real inventory capacity planner");
@@ -56,6 +57,25 @@ public final class QuestSmoke extends JavaPlugin {
         for(Component child:text.children()) checkText(child);
         if(text instanceof net.kyori.adventure.text.TranslatableComponent translated)
             for(var argument:translated.arguments()) if(argument.value() instanceof Component child) checkText(child);
+    }
+    private void checkCommands() {
+        var messages=new ArrayList<String>();var admin=new java.util.concurrent.atomic.AtomicBoolean(false);
+        var plain=net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText();
+        var sender=(org.bukkit.command.CommandSender)Proxy.newProxyInstance(org.bukkit.command.CommandSender.class.getClassLoader(),new Class<?>[]{org.bukkit.command.CommandSender.class},(proxy,method,args)->{
+            if(method.getName().equals("hasPermission")) return args[0].equals("quest.use") || admin.get();
+            if(method.getName().equals("sendMessage") && args!=null) for(Object arg:args) if(arg instanceof Component component) messages.add(plain.serialize(component));
+            if(method.getName().equals("getName")) return "CommandProbe";
+            return method.getReturnType()==boolean.class ? false : null;
+        });
+        var command=getServer().getPluginCommand("quest");
+        command.execute(sender,"quest",new String[]{"help"});
+        if(messages.stream().noneMatch(s->s.contains("/quest hud")) || messages.stream().anyMatch(s->s.contains("/quest reload"))) throw new AssertionError("Player help leaked admin commands or omitted HUD");
+        messages.clear();command.execute(sender,"quest",new String[]{"reload"});
+        if(messages.isEmpty() || messages.stream().anyMatch(s->s.contains("/quest hud"))) throw new AssertionError("Unprivileged reload was not rejected");
+        if(command.tabComplete(sender,"quest",new String[]{""}).contains("reload")) throw new AssertionError("Unprivileged reload completion");
+        admin.set(true);messages.clear();command.execute(sender,"quest",new String[]{"help"});
+        if(messages.stream().noneMatch(s->s.contains("/quest reload")) || !command.tabComplete(sender,"quest",new String[]{""}).contains("reload")) throw new AssertionError("Admin direct reload help missing");
+        getLogger().info("QUEST_COMMANDS_PASSED: player/admin help, direct reload permission and completion");
     }
     private void checkHudStartup(Object runtime) throws Exception {
         var hud=(ym.quest.hud.QuestHud)field(runtime,"hud");
@@ -139,12 +159,12 @@ public final class QuestSmoke extends JavaPlugin {
                 }));
             if(raw.contains("/quest") || raw.contains("待领奖励")) throw new AssertionError("Legacy manual reward HUD");
             var config=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/layout/quest_tracker.yml"));
-            if(config.getInt("quest_tracker.panel.x")!=-150 || config.getInt("quest_tracker.panel.y")!=-24) throw new AssertionError("Compact tracker anchor mismatch");
+            if(config.getInt("quest_tracker.panel.x")!=-150 || config.getInt("quest_tracker.panel.y")!=-2) throw new AssertionError("Tracker anchor mismatch");
             for(String row:List.of("chapter","task","objective"))
                 if(!"left".equals(config.getString("quest_tracker."+row+".align"))) throw new AssertionError("Tracker left alignment: "+row);
             if(!"right".equals(config.getString("quest_tracker.progress.align"))) throw new AssertionError("Progress must align right");
             var notices=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/layout/quest_notifications.yml"));
-            if(notices.getInt("quest_notice_task-complete.panel.y")!=-98) throw new AssertionError("Notice must remain below tracker plus gap");
+            if(notices.getInt("quest_notice_task-complete.panel.y")!=-76) throw new AssertionError("Notice must remain below tracker plus gap");
             if(api.popups().ids().stream().anyMatch(key->key.startsWith("quest_"))) throw new AssertionError("Retired Quest popup group still active");
         } catch(ReflectiveOperationException | java.io.IOException error) { throw new IllegalStateException("Xerr component verification failed",error); }
         getLogger().info("XERR_API_PASSED: four notice layouts, compact nonoverlapping bounds, native progress and variables; proxy player, no client packets");
@@ -219,6 +239,15 @@ public final class QuestSmoke extends JavaPlugin {
             }
             if(!rgb.containsAll(List.of(0xddb66d,0xeef3f5,0xa6b2c0,0x75d6bb))) throw new AssertionError("Final HUD shader RGB missing: "+rgb);
             java.nio.file.Files.writeString(java.nio.file.Path.of("../verification/xerr-tracker-final.json"),json);
+            var compactVars=new HashMap<String,String>(vars);compactVars.put("compact_task","精简探针");
+            String compactRaw=com.hiusers.xerr.api.XerrAPI.get().layouts().renderString(player,"quest_tracker_compact",compactVars,true,"quest:smoke");
+            if(!compactRaw.contains("精简探针") || compactRaw.contains("xerr_img:quest/panels") || compactRaw.contains("xerr_progress:"))
+                throw new AssertionError("Compact tracker must contain task text without a panel or progress bar");
+            display.getMethod("update",Player.class,String.class,Map.class,int.class,String.class)
+                .invoke(display.getConstructor().newInstance(),player,"quest_tracker_compact",compactVars,0,"quest_tracker");
+            if(components.size()!=1) throw new AssertionError("Compact and expanded tracker stacked");
+            var compactFrame=components.get("quest_tracker").getClass().getMethod("getComponent").invoke(components.get("quest_tracker"));
+            java.nio.file.Files.writeString(java.nio.file.Path.of("../verification/xerr-compact-final.json"),(String)compactFrame.getClass().getMethod("toRawMessage").invoke(compactFrame));
             for(String event:List.of("task-start","task-complete","chapter-start","chapter-complete")) {
                 display.getMethod("update",Player.class,String.class,Map.class,int.class,String.class)
                     .invoke(display.getConstructor().newInstance(),player,"quest_notice_"+event,Map.of("heading","通知探针","name","任务探针","detail","下一任务"),6,"quest_notice");

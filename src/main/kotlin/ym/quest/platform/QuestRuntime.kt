@@ -22,7 +22,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
                    private val files: QuestFiles, private val thread: GameThread, settings: Settings) : Listener, AutoCloseable {
     private val text = TextRenderer(settings.language)
     private val integrations = Integrations(plugin,service,::notify,::failure)
-    private val hud = ym.quest.hud.QuestHud(plugin,service,integrations,thread,::failure,settings.hud,text)
+    private val hud = ym.quest.hud.QuestHud(plugin,service,integrations,thread,::failure,settings.hud,text,ym.quest.storage.HudPreferenceStore(db))
     private val notices = StoryNotices(text,settings.notices)
     private val custom = if(plugin.server.pluginManager.isPluginEnabled("CraftEngine")) CraftEngineItemProvider() else null
     private val items = ItemFactory(listOfNotNull(custom))
@@ -42,9 +42,9 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
             if(closed) text.send(it,"unavailable")
             else if(it.hasPermission("quest.admin") || menus.settings.center.getBoolean("player-access",false)) menus.open(it)
             else text.send(it,"automatic-rewards")
-        },::reload,::failure,hud::visibility)
+        },::reload,::failure,hud::control)
         plugin.getCommand("quest")!!.apply { setExecutor(commands); tabCompleter=commands }
-        plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=2; task/chapter YAML schema=2; quests=${settings.quests.size}; chapters=${settings.chapters.size}; Paper ownership; Folia=false; Xerr HUD=${settings.hud.getBoolean("enabled")}")
+        plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=3; task/chapter YAML schema=2; quests=${settings.quests.size}; chapters=${settings.chapters.size}; Paper ownership; Folia=false; Xerr HUD=${settings.hud.getBoolean("enabled")}")
         listOf("DreamSkyblock","Genlite","CraftEngine","Xerr").forEach { id ->
             plugin.logger.info("Integration $id=${plugin.server.pluginManager.getPlugin(id)?.pluginMeta?.version ?: "missing"}")
         }

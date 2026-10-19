@@ -1,4 +1,12 @@
 schema-version: 1
+smart-hud:
+  notice-merged: '<#88D3A0><heading> · <name>'
+  usage: '<#A6B2C0>用法：/quest hud [smart|always|off|view]，或 /quest hud notifications [on|off]、/quest hud track [任务ID]'
+  saved: '<#75D6BB>HUD设置已保存：<#EEF3F5><mode><#A6B2C0>，完成通知：<notifications>'
+  view: '<#A6B2C0>已请求展开当前任务；连续请求受展开时长限制。'
+  invalid-task: '<#E7AD87>只能追踪当前空岛已激活的任务。'
+  help: '<#DDB66D>Quest 帮助<newline><#EEF3F5>/quest hud smart|always|off <#A6B2C0>智能 / 常展开 / 关闭；不带参数循环切换<newline><#EEF3F5>/quest hud view <#A6B2C0>临时展开当前任务<newline><#EEF3F5>/quest hud track [任务ID] <#A6B2C0>切换有效追踪目标<newline><#EEF3F5>/quest hud notifications on|off <#A6B2C0>独立控制完成通知<newline><#EEF3F5>/quest help <#A6B2C0>查看帮助'
+  help-admin: '<#DDB66D>管理指令<newline><#EEF3F5>/quest reload <#A6B2C0>重载配置<newline><#EEF3F5>/quest admin debug [空岛UUID] <#A6B2C0>诊断任务状态<newline><#EEF3F5>/quest admin reset [空岛UUID] [任务ID] <#A6B2C0>重置指定任务'
 hud-controls:
   shown: '<#75D6BB>任务HUD已显示。'
   hidden: '<#A6B2C0>任务HUD已隐藏，可用 /quest hud on 恢复。'
