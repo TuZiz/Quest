@@ -1,0 +1,23 @@
+name: Quest
+version: '${project.version}'
+main: ym.quest.Quest
+api-version: '26.3'
+folia-supported: false
+authors:
+  - ymxc
+softdepend:
+  - DreamSkyblock
+  - Genlite
+  - CraftEngine
+commands:
+  quest:
+    description: 任务中心
+permissions:
+  quest.use:
+    description: 使用全部普通任务功能
+    default: true
+  quest.admin:
+    description: 重载、诊断及重置任务进度
+    default: op
+    children:
+      quest.use: true

@@ -1,0 +1,24 @@
+schema-version: 1
+id: sky_start
+scope: island
+name: '<#7DD3FC>星海启航'
+description:
+  - '<#CBD5E1>创建或加入一个空岛，开始共同经营。'
+  - '<#94A3B8>奖励全岛只发放一次，已有空岛同样可以完成。'
+icon: minecraft:grass_block
+objectives:
+  - id: island
+    type: island.member
+    target: 1
+    description: '<#CBD5E1>创建或加入 DreamSkyblock 空岛'
+rewards:
+  - item: genlite:fuel
+    amount: 16
+  - item: minecraft:bread
+    amount: 8
+  - item: minecraft:stone_pickaxe
+    amount: 1
+  - item: genlite:cobblestone_generator
+    amount: 1
+    # 已有机器历史、待发机器或在线队员持有首台机器时，不再发放。
+    unless-generator-exists: true

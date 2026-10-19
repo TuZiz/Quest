@@ -1,0 +1,19 @@
+schema-version: 1
+id: first_fuel
+scope: island
+name: '<#FBBF24>能源启动'
+description:
+  - '<#CBD5E1>右键原石生成器，点击燃料按钮存入燃料。'
+icon: genlite:fuel
+prerequisites:
+  - sky_start
+objectives:
+  - id: fuel
+    type: genlite.fuel
+    target: 1
+    description: '<#CBD5E1>成功向生成器存入燃料'
+rewards:
+  - item: genlite:mechanical_parts
+    amount: 2
+  - item: genlite:copper_coil
+    amount: 2

@@ -1,0 +1,43 @@
+schema-version: 1
+title: '<#7DD3FC>任务详情'
+unavailable-item: minecraft:barrier
+Shape:
+  - '#########'
+  - '#  D O  #'
+  - '#VVVVVVV#'
+  - '#       #'
+  - '#B  C W #'
+  - '#########'
+components:
+  '#':
+    item: minecraft:gray_stained_glass_pane
+    name: ''
+  D:
+    item: minecraft:book
+    action: summary
+    name: '<quest>'
+    lore:
+      - '<status>'
+  O:
+    item: minecraft:writable_book
+    action: objectives
+    name: '<#7DD3FC>完成条件'
+  V:
+    item: minecraft:chest
+    action: preview
+  B:
+    item: minecraft:arrow
+    action: back
+    name: '<#CBD5E1>返回任务中心'
+  C:
+    item: minecraft:emerald
+    action: claim
+    name: '<#6EE7B7>领取任务奖励'
+    lore:
+      - '<status>'
+      - '<#94A3B8>前置任务领取后自动解锁下一任务。'
+      - '<#94A3B8>奖励全岛只领取一次。'
+  W:
+    item: minecraft:chest
+    action: mailbox
+    name: '<#FBBF24>领取待发奖励'

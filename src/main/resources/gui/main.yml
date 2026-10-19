@@ -1,0 +1,36 @@
+schema-version: 1
+title: '<#7DD3FC>空岛任务中心'
+unavailable-item: minecraft:barrier
+Shape:
+  - '#########'
+  - '#QQQQQQQ#'
+  - '#P M N R#'
+components:
+  '#':
+    item: minecraft:gray_stained_glass_pane
+    name: ''
+  Q:
+    item: minecraft:book
+    action: quest
+    name: '<quest>'
+    lore:
+      - '<status>'
+      - '<#94A3B8>点击查看条件与奖励'
+  P:
+    item: minecraft:arrow
+    action: previous
+    name: '<#CBD5E1>上一页'
+  N:
+    item: minecraft:arrow
+    action: next
+    name: '<#CBD5E1>下一页'
+  M:
+    item: minecraft:chest
+    action: mailbox
+    name: '<#FBBF24>领取待发奖励'
+    lore:
+      - '<#94A3B8>全岛共享，背包满时保留。'
+  R:
+    item: minecraft:clock
+    action: refresh
+    name: '<#7DD3FC>刷新 · <page>/<pages>'

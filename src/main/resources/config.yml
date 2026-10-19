@@ -1,0 +1,4 @@
+# Quest 全局基础设施设置。任务、菜单和文本分别独立配置。
+schema-version: 1
+# SQLite 路径固定在插件数据目录内；数据库在独立线程运行。
+storage: data/quest.db
