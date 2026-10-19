@@ -106,3 +106,5 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 
 实际运行 tools/run_smoke.py、tools/run_xerr_smoke.py 均通过：锚定渲染、变量、非法重载保留原任务状态通过；8 张 Quest 贴图合并后像素一致，958 个 bitmap provider 的单格源尺寸均不超过 256×256，隔离服正常退出。正式服 RCON 未启用，没有发送重载命令或主动停服；需要按 XERR.md 顺序重载并重新加载资源包，真实客户端结果待确认。此次仅修改服务端素材/锚点与验证脚本，没有重新构建或更换 Quest JAR。
 
+用户后续截图确认贴图已显示但位置仍旧。检查正式服 Xerr 与 CE 包，均仍含右侧中线的旧着色器；Xerr 生成 ZIP 时间未更新，虽已重载配置，CE 仍合并旧生成内容。核对正式服/隔离服 19 个输入文件 SHA256 完全一致，提取前轮验证通过的 Xerr ZIP 到同卷暂存目录，备份并替换正式服生成目录及 ZIP，51 个输出逐字节与验证 ZIP 一致，清除旧输出目录残留，右上锚点着色器不再含 50% Y。没有重发正式服命令、停止服务器或改动玩家数据；只待用户执行 ce reload pack，客户端位置仍未确认。部署记录：.build/hud/generated-sync-evidence.json。
+
