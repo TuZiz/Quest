@@ -108,8 +108,19 @@ public final class QuestSmoke extends JavaPlugin {
             var rendered=method.invoke(layouts,player,"quest_tracker",vars,true,"quest:smoke");
             String json=(String)rendered.getClass().getMethod("toRawMessage").invoke(rendered);
             java.nio.file.Files.writeString(java.nio.file.Path.of("../verification/xerr-tracker-components.json"),json);
-            for(String color:List.of("#ffcc80","#89f7fe","#a8ff78","#ffd700"))
-                if(!json.toLowerCase(java.util.Locale.ROOT).contains(color)) throw new AssertionError("HUD RGB missing: "+color);
+            checkHudComponent(json);
+            checkFinalHud(player,vars);
+            var asyncMethod=com.hiusers.xerr.api.layout.XerrLayoutAPI.class.getMethod("renderAsync",Player.class,String.class,Map.class,String.class,Integer.class);
+            var future=(java.util.concurrent.CompletableFuture<?>)asyncMethod.invoke(api.layouts(),player,"quest_tracker",vars,"bossbar:quest_tracker",null);
+            future.whenComplete((frame,error)->
+                getServer().getScheduler().runTask(this,()->{
+                    try {
+                        if(error!=null) throw new IllegalStateException("HUD async rendering failed",error);
+                        String async=(String)frame.getClass().getMethod("toRawMessage").invoke(frame);checkHudComponent(async);
+                        java.nio.file.Files.writeString(java.nio.file.Path.of("../verification/xerr-tracker-async.json"),async);
+                        getLogger().info("XERR_ASYNC_PASSED: actual color properties, no literal formatting, positioned font and plain-text alignment on refresh path");
+                    } catch(Throwable failure) {getLogger().log(java.util.logging.Level.SEVERE,"QUEST_SMOKE_FAILED",failure);}
+                }));
             if(raw.contains("/quest") || raw.contains("待领奖励")) throw new AssertionError("Legacy manual reward HUD");
             var config=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/layout/quest_tracker.yml"));
             if(config.getInt("quest_tracker.panel.x")!=-151 || config.getInt("quest_tracker.panel.y")!=-44) throw new AssertionError("Tracker not right-flush below notice");
@@ -120,6 +131,60 @@ public final class QuestSmoke extends JavaPlugin {
                 throw new AssertionError("Notifications must queue in one top slot");
         } catch(ReflectiveOperationException | java.io.IOException error) { throw new IllegalStateException("Xerr component verification failed",error); }
         getLogger().info("XERR_API_PASSED: five popup IDs, anchored tracker bitmap/markers and variables; proxy player, no client packets");
+    }
+    private void checkHudComponent(String json) {
+        var tree=com.google.gson.JsonParser.parseString(json);
+        var colors=new HashSet<String>();var texts=new ArrayList<String>();
+        var pending=new ArrayDeque<com.google.gson.JsonElement>();pending.add(tree);
+        while(!pending.isEmpty()) {
+            var next=pending.remove();
+            if(next.isJsonArray()) next.getAsJsonArray().forEach(pending::add);
+            else if(next.isJsonObject()) {
+                var object=next.getAsJsonObject();
+                if(object.has("color")) colors.add(object.get("color").getAsString().toLowerCase(Locale.ROOT));
+                if(object.has("text")) {
+                    String value=object.get("text").getAsString();texts.add(value);
+                    if(value.contains("(color=") || value.contains("<#")) throw new AssertionError("HUD formatting leaked into visible text: "+value);
+                }
+                object.entrySet().forEach(e->{if(e.getValue().isJsonObject() || e.getValue().isJsonArray()) pending.add(e.getValue());});
+            }
+        }
+        if(!colors.containsAll(List.of("#ffcc80","#89f7fe","#a8ff78","#ffd700"))) throw new AssertionError("HUD lacks actual RGB style properties: "+colors);
+        for(String expected:List.of("章节探针","章节进度 2 / 3","生产探针","原石","7 / 32","完成后奖励自动发放"))
+            if(!texts.contains(expected)) throw new AssertionError("HUD visible row differs from plain text: "+expected+" / "+texts);
+    }
+    private void checkFinalHud(Player player,Map<String,String> vars) throws ReflectiveOperationException,java.io.IOException {
+        // Capture exactly what Quest submits to the production Xerr HUD API.
+        var renderer=com.hiusers.xerr.api.container.BossbarHudRenderer.INSTANCE;
+        var contextsField=renderer.getClass().getDeclaredField("playerBossbar");contextsField.setAccessible(true);
+        @SuppressWarnings("unchecked") var contexts=(Map<UUID,Object>)contextsField.get(null);
+        var bar=(org.bukkit.boss.BossBar)Proxy.newProxyInstance(org.bukkit.boss.BossBar.class.getClassLoader(),new Class<?>[]{org.bukkit.boss.BossBar.class},(proxy,method,args)->null);
+        var components=new HashMap<String,com.hiusers.xerr.api.builder.RefreshableComponent>();
+        contexts.put(player.getUniqueId(),new com.hiusers.xerr.api.bossbar.BossbarHudContext(bar,components));
+        try {
+            var display=Class.forName("ym.quest.hud.XerrDisplay");
+            display.getMethod("update",Player.class,String.class,Map.class).invoke(display.getConstructor().newInstance(),player,"quest_tracker",vars);
+            var stored=components.get("quest_tracker");
+            var frame=stored.getClass().getMethod("getComponent").invoke(stored);
+            var json=(String)frame.getClass().getMethod("toRawMessage").invoke(frame);
+            if(java.util.regex.Pattern.compile("ui_position_[0-9]+").matcher(json).find()) throw new AssertionError("Intermediate font leaked to player HUD");
+            if(!json.contains("ui_position_dark") && !json.contains("ui_position_light")) throw new AssertionError("Final HUD lacks carrier font");
+            if(json.contains("(color=") || json.contains("<#")) throw new AssertionError("Final HUD leaked formatting");
+            var tree=com.google.gson.JsonParser.parseString(json);
+            var pending=new ArrayDeque<com.google.gson.JsonElement>();pending.add(tree);var rgb=new HashSet<Integer>();
+            while(!pending.isEmpty()) {
+                var next=pending.remove();
+                if(next.isJsonArray()) next.getAsJsonArray().forEach(pending::add);
+                else if(next.isJsonObject()) {
+                    var object=next.getAsJsonObject();
+                    if(object.has("shadow_color")) rgb.add(object.get("shadow_color").getAsInt() & 0xffffff);
+                    object.entrySet().forEach(e->{if(e.getValue().isJsonObject() || e.getValue().isJsonArray())pending.add(e.getValue());});
+                }
+            }
+            if(!rgb.containsAll(List.of(0xffcc80,0x89f7fe,0xa8ff78,0xffd700))) throw new AssertionError("Final HUD shader RGB missing: "+rgb);
+            java.nio.file.Files.writeString(java.nio.file.Path.of("../verification/xerr-tracker-final.json"),json);
+            getLogger().info("XERR_FINAL_HUD_PASSED: actual Quest update captured; carrier fonts, RGB shader payload and positioning markers; no client packets");
+        } finally {contexts.remove(player.getUniqueId());}
     }
     private void checkChapterMenus(Object runtime,ItemFactory original) throws Exception {
         var menus=(QuestMenus)field(runtime,"menus");

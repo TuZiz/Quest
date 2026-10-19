@@ -136,3 +136,14 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 - Neuron 本地与任务绑定验证通过；实际共享 TextRenderer 导出 48 项语言 Component。新增完成文案 RGB、单引号；JAR 不含服务端 API、测试源码或材质。
 - 正式服旧 JAR 已备份，新 JAR 暂存 plugins/update/Quest-1.0.0.jar；语言区块由启动加载器仅补缺失项。未修改正式玩家数据库、未停服或重启、未改动 Xerr 材质，因此无需重新生成资源包。
 - 真人客户端重启后的实际显示仍待确认；代理生命周期验证不等于客户端像素验收。证据见 target/verification/startup-hud-*.json、smoke-console.log 和 surefire-reports。
+
+
+## Xerr 字面颜色与静态 HUD 定位（2026-10-19）
+
+- 截图复现两处问题：文字 value 中 SimpleComponent 方括号颜色被字体包装转义并计入宽度；旧静态 appendLayout 将中间 ui_position_N 字体直接发给客户端，没有经过 PositionedText 的载体字体/位置编码。不是任务进度异常。旧测试只搜索 JSON 中颜色字符串存在，未判断真正样式，不足以证明正常显示。
+- Quest XerrDisplay 使用 Xerr 原生 ComponentBuilder → PositionedText → appendLayoutRaw；Xerr2.1 已核实字节码的三个变量出口补充 MiniMessage颜色处理，位于宽度计算之前。工具校验原类 SHA256、拒绝未知类/重复补丁/原地覆盖，只新增一个辅助运行类，不附带服务端 API 或额外库。
+- JDK25 Maven package、37 JUnit 零失败/错误。Leaf26.3隔离服捕获实际 Quest update 提交到 BossbarHudContext 的最终数据：无中间数字定位字体、无字面格式，最终载体字体与着色器 RGB 载荷有效。同步和异步原生布局、启动/重载/退出、菜单/CE/API和非法重载回归通过；隔离服正常退出。
+- 重新执行 Xerr 原生生成和 CE 合并，8 张任务 PNG 像素及透明度一致、26 个 bitmap provider 符合256像素图集限制、4 个最终字体 JSON 和26个定位着色器文件语义/内容一致。JSON比较按解析结构进行，CE会压缩编码，不能以字节变化误报失败。
+- 先核对正式服所有 Xerr/core、CE/resources及其他实际存在的外部合并输入与隔离副本哈希相同，再备份部署 Xerr/CE生成输出；原贴图不改，服务端两个布局改用单引号 MiniMessage，重复迁移字节不变。两 JAR 暂存 plugins/update，未重启正式服，未改玩家数据库。
+- 正式备份：plugins/Quest/backups/xerr-render-20261019-193802；布局原文：plugins/Xerr/backups/quest-minimessage-20261019-193735。未进行真人客户端像素、不同 GUI 缩放及 Geyser 显示验收；自动化验证不作实机声明。
+- 证据：target/verification/xerr-render-*.json、xerr-tracker-final.json、xerr-tracker-async.json、xerr-smoke-console.log、smoke-console.log及surefire-reports。补丁重建说明见XERR.md。

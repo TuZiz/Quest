@@ -22,10 +22,11 @@ with log.open('w',encoding='utf-8') as output:
         deadline=time.monotonic()+120
         while time.monotonic()<deadline and process.poll() is None:
             text=log.read_text(encoding='utf-8',errors='replace')
-            if 'QUEST_SMOKE_PASSED' in text or 'QUEST_SMOKE_FAILED' in text: break
+            if 'QUEST_SMOKE_FAILED' in text: break
+            if 'QUEST_SMOKE_PASSED' in text and (not (server/'plugins/Xerr-2.1.0.jar').exists() or 'XERR_ASYNC_PASSED' in text): break
             time.sleep(1)
         text=log.read_text(encoding='utf-8',errors='replace')
-        passed='QUEST_SMOKE_PASSED' in text and 'QUEST_SMOKE_FAILED' not in text
+        passed='QUEST_SMOKE_PASSED' in text and 'QUEST_SMOKE_FAILED' not in text and (not (server/'plugins/Xerr-2.1.0.jar').exists() or 'XERR_ASYNC_PASSED' in text)
         print('SMOKE: '+('passed' if passed else 'failed; inspect '+str(log)),flush=True)
         if process.poll() is None:
             config=server/'plugins/Quest/quests/星海启航.yml'

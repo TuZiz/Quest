@@ -34,7 +34,7 @@ with log.open('w', encoding='utf-8') as output:
     def logs():
         return log.read_text(encoding='utf-8', errors='replace')
     try:
-        wait_for(lambda: 'XERR_API_PASSED' in logs() or 'QUEST_SMOKE_FAILED' in logs(), 120)
+        wait_for(lambda: ('XERR_API_PASSED' in logs() and 'XERR_ASYNC_PASSED' in logs()) or 'QUEST_SMOKE_FAILED' in logs(), 120)
         if 'QUEST_SMOKE_FAILED' in logs():
             raise RuntimeError('Xerr API smoke failed')
         stamp = time.time()
@@ -46,6 +46,32 @@ with log.open('w', encoding='utf-8') as output:
         ce = server / 'plugins/CraftEngine/generated/resource_pack.zip'
         wait_for(lambda: ce.exists() and ce.stat().st_mtime >= stamp and zipfile.is_zipfile(ce), 90)
         with zipfile.ZipFile(xerr) as source, zipfile.ZipFile(ce) as merged:
+            # Validate actual renderer font references, not just texture presence.
+            # A stale pack can contain the PNGs while missing ui_position_N fonts.
+            rendered=json.loads((root/'target/verification/xerr-tracker-final.json').read_text(encoding='utf-8'))
+            fonts=set()
+            def collect(value):
+                if isinstance(value,dict):
+                    if 'font' in value: fonts.add(value['font'])
+                    for child in value.values(): collect(child)
+                elif isinstance(value,list):
+                    for child in value: collect(child)
+            collect(rendered)
+            for font in fonts:
+                namespace,relative=font.split(':',1)
+                name='assets/'+namespace+'/font/'+relative+'.json'
+                if name not in source.namelist() or name not in merged.namelist():
+                    raise AssertionError('Rendered font absent from generated/merged pack: '+font)
+                if json.loads(source.read(name))!=json.loads(merged.read(name)):
+                    raise AssertionError('Rendered font changed during CE merge: '+font)
+            # Check the client's version-specific placement shaders survive merge too.
+            shaders=[n for n in source.namelist() if '/shaders/' in n and not n.endswith('/')]
+            for name in shaders:
+                if name not in merged.namelist():
+                    raise AssertionError('Position shader absent during CE merge: '+name)
+                equal=json.loads(source.read(name))==json.loads(merged.read(name)) if name.endswith('.json') else source.read(name)==merged.read(name)
+                if not equal:
+                    raise AssertionError('Position shader absent/changed during CE merge: '+name)
             # Display height does not shrink bitmap source cells. Vanilla font atlases
             # cannot stitch a single source glyph larger than 256x256.
             checked = 0
@@ -77,6 +103,7 @@ with log.open('w', encoding='utf-8') as output:
                     raise AssertionError('CE native merge mismatch: ' + name)
         print('XERR_PACK_AND_CE_NATIVE_MERGE_PASSED: ' + str(len(textures)) + ' Quest textures', flush=True)
         print('XERR_BITMAP_ATLAS_PASSED: ' + str(checked) + ' providers', flush=True)
+        print('XERR_RENDERED_FONTS_AND_SHADERS_PASSED: '+str(len(fonts))+' fonts, '+str(len(shaders))+' shaders',flush=True)
         command('quest admin reload')
         time.sleep(2)
         command('stop')

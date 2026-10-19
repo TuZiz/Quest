@@ -1,6 +1,6 @@
 # 兼容接口变更
 
-原始 `D:/codex/DreamSkyblock`、`D:/codex/Genlite` 和正式服务器目录均不改写。`compat/` 是源文件覆盖包，应用于本次已核查的本地源码副本；不是跨版本通用补丁。更新上游后需要重新核对差异，不能盲目覆盖。
+原始 `D:/codex/DreamSkyblock`、`D:/codex/Genlite` 不改写；服务端部署均先备份。`compat/` 是源文件覆盖包，应用于本次已核查的本地源码副本；不是跨版本通用补丁。更新上游后需要重新核对差异，不能盲目覆盖。
 
 ## DreamSkyblock
 
@@ -22,3 +22,7 @@
 - 新增 `QuestCountersTest` 验证燃料变更、转移不计数、持久重读，以及提交后真实 2 个/批生产计数。
 
 `tools/make_compat.py` 保留本次补丁的生成依据，会核对需要替换的原始片段；日常构建不需要重新运行它。运行 `build.ps1` 即可应用已保存的覆盖包。
+
+## Xerr 2.1
+
+本次仅有本地 JAR，补丁源码及可复现构建器分别为 `compat/Xerr/LayoutMiniMessage.java`、`tools/smoke/PatchXerr.java`、`tools/patch_xerr.py`。固定原始 LayoutEntity 字节码 SHA256 为 `d4ee2d49edd57ab3435de87a82d69f0bcb69f0e80e2ddfee3374a47978cf2784`，只在变量处理后的三个字符串出口调用颜色适配器，其他类保留；新运行类仅依赖 Paper 已提供的 Adventure。材料、配置、字体不进入 Quest 或补丁 JAR。该补丁仅验收 Paper/Leaf26.3 + Java25 + Xerr2.1，不声称支持其他平台版本。详情见 XERR.md。
