@@ -9,13 +9,13 @@ import java.nio.file.Files
 data class Settings(val quests: List<QuestDefinition>, val language: YamlConfiguration,
                     val center: YamlConfiguration, val detail: YamlConfiguration,
                     val chapters: List<ChapterDefinition>, val chapterMenu: YamlConfiguration, val chapterDetail: YamlConfiguration,
-                    val notices: Map<String,NoticeProfile>, val hud: YamlConfiguration)
+                    val notices: Map<String,NoticeProfile>, val hud: YamlConfiguration, val rewards: RewardSettings)
 
 /** IO executor only. No save of existing YAML: comments/unknown fields remain byte-for-byte intact. */
 class QuestFiles(private val plugin: JavaPlugin, private val conditions: ConditionRegistry) {
     private val defaults = listOf("config.yml","lang/zh_cn.yml","gui/main.yml","gui/detail.yml",
         "quests/星海启航.yml","quests/能源启动.yml","quests/第一批资源.yml",
-        "提示.yml","显示.yml","gui/chapters.yml","gui/chapter-detail.yml")
+        "提示.yml","显示.yml","奖励.yml","gui/chapters.yml","gui/chapter-detail.yml")
     fun load(): Settings {
         ResourceUpgrade.relocateLayout(plugin.dataFolder.toPath())
         ResourceUpgrade.renameQuests(plugin.dataFolder.toPath())
@@ -44,6 +44,8 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             }
         }
         val config = yaml("config.yml")
+        val rewards = RewardSettings.parse(yaml("奖励.yml"))
+        if(rewards.automatic) RewardTextUpgrade.migrate(plugin.dataFolder.toPath().resolve("lang/zh_cn.yml"))
         require(config.getString("storage") == "data/quest.db") { "config.yml:storage=${config.get("storage")} unsupported" }
         val quests = Files.list(plugin.dataFolder.toPath().resolve("quests")).use { paths ->
             paths.filter { it.fileName.toString().endsWith(".yml") }.sorted().map { path ->
@@ -72,7 +74,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         listOf("enabled","tracker","notifications").forEach { require(hud.isBoolean(it)) { "显示.yml:$it=${hud.get(it)} expected boolean" } }
         require(hud.isInt("refresh-ticks") && hud.getInt("refresh-ticks") in 20..1200) { "显示.yml:refresh-ticks=${hud.get("refresh-ticks")} expected 20..1200" }
         listOf("tracker-layout","popup-prefix").forEach { require(!hud.getString(it).isNullOrBlank()) { "显示.yml:$it missing" } }
-        return Settings(ordered,language,center,detail,chapters,chapterMenu,chapterDetail,notices,hud)
+        return Settings(ordered,language,center,detail,chapters,chapterMenu,chapterDetail,notices,hud,rewards)
     }
     private fun parse(file: String, y: YamlConfiguration): QuestDefinition {
         fun text(s: ConfigurationSection, key: String) = s.getString(key)?.takeIf { it.isNotBlank() }

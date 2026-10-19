@@ -59,6 +59,29 @@ class ChapterServiceTest {
         } finally { db.closeAsync().await() }
     }
 
+    @Test fun `automatic claims share unique delivery records with manual claims and recover after restart`() {
+        var db=database(); var s=QuestService(db); s.configure(quests,listOf(chapter)).await()
+        val eligible=quests.map { it.id }.toSet()+"chapter:${chapter.id}"
+        assertEquals(listOf("sky_start"),s.claimCompleted("A","member",facts(100,500),false,eligible).await())
+        s.sync("A",facts(101,999)).await(); s.sync("A",facts(101,1031)).await()
+        val concurrent=(1..30).map { s.claimCompleted("A","member-$it",facts(101,1031),false,eligible) }
+        assertEquals(3,concurrent.sumOf { it.await().size })
+        assertFalse(s.claim("A","manual","first_resources",facts(101,1031),false).await())
+        assertEquals(4,s.mailbox("A").await().size)
+        val parcel=s.mailbox("A").await().first()
+        assertTrue(s.transition(parcel.id,"member","WAITING","SENDING").await())
+        db.closeAsync().await(); db=database(); s=QuestService(db); s.configure(quests,listOf(chapter)).await()
+        try {
+            assertTrue(s.claimCompleted("A","after-restart",facts(101,1031),false,eligible).await().isEmpty())
+            assertEquals(4,s.mailbox("A").await().size)
+            assertEquals("SENDING",s.mailbox("A").await().first().phase)
+            assertEquals(3,s.mailbox("A").await().count { it.phase == "WAITING" })
+            // Unavailable items are excluded by the owner-thread item check and retried later.
+            assertTrue(s.claimCompleted("B","member",facts(),false,emptySet()).await().isEmpty())
+            assertEquals(listOf("sky_start"),s.claimCompleted("B","member",facts(),false,eligible).await())
+        } finally { db.closeAsync().await() }
+    }
+
     @Test fun `chapter gates wait for completion not claims and branches use independent baselines`() {
         val db=database()
         try {

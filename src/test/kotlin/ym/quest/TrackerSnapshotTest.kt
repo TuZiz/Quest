@@ -16,9 +16,9 @@ class TrackerSnapshotTest {
         assertEquals(q.name,values["task"]); assertEquals("0",values["pending"])
         assertEquals(7,journal.quests.single().progress.single().progress)
     }
-    @Test fun `completed unpaid chapter stays visible until all rewards are claimed`() {
+    @Test fun `completed chapter hides tracker without asking for manual claims`() {
         val unpaid = JournalView(listOf(QuestView(q,QuestStatus.COMPLETE,emptyList())),listOf(ChapterView(ch,ChapterStatus.COMPLETE,1,false)))
-        assertEquals("2",TrackerSnapshot.values(unpaid)!!["pending"])
+        assertNull(TrackerSnapshot.values(unpaid))
         val paid = JournalView(listOf(QuestView(q,QuestStatus.CLAIMED,emptyList())),listOf(ChapterView(ch,ChapterStatus.COMPLETE,1,true)))
         assertNull(TrackerSnapshot.values(paid))
     }

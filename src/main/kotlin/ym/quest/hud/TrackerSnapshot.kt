@@ -10,7 +10,7 @@ object TrackerSnapshot {
         val task = journal.quests.firstOrNull { it.status == QuestStatus.ACTIVE }
         val chapter = journal.chapters.firstOrNull { task?.definition?.id in it.definition.quests }
             ?: journal.chapters.firstOrNull { it.status == ChapterStatus.COMPLETE && !it.claimed }
-        if(task == null && pending == 0) return null
+        if(task == null) return null
         val objective = task?.progress?.firstOrNull { it.progress < it.objective.target } ?: task?.progress?.firstOrNull()
         return mapOf("chapter" to (chapter?.definition?.name ?: ""),
             "task" to (task?.definition?.name ?: ""),

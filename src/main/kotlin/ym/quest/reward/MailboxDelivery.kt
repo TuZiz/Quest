@@ -17,29 +17,29 @@ class MailboxDelivery(private val service: QuestService, private val integration
     private val sending = mutableSetOf<String>()
     fun isSending(id: String) = id in sending
     private var closed = false
-    fun collect(player: Player, home: UUID, done: () -> Unit = {}) {
-        if(closed || !busy.add(player.uniqueId)) { text.send(player,"busy"); return }
+    fun collect(player: Player, home: UUID, quiet: Boolean = false, done: () -> Unit = {}) {
+        if(closed || !busy.add(player.uniqueId)) { if(!quiet) text.send(player,"busy"); done(); return }
         service.mailbox(home.toString()).whenComplete { parcels,error -> thread.run {
-            if(error != null) { busy.remove(player.uniqueId); failure(error); text.send(player,"error"); return@run }
-            if(!valid(player,home)) { busy.remove(player.uniqueId); return@run }
-            if(parcels.any { it.phase == "SENDING" }) text.send(player,"uncertain")
-            next(player,home,parcels.filter { it.phase == "WAITING" },done)
+            if(error != null) { busy.remove(player.uniqueId); failure(error); if(!quiet) text.send(player,"error"); done(); return@run }
+            if(!valid(player,home)) { busy.remove(player.uniqueId); done(); return@run }
+            if(!quiet && parcels.any { it.phase == "SENDING" }) text.send(player,"uncertain")
+            next(player,home,parcels.filter { it.phase == "WAITING" },quiet,done)
         } }
     }
     private fun valid(p: Player,home: UUID) = !closed && p.isOnline && p.hasPermission("quest.use") &&
         integrations.island(p.uniqueId)?.id == home && integrations.allowed(home,p.uniqueId)
-    private fun next(player: Player,home: UUID,parcels: List<Parcel>,done: () -> Unit) {
+    private fun next(player: Player,home: UUID,parcels: List<Parcel>,quiet: Boolean,done: () -> Unit) {
         val parcel = parcels.firstOrNull()
         if(parcel == null || !valid(player,home)) { busy.remove(player.uniqueId); done(); return }
         val stacks = try { split(items.build(parcel.item,player),parcel.amount) }
-        catch(e: Exception) { busy.remove(player.uniqueId); failure(e); text.send(player,"unavailable"); return }
+        catch(e: Exception) { busy.remove(player.uniqueId); failure(e); if(!quiet) text.send(player,"unavailable"); done(); return }
         val planned = plan(player.inventory.storageContents,stacks)
-        if(planned == null) { busy.remove(player.uniqueId); text.send(player,"inventory-full"); done(); return }
+        if(planned == null) { busy.remove(player.uniqueId); if(!quiet) text.send(player,"inventory-full"); done(); return }
         sending += parcel.id
         service.transition(parcel.id,player.uniqueId.toString(),"WAITING","SENDING").whenComplete { reserved,error -> thread.run {
             if(error != null || !reserved) {
                 sending -= parcel.id; busy.remove(player.uniqueId)
-                if(error != null) { failure(error); text.send(player,"error") }
+                if(error != null) { failure(error); if(!quiet) text.send(player,"error") }
                 done(); return@run
             }
             // Re-plan after async persistence: player inventory/membership may have changed.
@@ -48,22 +48,22 @@ class MailboxDelivery(private val service: QuestService, private val integration
                 service.transition(parcel.id,player.uniqueId.toString(),"SENDING","WAITING").whenComplete { _,undoError -> thread.run {
                     sending -= parcel.id; busy.remove(player.uniqueId)
                     if(undoError != null) failure(undoError)
-                    if(player.isOnline) text.send(player,"inventory-full")
+                    if(player.isOnline && !quiet) text.send(player,"inventory-full")
                     done()
                 } }
                 return@run
             }
             // One synchronous inventory replacement, no partial addItem/overflow and no intervening player action.
             try { player.inventory.storageContents = now }
-            catch(e: Exception) { sending -= parcel.id; busy.remove(player.uniqueId); failure(e); text.send(player,"uncertain"); return@run }
+            catch(e: Exception) { sending -= parcel.id; busy.remove(player.uniqueId); failure(e); if(!quiet) text.send(player,"uncertain"); done(); return@run }
             service.transition(parcel.id,player.uniqueId.toString(),"SENDING","DELIVERED").whenComplete { saved,saveError -> thread.run {
                 sending -= parcel.id
                 if(saveError != null || !saved) {
                     busy.remove(player.uniqueId); if(saveError != null) failure(saveError)
-                    text.send(player,"uncertain"); done()
+                    if(!quiet) text.send(player,"uncertain"); done()
                 } else {
                     if(player.isOnline) text.send(player,"delivered")
-                    next(player,home,parcels.drop(1),done)
+                    next(player,home,parcels.drop(1),quiet,done)
                 }
             } }
         } }

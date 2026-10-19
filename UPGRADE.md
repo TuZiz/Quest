@@ -7,7 +7,7 @@
 - 默认章 `sky_awakening`：第一章 · 星海初醒。
 - 任务 ID 继续为 `sky_start`、`first_fuel`、`first_resources`，奖励物品和数量全部保留；任务文件改为 `星海启航.yml`、`能源启动.yml`、`第一批资源.yml`。
 - 新增 `chapters/第一章·星海初醒.yml` 与根目录 `提示.yml`，以及独立菜单 `gui/chapters.yml`、`gui/chapter-detail.yml`。章节奖励默认 2 个原版钻石，可自由配置。
-- `/quest` 进入章节列表。章节 → 任务列表 → 原任务详情，可返回；任务奖励与章节奖励独立领取，均使用原共享邮箱。
+- 默认奖励自动发放，玩家无需 `/quest` 或邮箱。管理员保留章节 → 任务列表 → 详情作为检查入口；原 claims/parcels 仅作为内部兼容、防重复与恢复记录。
 - 完成前置目标后自动推进；不需要先领任务奖励。未领取的任务完成资格、已生成的奖励载荷均持久保存。
 
 ## 文件布局调整
@@ -49,3 +49,7 @@ GUI 文件名保持英文：`gui/chapters.yml`、`gui/chapter-detail.yml`；玩�
 当前自动化与隔离服结果见 [VALIDATION.md](VALIDATION.md)。箱子页面和提示经过真实服务端 API 探针；玩家对象使用代理，尚未使用真人 Java/Geyser 客户端点击。Purpur/Folia、硬断电及实际客户端材质不在已通过范围。Folia 继续明确不支持。
 
 SQLite 与玩家存档仍没有跨存储原子提交；崩溃窗口的 SENDING 记录维持隔离，由管理员核对，不能自动重发。该升级不承诺硬崩溃场景下零丢失或自动 exactly-once。
+
+## 自动发奖升级
+
+新增 `奖励.yml`（schema-version: 1），默认 `automatic: true`，在线空岛每 100 tick 自动检查及重试。无需数据库结构升级，不删除任何旧进度、claims 或 parcels；历史 WAITING 自动补发，SENDING 保留待核对，已发奖励不重复创建。旧版默认领奖说明只作精确文字替换，未知键、自定义颜色及注释保留；自动发奖关闭时不执行该文案迁移。

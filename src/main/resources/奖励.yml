@@ -1,0 +1,5 @@
+schema-version: 1
+# 完成后自动发放任务和章节奖励；每个空岛仍只发放一次。
+automatic: true
+# 在线空岛发放及背包不足重试间隔，单位 tick，范围 20 至 1200。
+retry-ticks: 100

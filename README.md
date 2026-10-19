@@ -1,6 +1,6 @@
 # Quest
 
-Kotlin + Maven 的空岛团队任务插件。本版在原引擎上增加「第一章 · 星海初醒」，仅包含「星海启航 → 能源启动 → 第一批资源」三个现有任务。前置目标完成即自动解锁下一任务，无需先领奖；任务奖励与章节奖励独立手动领取。任一有 `quest.use` 的空岛成员均可操作，奖励每岛一次。
+Kotlin + Maven 的空岛团队任务插件。本版在原引擎上增加「第一章 · 星海初醒」，仅包含「星海启航 → 能源启动 → 第一批资源」三个现有任务。前置目标完成即自动解锁下一任务，无需先领奖；任务奖励与章节奖励默认完成后自动发放，不需要邮箱或手动操作。任一有 `quest.use` 的空岛成员均可操作，奖励每岛一次。
 
 ## 构建与安装
 
@@ -42,15 +42,15 @@ plugins/Quest/
   data/quest.db
 ```
 
-`/quest` 默认打开全部章节。章节列表展示状态和完成数量，章节详情展示任务链、完成奖励及独立领取入口；任务详情显示条件和原任务奖励。所有列表支持分页。菜单仍为原版箱子。没有 Java 客户端专用输入、MOD、聊天点击或依赖玩家名称的逻辑；可供 Geyser/Floodgate 映射使用。基岩客户端点击及材质展示仍需实际客户端验收。
+普通玩家默认使用常驻任务 HUD，不开放 `/quest` 菜单；管理员仍可打开全部章节作检查。`gui/main.yml:player-access` 缺省为 false。章节列表展示状态和完成数量，章节详情展示任务链、完成奖励及独立领取入口；任务详情显示条件和原任务奖励。所有列表支持分页。菜单仍为原版箱子。没有 Java 客户端专用输入、MOD、聊天点击或依赖玩家名称的逻辑；可供 Geyser/Floodgate 映射使用。基岩客户端点击及材质展示仍需实际客户端验收。
 
 ## 默认玩法与物品证据
 
-1. 创建/加入 DreamSkyblock 空岛，或使用已有 ACTIVE 空岛，打开 `/quest` 领取「星海启航」。发放 16 个 `genlite:fuel`、8 个面包、石镐，以及有条件的首台 `genlite:cobblestone_generator`。
-2. 按 Genlite 原有操作向生成器存入燃料，领取「能源启动」，获得各 2 个 `genlite:mechanical_parts` 和 `genlite:copper_coil`。
-3. 燃料目标完成后即开始计数，由岛内生成器实际生产 32 个 `minecraft:cobblestone`，领取 2 个 `genlite:basic_upgrade_unit`，对应当前原石生成器 1→2 级的实际升级成本。
+1. 创建/加入 DreamSkyblock 空岛，或使用已有 ACTIVE 空岛，完成「星海启航」后自动发放 16 个 `genlite:fuel`、8 个面包、石镐，以及有条件的首台 `genlite:cobblestone_generator`。
+2. 按 Genlite 原有操作向生成器存入燃料，完成「能源启动」后自动获得各 2 个 `genlite:mechanical_parts` 和 `genlite:copper_coil`。
+3. 燃料目标完成后即开始计数，由岛内生成器实际生产 32 个 `minecraft:cobblestone`，自动获得 2 个 `genlite:basic_upgrade_unit`，对应当前原石生成器 1→2 级的实际升级成本。
 
-第一章全部任务完成后可独立领取章节奖励，默认 2 个 `minecraft:diamond`，可在 `chapters/第一章·星海初醒.yml` 修改。完成时默认发送聊天提示、简洁 Title 和升级音效。任务名称、目标、图标与任务奖励在 quests/ 中文任务 YAML 中；任务归属与前置关系统一配置在 chapters/ 对应章节文件。物品 ID 来自本地 `Genlite/craftengine/genlite/configuration/materials.yml`、`machines/cobblestone_generator.yml`，燃料和产出来自 `Genlite/src/main/resources/genlite/cobblestone_generator.yml`，没有使用展示名称匹配或猜测 ID。
+第一章全部任务完成后自动发放独立章节奖励，默认 2 个 `minecraft:diamond`，可在 `chapters/第一章·星海初醒.yml` 修改。完成时默认发送聊天提示、简洁 Title 和升级音效。任务名称、目标、图标与任务奖励在 quests/ 中文任务 YAML 中；任务归属与前置关系统一配置在 chapters/ 对应章节文件。物品 ID 来自本地 `Genlite/craftengine/genlite/configuration/materials.yml`、`machines/cobblestone_generator.yml`，燃料和产出来自 `Genlite/src/main/resources/genlite/cobblestone_generator.yml`，没有使用展示名称匹配或猜测 ID。
 
 首台机器检查 Genlite 全部机器历史（包含已拆机器）、当前队员的 Genlite 待发机器，以及在线队员背包中的相应 CE 物品；Quest 自身的岛级领奖唯一约束阻止重复发放。本次核查的 DreamSkyblock 默认模板与 Genlite 启动流程没有自动赠送首台机器。**迁入旧服前若曾通过管理员、其他插件或离线背包发过未放置的裸机器，必须先核对；无法从现有公开 API 证明其发放历史。此类服请从第一任务奖励中移除首台机器条目，或先补齐既有机器历史。**不扫描玩家 NBT，不猜测其他插件的账本。
 
@@ -78,7 +78,7 @@ plugins/Quest/
 - 所有库存、菜单、消息和 Bukkit 调用在 Paper 主线程执行；文件/JDBC 在独立线程执行。停止时取消任务、关闭菜单与集成监听、排空已接受的数据库事务并异步关闭连接，不在服务器线程 `get/join/sleep`。
 - 可选插件缺失时保留 Quest 数据，相关功能提示不可用；运行中禁用联动插件会暂停当前 Quest 运行实例，重启后恢复，防止旧对象继续回调。
 
-奖励先事务性进入全岛邮箱，背包足够时才按 `WAITING → SENDING → DELIVERED` 发放；容量在异步提交前后各检查一次，不向地面丢弃溢出物。发放失败或退出时未应用的奖励回到 WAITING。跨岛、离线、禁用和权限变化会在应用前重新核验。其他成员可以领取尚未发出的全岛奖励。
+`奖励.yml` 的 `automatic: true` 默认开启任务和章节自动发放，`retry-ticks: 100` 每 5 秒检查在线空岛。每岛选择一位有权限的在线成员接收，奖励每岛一次。玩家侧没有邮箱；内部保留旧的持久化发放记录以兼容历史数据。奖励先事务性记录，背包足够时才按 `WAITING → SENDING → DELIVERED` 发放；容量在异步提交前后各检查一次，不向地面丢弃溢出物。发放失败或退出时未应用的奖励回到 WAITING。跨岛、离线、禁用和权限变化会在应用前重新核验。背包不足时安全保留并自动重试；成员离线后可由其他在线岛员接收。旧 SENDING 不盲目重发，仍由管理员核对。
 
 **SQLite 与 Minecraft 玩家存档没有跨存储原子事务。**进程恰在物品应用/确认期间崩溃的 SENDING 记录会隔离，不能自动重发；debug 显示物品、数量、接收者和 UUID，管理员核对后使用 resolve，操作写入审计表。已标记 DELIVERED 但尚未被 Minecraft 保存的背包仍有服务端硬崩溃窗口，需依据发放审计/整服备份核对，不承诺玩家数据的零丢失。停服一致性备份应覆盖玩家存档、Quest、DreamSkyblock 和 Genlite；运行中不要只复制 SQLite 主文件而遗漏 WAL。
 
@@ -121,3 +121,5 @@ rewards:
 兼容修改的完整文件在 `compat/`，修改说明见 [COMPATIBILITY.md](COMPATIBILITY.md)。构建时生成 `.build/dependencies/source-manifest.json`，记录被替换源文件的 SHA-256。源码来源：[DreamSkyblock](https://github.com/TuZiz/DreamSkyblock)、[Genlite](https://github.com/TuZiz/Genlite)；实际编译以已检查的本地源码为准。
 
 验证结果、已知上游警告和待实机验收范围见 [VALIDATION.md](VALIDATION.md)。
+
+HUD 材质与布局仅配置在服务端 `plugins/Xerr/core/`：常驻面板贴右边缘、文字居中并分层配色；通知固定最右上角单槽排队，面板留在通知区下方。移除待领奖数与 `/quest` 帮助。修改布局后必须重建 Xerr 资源包并由 CraftEngine 合并。

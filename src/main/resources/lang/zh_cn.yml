@@ -1,17 +1,18 @@
 schema-version: 1
+automatic-rewards: '<#89F7FE>任务进度会自动追踪，<#A8FF78>完成奖励自动发放<#89F7FE>，无需打开任务菜单。'
 no-permission: '<#FCA5A5>你没有使用此功能的权限。'
 unavailable: '<#FCA5A5>相关插件或物品尚未就绪，请稍后再试。'
 no-island: '<#FBBF24>请先创建或加入空岛。'
 loading: '<#94A3B8>正在读取任务数据…'
 error: '<#FCA5A5>操作未能完成，请联系管理员查看 Quest 日志。'
 busy: '<#FBBF24>正在处理，请稍后再试。'
-claimed: '<#6EE7B7>任务奖励已存入全岛待领取列表。'
+claimed: '<#6EE7B7>任务奖励正在自动发放。'
 not-complete: '<#FBBF24>任务尚未完成、已经领取，或记录状态不允许此操作。'
-inventory-full: '<#FBBF24>背包空间不足，奖励已安全保留。腾出空间后点击待领取。'
+inventory-full: '<#FBBF24>背包空间不足，奖励已安全保留。腾出空间后会自动发放。'
 uncertain: '<#FBBF24>存在发放结果待核对的奖励。请管理员检查 /quest admin debug。'
 delivered: '<#6EE7B7>奖励已放入背包。'
 progress: '<#7DD3FC>任务进度更新：<quest>'
-complete: '<#6EE7B7>任务完成：<quest><#CBD5E1>，使用 /quest 领取奖励。'
+complete: '<#6EE7B7>任务完成：<quest><#CBD5E1>，奖励会自动发放。'
 reloaded: '<#6EE7B7>Quest 配置已重载。'
 reset: '<#6EE7B7>进度已重置；已有领奖记录保留，防止重复奖励。'
 usage: '<#CBD5E1>/quest admin reload | reset 〈空岛UUID〉 〈任务ID〉 | debug 〈空岛UUID〉 | resolve 〈奖励UUID〉 delivered/retry'
@@ -23,7 +24,7 @@ objective-line: '<description> <#7DD3FC><progress><#94A3B8>/<target>'
 status:
   LOCKED: '<#64748B>未解锁'
   ACTIVE: '<#7DD3FC>进行中'
-  COMPLETE: '<#6EE7B7>已完成 · 可领取'
+  COMPLETE: '<#6EE7B7>已完成'
   CLAIMED: '<#94A3B8>已领取'
 
 chapter-status:
@@ -42,14 +43,14 @@ notices:
     title: '<quest>'
     subtitle: '<#CBD5E1>目标已解锁'
   task-complete:
-    message: '<#6EE7B7>任务完成：<quest><#CBD5E1>，奖励可随时领取。'
+    message: '<#6EE7B7>任务完成：<quest><#CBD5E1>，奖励会自动发放。'
     title: '<#6EE7B7>任务完成'
     subtitle: '<quest>'
   next-task:
     message: '<#7DD3FC>下一任务已解锁：<quest>'
     title: '<quest>'
-    subtitle: '<#CBD5E1>无需领取前置奖励即可继续'
+    subtitle: '<#CBD5E1>新的目标已解锁，继续前进吧'
   chapter-complete:
-    message: '<#6EE7B7>章节完成：<chapter><#CBD5E1>，请在章节页面领取奖励。'
+    message: '<#6EE7B7>章节完成：<chapter><#CBD5E1>，章节奖励会自动发放。'
     title: '<#6EE7B7>章节完成'
     subtitle: '<chapter>'

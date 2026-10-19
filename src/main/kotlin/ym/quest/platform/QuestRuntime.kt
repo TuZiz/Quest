@@ -28,6 +28,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     private val items = ItemFactory(listOfNotNull(custom))
     private val delivery = MailboxDelivery(service,integrations,items,text,thread,::failure)
     private val menus = QuestMenus(plugin,service,integrations,items,text,thread,delivery,::claim,::failure,settings)
+    private val automatic = AutomaticRewards(plugin,service,integrations,items,{ custom?.id(it) },delivery,thread,::failure,settings.rewards) { !closed && !reloading }
     private val claiming = mutableSetOf<UUID>()
     private var reloading = false
     private var closed = false
@@ -37,7 +38,11 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
         validateItems(settings)
         plugin.server.pluginManager.registerEvents(menus,plugin)
         plugin.server.pluginManager.registerEvents(this,plugin)
-        val commands = QuestCommands(text,service,integrations,thread,delivery,{ if(!closed) menus.open(it) else text.send(it,"unavailable") },::reload,::failure)
+        val commands = QuestCommands(text,service,integrations,thread,delivery,{
+            if(closed) text.send(it,"unavailable")
+            else if(it.hasPermission("quest.admin") || menus.settings.center.getBoolean("player-access",false)) menus.open(it)
+            else text.send(it,"automatic-rewards")
+        },::reload,::failure)
         plugin.getCommand("quest")!!.apply { setExecutor(commands); tabCompleter=commands }
         plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=2; task/chapter YAML schema=2; quests=${settings.quests.size}; chapters=${settings.chapters.size}; Paper ownership; Folia=false; Xerr HUD=${settings.hud.getBoolean("enabled")}")
         listOf("DreamSkyblock","Genlite","CraftEngine","Xerr").forEach { id ->
@@ -98,6 +103,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
         if(reloading) { text.send(sender,"busy"); return }
         reloading=true
         db.submit { files.load() }.whenComplete { settings,error -> thread.run {
+            if(closed) return@run
             if(error != null) { reloading=false; failure(error); text.send(sender,"error"); return@run }
             try {
                 (settings.quests.flatMap { listOf(it.icon)+it.rewards.map { r -> r.item } } + settings.chapters.flatMap { listOf(it.icon)+it.rewards.map { r -> r.item } }).distinct().forEach { items.build(it) }
@@ -106,10 +112,11 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
                 }
             } catch(e: Exception) { reloading=false; failure(e); text.send(sender,"error"); return@run }
             service.configure(settings.quests,settings.chapters).whenComplete { _,configureError -> thread.run {
+                if(closed) return@run
                 reloading=false
                 if(configureError != null) { failure(configureError); text.send(sender,"error"); return@run }
                 menus.close(); menus.settings=settings; text.language=settings.language; notices.profiles=settings.notices
-                hud.reload(settings.hud); integrations.refresh(); text.send(sender,"reloaded")
+                hud.reload(settings.hud); automatic.reload(settings.rewards); integrations.refresh(); text.send(sender,"reloaded")
             } }
         } }
     }
@@ -120,6 +127,6 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     }
     override fun close() {
         if(closed) return
-        closed=true; service.claimChanges = {}; heartbeat.cancel(); hud.close(); menus.close(); delivery.close(); integrations.close(); claiming.clear()
+        closed=true; service.claimChanges = {}; heartbeat.cancel(); automatic.close(); hud.close(); menus.close(); delivery.close(); integrations.close(); claiming.clear()
     }
 }

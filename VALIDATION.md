@@ -108,3 +108,12 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 
 用户后续截图确认贴图已显示但位置仍旧。检查正式服 Xerr 与 CE 包，均仍含右侧中线的旧着色器；Xerr 生成 ZIP 时间未更新，虽已重载配置，CE 仍合并旧生成内容。核对正式服/隔离服 19 个输入文件 SHA256 完全一致，提取前轮验证通过的 Xerr ZIP 到同卷暂存目录，备份并替换正式服生成目录及 ZIP，51 个输出逐字节与验证 ZIP 一致，清除旧输出目录残留，右上锚点着色器不再含 50% Y。没有重发正式服命令、停止服务器或改动玩家数据；只待用户执行 ce reload pack，客户端位置仍未确认。部署记录：.build/hud/generated-sync-evidence.json。
 
+
+## 默认自动发奖及 HUD 整理（2026-10-19）
+
+- JDK25 `mvn -q -o -Dkotlin.compiler.daemon=false package` 通过，32 项 JUnit 无失败、错误或跳过。新增覆盖岛级自动领奖并发、手动竞争、重启后不重复生成、SENDING 保留、物品缺失后恢复、配置范围和提示迁移幂等。
+- `tools/run_smoke.py` 隔离 Leaf26.3 启动、API/菜单/背包容量探针、错误重载保留原定义通过，正常退出。新探针最初反射内部 LayoutAPI 遇访问限制，改为已验证的公开 XerrLayoutAPI 后通过；这不是正式服异常。
+- `tools/run_xerr_smoke.py` 对最终 JAR 通过：实际锚定 Component JSON 验证 RGB，常驻行居中、面板 x=-151/y=-44、通知单槽 x=-236/y=0；Xerr 构包与 CraftEngine 原生合并的 8 张图片 RGBA 一致，26 个 bitmap provider 不超过 256 图集限制。
+- 正式服 Xerr 的 19 个输入文件与隔离服 SHA256 一致后，同步已验证的 51 个生成文件并备份旧包。奖励配置默认开启、普通玩家菜单关闭、旧领取提示精确替换；不改写玩家数据库。材质和布局仅在服务器 Xerr 文件夹。
+- 新 Quest JAR 已放入 `plugins/update/Quest-1.0.0.jar`，没有停止或重启正式服，也没有发送 CE 重载命令。需要完整重启并重新合并/发送资源包。真人客户端最终像素位置及在线自动入包尚待验证；代理测试不代表实机验收。Neuron 对已提交检查无问题，因该实机范围未执行记录为 pending。
+- 证据：`target/verification/auto-rewards-evidence.json`、`auto-rewards-deployment.json`、`xerr-tracker-components.json`、`auto-rewards-neuron.json` 及两份隔离服日志。

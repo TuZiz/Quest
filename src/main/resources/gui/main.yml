@@ -1,4 +1,6 @@
 schema-version: 1
+# 普通玩家默认使用 HUD 和自动发奖；管理员仍可打开菜单。
+player-access: false
 title: '<#7DD3FC>空岛任务中心'
 unavailable-item: minecraft:barrier
 Shape:

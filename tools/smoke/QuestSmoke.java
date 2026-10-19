@@ -77,6 +77,23 @@ public final class QuestSmoke extends JavaPlugin {
         if(raw==null || !raw.contains("章节探针") || !raw.contains("7")) throw new AssertionError("HUD variable render failed: "+raw);
         if(!raw.contains("font=xerr_img:quest/panels/gui") || !raw.contains("font=xerr_position:space"))
             throw new AssertionError("HUD missing anchored bitmap font or positioning markers: "+raw);
+        try {
+            var layouts=api.layouts();
+            var method=com.hiusers.xerr.api.layout.XerrLayoutAPI.class.getMethod("render",Player.class,String.class,Map.class,boolean.class,String.class);
+            var rendered=method.invoke(layouts,player,"quest_tracker",vars,true,"quest:smoke");
+            String json=(String)rendered.getClass().getMethod("toRawMessage").invoke(rendered);
+            java.nio.file.Files.writeString(java.nio.file.Path.of("../verification/xerr-tracker-components.json"),json);
+            for(String color:List.of("#ffcc80","#89f7fe","#a8ff78","#ffd700"))
+                if(!json.toLowerCase(java.util.Locale.ROOT).contains(color)) throw new AssertionError("HUD RGB missing: "+color);
+            if(raw.contains("/quest") || raw.contains("待领奖励")) throw new AssertionError("Legacy manual reward HUD");
+            var config=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/layout/quest_tracker.yml"));
+            if(config.getInt("quest_tracker.panel.x")!=-151 || config.getInt("quest_tracker.panel.y")!=-44) throw new AssertionError("Tracker not right-flush below notice");
+            for(String row:List.of("chapter","count","task","objective","progress"))
+                if(!"center".equals(config.getString("quest_tracker."+row+".align"))) throw new AssertionError("Tracker row not centered: "+row);
+            var popup=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/display/popups/quest.yml"));
+            if(popup.getMapList("quest.slots").size()!=1 || !popup.getMapList("quest.slots").getFirst().get("y").equals(0))
+                throw new AssertionError("Notifications must queue in one top slot");
+        } catch(ReflectiveOperationException | java.io.IOException error) { throw new IllegalStateException("Xerr component verification failed",error); }
         getLogger().info("XERR_API_PASSED: five popup IDs, anchored tracker bitmap/markers and variables; proxy player, no client packets");
     }
     private void checkChapterMenus(Object runtime,ItemFactory original) throws Exception {
