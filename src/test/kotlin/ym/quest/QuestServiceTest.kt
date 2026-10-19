@@ -26,7 +26,7 @@ class QuestServiceTest {
         try {
             val service=QuestService(db); service.configure(definitions()).await()
             service.sync(home,facts(10,100)).await()
-            assertEquals(listOf(QuestStatus.COMPLETE,QuestStatus.LOCKED,QuestStatus.LOCKED),service.views(home).await().map { it.status })
+            assertEquals(listOf(QuestStatus.COMPLETE,QuestStatus.ACTIVE,QuestStatus.LOCKED),service.views(home).await().map { it.status })
             val attempts=(1..40).map { service.claim(home,"member-$it","start",facts(10,100),false) }
             assertEquals(1,attempts.count { it.await() })
             assertEquals(2,service.mailbox(home).await().size)

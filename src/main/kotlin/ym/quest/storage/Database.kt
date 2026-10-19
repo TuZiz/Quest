@@ -23,14 +23,25 @@ class Database(private val file: Path, private val log: Logger) : AutoCloseable 
             s.execute("PRAGMA journal_mode=WAL"); s.execute("PRAGMA synchronous=FULL")
             s.execute("PRAGMA foreign_keys=ON"); s.execute("PRAGMA busy_timeout=5000")
             val version = s.executeQuery("PRAGMA user_version").use { it.next(); it.getInt(1) }
-            require(version in 0..1) { "$file: schema-version=$version unsupported" }
+            require(version in 0..2) { "$file: schema-version=$version unsupported" }
             s.execute("CREATE TABLE IF NOT EXISTS facts(home TEXT,metric TEXT,value INTEGER NOT NULL CHECK(value>=0),PRIMARY KEY(home,metric))")
             s.execute("CREATE TABLE IF NOT EXISTS objectives(home TEXT,quest TEXT,objective TEXT,baseline INTEGER NOT NULL,progress INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(home,quest,objective))")
             s.execute("CREATE TABLE IF NOT EXISTS completions(home TEXT,quest TEXT,completed INTEGER NOT NULL,PRIMARY KEY(home,quest))")
             s.execute("CREATE TABLE IF NOT EXISTS claims(home TEXT,quest TEXT,player TEXT,created INTEGER,PRIMARY KEY(home,quest))")
             s.execute("CREATE TABLE IF NOT EXISTS parcels(id TEXT PRIMARY KEY,home TEXT NOT NULL,quest TEXT NOT NULL,item TEXT NOT NULL,amount INTEGER NOT NULL,phase TEXT NOT NULL,player TEXT)")
             s.execute("CREATE TABLE IF NOT EXISTS audit(created INTEGER NOT NULL,actor TEXT NOT NULL,action TEXT NOT NULL,details TEXT NOT NULL)")
-            s.execute("PRAGMA user_version=1")
+        }
+        // Additive, transactional v1 -> v2 migration. Existing baselines, claims and parcels are untouched.
+        transaction { c ->
+            c.createStatement().use { s ->
+                s.execute("CREATE TABLE IF NOT EXISTS chapter_progress(home TEXT,chapter TEXT,started INTEGER NOT NULL,completed INTEGER,PRIMARY KEY(home,chapter))")
+                s.execute("INSERT OR IGNORE INTO completions SELECT home,quest,created FROM claims WHERE quest NOT LIKE 'chapter:%'")
+                val previous = c.number("PRAGMA user_version")
+                if(previous < 2) c.update("INSERT INTO audit VALUES(?,?,?,?)",System.currentTimeMillis(),"Quest","schema-migration",
+                    "SQLite $previous->2; all existing objective baselines/progress and reward rows retained; new cumulative objectives await first live snapshot")
+                s.execute("PRAGMA user_version=2")
+            }
+            Unit
         }
     }
     fun <T> submit(action: () -> T): CompletableFuture<T> {

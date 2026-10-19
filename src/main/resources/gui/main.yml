@@ -4,7 +4,7 @@ unavailable-item: minecraft:barrier
 Shape:
   - '#########'
   - '#QQQQQQQ#'
-  - '#P M N R#'
+  - '#P MCN R#'
 components:
   '#':
     item: minecraft:gray_stained_glass_pane
@@ -34,3 +34,7 @@ components:
     item: minecraft:clock
     action: refresh
     name: '<#7DD3FC>刷新 · <page>/<pages>'
+  C:
+    item: minecraft:ender_eye
+    action: chapters
+    name: '<#7DD3FC>查看全部章节'

@@ -19,5 +19,5 @@ for artifact in artifacts:
 with zipfile.ZipFile(release/'Quest-1.0.0-bundle.zip','w',compression=zipfile.ZIP_DEFLATED) as bundle:
     for artifact in artifacts: bundle.write(release/artifact.name,artifact.name)
     bundle.write(release/'SHA256.json','SHA256.json')
-    for name in ('README.md','COMPATIBILITY.md','VALIDATION.md'): bundle.write(root/name,name)
+    for name in ('README.md','COMPATIBILITY.md','VALIDATION.md','UPGRADE.md'): bundle.write(root/name,name)
 print(json.dumps({'artifacts':hashes,'bundle':str(release/'Quest-1.0.0-bundle.zip')},indent=2))

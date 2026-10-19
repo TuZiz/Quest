@@ -21,7 +21,7 @@ class Quest : JavaPlugin() {
         val service = QuestService(database)
         getCommand("quest")!!.setExecutor(CommandExecutor { _,_,_,_ -> true })
         database.open().thenCompose { database.submit { files.load() } }
-            .thenCompose { settings -> service.configure(settings.quests).thenApply { settings } }
+            .thenCompose { settings -> service.configure(settings.quests,settings.chapters).thenApply { settings } }
             .whenComplete { settings,error -> thread.run {
                 if(error != null) {
                     logger.log(Level.SEVERE,"Quest initialization failed: YAML/schema/SQLite; original files preserved",error)

@@ -41,6 +41,7 @@ class Integrations(private val plugin: JavaPlugin, private val service: QuestSer
     fun allowed(home: UUID, player: UUID) = islands?.canClaim(home,player) == true
     fun facts(home: UUID): Map<String,Long> = buildMap {
         if(islands?.byId(home) != null) put("island.member",1)
+        if(production?.ready() == true) service.definitions.flatMap { it.objectives }.filter { it.type.startsWith("genlite.") }.forEach { put(it.metric,0L) }
         production?.takeIf { it.ready() }?.counters()?.forEach { (key,n) -> if(key.startsWith("$home|")) put(key.substringAfter('|'),n) }
     }
     fun syncIsland(home: UUID) {
@@ -57,7 +58,8 @@ class Integrations(private val plugin: JavaPlugin, private val service: QuestSer
         }
         homes.forEach { home ->
             if(islands?.byId(home) == null) return@forEach
-            val values = counters.filterKeys { it.startsWith("$home|") }.mapKeys { it.key.substringAfter('|') } + ("island.member" to 1L)
+            val defaults = service.definitions.flatMap { it.objectives }.filter { it.type.startsWith("genlite.") }.associate { it.metric to 0L }
+            val values = defaults + ("island.member" to 1L) + counters.filterKeys { it.startsWith("$home|") }.mapKeys { it.key.substringAfter('|') }
             service.sync(home.toString(),values).whenComplete { list,error ->
                 if(error != null) { values.keys.forEach { seen.remove("$home|$it") }; failure(error) }
                 else if(!closed) changes(list)

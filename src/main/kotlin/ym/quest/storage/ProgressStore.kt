@@ -14,21 +14,25 @@ class ProgressStore {
     private fun fact(c: Connection, home: String, metric: String) = c.number("SELECT value FROM facts WHERE home=? AND metric=?",home,metric)
     fun claimed(c: Connection, home: String, quest: String) = c.number("SELECT COUNT(*) FROM claims WHERE home=? AND quest=?",home,quest) != 0L
     private fun completed(c: Connection, home: String, quest: String) = c.number("SELECT COUNT(*) FROM completions WHERE home=? AND quest=?",home,quest) != 0L
-    fun views(c: Connection, home: String, definitions: List<QuestDefinition>): List<QuestView> = definitions.map { q ->
+    fun satisfied(c: Connection, home: String, quest: String) = completed(c,home,quest) || claimed(c,home,quest)
+    fun views(c: Connection, home: String, definitions: List<QuestDefinition>, allowed: (QuestDefinition) -> Boolean = { true }): List<QuestView> = definitions.map { q ->
         val claimed = claimed(c,home,q.id)
-        val unlocked = q.prerequisites.all { claimed(c,home,it) }
+        val unlocked = allowed(q) && q.prerequisites.all { satisfied(c,home,it) }
         val progress = q.objectives.map { o ->
             ObjectiveProgress(o, c.number("SELECT progress FROM objectives WHERE home=? AND quest=? AND objective=?",home,q.id,o.id).coerceAtMost(o.target))
         }
-        val status = when { claimed -> QuestStatus.CLAIMED; !unlocked -> QuestStatus.LOCKED
-            completed(c,home,q.id) || progress.all { it.progress >= it.objective.target } -> QuestStatus.COMPLETE
+        val status = when { claimed -> QuestStatus.CLAIMED; completed(c,home,q.id) -> QuestStatus.COMPLETE; !unlocked -> QuestStatus.LOCKED
             else -> QuestStatus.ACTIVE }
         QuestView(q,status,progress)
     }
-    fun refresh(c: Connection, home: String, definitions: List<QuestDefinition>): List<ProgressChange> {
+    fun refresh(c: Connection, home: String, definitions: List<QuestDefinition>, snapshot: Set<String>, allowed: (QuestDefinition) -> Boolean = { true }): List<ProgressChange> {
         val changes = mutableListOf<ProgressChange>()
         definitions.forEach { q ->
-            if (claimed(c,home,q.id) || completed(c,home,q.id) || q.prerequisites.any { !claimed(c,home,it) }) return@forEach
+            if (claimed(c,home,q.id) || completed(c,home,q.id) || !allowed(q) || q.prerequisites.any { !satisfied(c,home,it) }) return@forEach
+            // Do not initialize from cached v1 facts when a live integration snapshot is absent.
+            val missing = q.objectives.filter { o -> c.number("SELECT COUNT(*) FROM objectives WHERE home=? AND quest=? AND objective=?",home,q.id,o.id) == 0L }
+            if(missing.any { it.metric !in snapshot }) return@forEach
+            val started = missing.size == q.objectives.size
             var changed = false
             val before = q.objectives.all { o -> c.number("SELECT progress FROM objectives WHERE home=? AND quest=? AND objective=?",home,q.id,o.id) >= o.target }
             q.objectives.forEach { o ->
@@ -45,9 +49,8 @@ class ProgressStore {
             }
             val after = q.objectives.all { o -> c.number("SELECT progress FROM objectives WHERE home=? AND quest=? AND objective=?",home,q.id,o.id) >= o.target }
             if(after) c.update("INSERT OR IGNORE INTO completions VALUES(?,?,?)",home,q.id,System.currentTimeMillis())
-            if(changed) {
-                changes += ProgressChange(home,q.id,!before && after)
-            }
+            if(started) changes += ProgressChange(home,q.id,false,started=true)
+            if(changed || (!before && after)) changes += ProgressChange(home,q.id,!before && after)
         }
         return changes
     }

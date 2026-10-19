@@ -25,3 +25,31 @@ status:
   ACTIVE: '<#7DD3FC>进行中'
   COMPLETE: '<#6EE7B7>已完成 · 可领取'
   CLAIMED: '<#94A3B8>已领取'
+
+chapter-status:
+  LOCKED: '<#64748B>未解锁'
+  ACTIVE: '<#7DD3FC>进行中'
+  COMPLETE: '<#6EE7B7>已完成'
+chapter-progress: '<#CBD5E1>章节进度：<progress>/<target>'
+chapter-reward-status: '<#FBBF24>章节奖励：<status>'
+notices:
+  chapter-start:
+    message: '<#7DD3FC>章节开启：<chapter>'
+    title: '<chapter>'
+    subtitle: '<#CBD5E1>新的旅程开始了'
+  task-start:
+    message: '<#7DD3FC>任务开始：<quest>'
+    title: '<quest>'
+    subtitle: '<#CBD5E1>目标已解锁'
+  task-complete:
+    message: '<#6EE7B7>任务完成：<quest><#CBD5E1>，奖励可随时领取。'
+    title: '<#6EE7B7>任务完成'
+    subtitle: '<quest>'
+  next-task:
+    message: '<#7DD3FC>下一任务已解锁：<quest>'
+    title: '<quest>'
+    subtitle: '<#CBD5E1>无需领取前置奖励即可继续'
+  chapter-complete:
+    message: '<#6EE7B7>章节完成：<chapter><#CBD5E1>，请在章节页面领取奖励。'
+    title: '<#6EE7B7>章节完成'
+    subtitle: '<chapter>'

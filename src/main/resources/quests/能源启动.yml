@@ -1,12 +1,11 @@
-schema-version: 1
+# 仅定义任务内容；章节及前置关系配置在 chapters/ 对应章节文件。
+schema-version: 2
 id: first_fuel
 scope: island
 name: '<#FBBF24>能源启动'
 description:
   - '<#CBD5E1>右键原石生成器，点击燃料按钮存入燃料。'
 icon: genlite:fuel
-prerequisites:
-  - sky_start
 objectives:
   - id: fuel
     type: genlite.fuel

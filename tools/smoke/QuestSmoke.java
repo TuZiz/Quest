@@ -7,6 +7,14 @@ import ym.quest.reward.ItemFactory;
 import ym.quest.reward.MailboxDelivery;
 import net.momirealms.craftengine.bukkit.api.CraftEngineItems;
 import java.util.*;
+import java.lang.reflect.Proxy;
+import org.bukkit.entity.Player;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
+import ym.quest.gui.*;
+import ym.quest.domain.*;
+import ym.quest.config.*;
+import ym.quest.text.*;
 
 /** Isolated test plugin, deliberately excluded from the distributable Quest JAR. */
 public final class QuestSmoke extends JavaPlugin {
@@ -36,8 +44,64 @@ public final class QuestSmoke extends JavaPlugin {
                 full[5]=null;
                 var plan=MailboxDelivery.Companion.plan(full,addition);
                 if(plan==null || plan[5]==null || full[5]!=null) throw new AssertionError("Delivery plan invalid");
+                checkChapterMenus(runtime,items);
                 getLogger().info("QUEST_SMOKE_PASSED: API readiness, 5 CE identities, real inventory capacity planner");
             } catch(Throwable error) {getLogger().log(java.util.logging.Level.SEVERE,"QUEST_SMOKE_FAILED",error);}
         },100L);
     }
+    private void checkText(Component text) {
+        if(text.decoration(TextDecoration.ITALIC)!=TextDecoration.State.FALSE) throw new AssertionError("Italic item text");
+        for(Component child:text.children()) checkText(child);
+    }
+    private void checkChapterMenus(Object runtime,ItemFactory original) throws Exception {
+        var menus=(QuestMenus)field(runtime,"menus");
+        var settings=menus.getSettings();
+        if(settings.getChapters().size()!=1 || settings.getQuests().size()!=3) throw new AssertionError("Wrong defaults");
+        var chapter=settings.getChapters().getFirst();
+        var text=new TextRenderer(settings.getLanguage());
+        // Render actual server ItemStacks without requiring a connected player's CE context.
+        var items=new ItemFactory(List.of((id,player)->original.build(id,null)));
+        var renderer=new JournalMenuRenderer(items,text);
+        var calls=new ArrayList<String>();
+        var player=(Player)Proxy.newProxyInstance(Player.class.getClassLoader(),new Class<?>[]{Player.class},(proxy,method,args)->{
+            calls.add(method.getName());
+            if(method.getReturnType()==boolean.class) return true;
+            if(method.getReturnType()==int.class) return 0;
+            if(method.getReturnType()==long.class) return 0L;
+            if(method.getReturnType()==double.class) return 0D;
+            if(method.getReturnType()==float.class) return 0F;
+            return null;
+        });
+        var questViews=settings.getQuests().stream().map(q->new QuestView(q,QuestStatus.COMPLETE,
+            q.getObjectives().stream().map(o->new ObjectiveProgress(o,o.getTarget())).toList())).toList();
+        var journal=new JournalView(questViews,List.of(new ChapterView(chapter,ChapterStatus.COMPLETE,3,false)));
+        String chapterId=chapter.getId();
+        for(String mode:List.of("chapters","chapter","task")) {
+            var session=new MenuSession(UUID.randomUUID(),UUID.randomUUID(),mode.equals("task")?"sky_start":null,0,
+                mode.equals("chapters")?null:chapterId,true);
+            var layout=renderer.layout(settings,session);
+            session.setMenu(getServer().createInventory(session,layout.getStringList("Shape").size()*9,Component.empty()));
+            renderer.render(player,session,journal,settings,true);
+            var actions=session.getActions().values();
+            if(mode.equals("chapters") && !actions.contains("chapter:"+chapterId)) throw new AssertionError("No chapter link");
+            if(mode.equals("chapter") && (!actions.contains("chapter-claim") || actions.stream().filter(a->a.startsWith("quest:")).count()!=3 || !actions.contains("chapter-preview"))) throw new AssertionError("Chapter layout incomplete");
+            if(mode.equals("task") && actions.stream().filter(a->a.equals("preview")).count()!=4) throw new AssertionError("Original task reward previews lost");
+            for(var item:session.getMenu().getContents()) if(item!=null) {
+                var meta=item.getItemMeta();
+                if(meta.hasDisplayName()) checkText(meta.displayName());
+                if(meta.hasLore()) for(var line:meta.lore()) checkText(line);
+            }
+        }
+        var notices=new StoryNotices(text,settings.getNotices());
+        calls.clear();
+        notices.send(player,new ProgressChange("A",chapterId,true,false,true),settings.getQuests(),settings.getChapters());
+        if(!calls.contains("showTitle") || !calls.contains("playSound") || !calls.contains("sendMessage")) throw new AssertionError("Completion channels missing: "+calls);
+        var disabled=new HashMap<String,NoticeProfile>();
+        settings.getNotices().forEach((event,p)->disabled.put(event,new NoticeProfile(false,false,false,null,0,1)));
+        notices.setProfiles(disabled);calls.clear();
+        notices.send(player,new ProgressChange("A",chapterId,true,false,true),settings.getQuests(),settings.getChapters());
+        if(!calls.isEmpty()) throw new AssertionError("Disabled channels invoked: "+calls);
+        getLogger().info("CHAPTER_GUI_PASSED: chapter list/detail/task rewards, actual ItemStack non-italic rendering, title/sound/chat dispatch and all-off switches; player is a proxy, no client click claim");
+    }
+
 }

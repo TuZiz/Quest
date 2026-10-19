@@ -1,56 +1,74 @@
-# 验证记录
+# 章节系统升级验证记录
 
-验证日期：2026-10-19。以下为真实执行结果，不将编译成功等同于真人玩法验收。
+验证日期：2026-10-19。以下记录本次真实执行结果，尚未执行的客户端和故障注入不视为通过。
 
-## 已通过
+## 构建与测试
 
-| 范围 | 验证与结果 |
+环境为 JDK 25.0.2、Kotlin 2.3.10、Maven 3.9.12、Paper API 26.3.build.28-alpha，隔离服为 Leaf 26.3-4，CraftEngine 26.9.2。Folia 继续不支持。
+
+| 范围 | 结果 |
 |---|---|
-| Quest 构建 | JDK 25.0.2 / Maven 3.9.12 / Kotlin 2.3.10，`mvn -o -Dkotlin.compiler.daemon=false package` 成功 |
-| Quest 核心测试 | 7 项全部通过：完整三任务领域流程、40 次团队并发首次领奖、20 次最终领奖、重复/迟到计数、解锁基线、多条件、重启、待发记录、领取竞争、人工恢复、重置保留领奖、重载后奖励快照不变、完成状态独立持久化 |
-| 默认资源 | 全部 YAML 可解析、版本标记、Shape 字符映射与语言键一致；无传统色码与 Tab |
-| 物品渲染 | 使用真正 TextRenderer 方法和项目 Adventure 依赖，显式嵌套斜体、动态子组件及翻译参数均转为非斜体；占位值不会被重新当作 MiniMessage 指令解析 |
-| Neuron 本地检查 | `neuron_check.py` 检查全部 Quest Kotlin/YAML，实际渲染入口导出的 Component 样本，结果 `passed`，issues/pending 均为空 |
-| Genlite 补丁 | 105 项测试全部通过，其中新增 2 项覆盖燃料事务计数、转移不计数、计数持久化、真实生产 2 个/批，以及通知发生在持久提交之后 |
-| DreamSkyblock 补丁 | 81 项测试中 80 通过、1 跳过，无失败；使用原有测试套件，新增成员事件的位置另外经源码检查 |
-| 联动启动 | 隔离 Leaf **26.3-4-ver/26.3@4b0dcd2**，Quest + 两个补丁插件 + CraftEngine **26.9.2** 均成功启动 |
-| 实服 API 探针 | 临时 QuestSmoke 测试插件确认 DreamSkyblock/Genlite 公开服务 ready，五个 CE 物品 ID 与实际构建 ItemStack 一致；使用真实服务端 ItemStack 验证满背包拒绝及空槽发放规划不修改输入 |
-| 重载与停止 | 隔离服注入无效任务 YAML，reload 报错后 debug 仍保留三个旧任务；恢复文件后成功 reload，正常 `stop`，进程退出码 0 |
-| 缺少可选插件 | 隔离服只保留 Quest，三个联动均 missing，仍成功启用，控制台指令/诊断正常，无缺失类异常，正常停止退出码 0 |
-| JAR 边界 | Quest 约 13.3 MiB，仅含 Quest、Kotlin/注解、SQLite 及必要资源；无 Paper/Bukkit、CraftEngine、DreamSkyblock、Genlite、JUnit、探针、源码或缓存 |
+| Quest | `mvn -o -Dkotlin.compiler.daemon=false clean package` 通过；任务依赖归章后再次 `package`，最终 26 项测试全通过 |
+| 自动推进 | 未领取任一任务奖励即可连续完成三任务；章节完成独立于任务领奖；同一快照完成前置并建立后续基线时，历史生产不计入 |
+| 累计防重 | 重复与迟到/回退快照不重计，31/32 边界正确；来源未就绪及菜单查询不初始化累计基线 |
+| 领奖与恢复 | 40 次章节领取竞争、20 次任务领取竞争仅一次成功；重启后不重领；章节与任务记录隔离；邮箱 SENDING 竞争与人工恢复保持正确，重载不改变奖励载荷 |
+| SQLite v1 → v2 | 真实旧表结构夹具迁移：既有基线 100、进度 12 保留并正常推进至 20；旧完成/领奖记录、WAITING/SENDING/DELIVERED 记录保留；已全部完成的岛识别章节完成；未知未来版本拒绝且原数据保留；重复启动审计不重复 |
+| 配置资源 | 默认仅一章三任务，中文任务名及文件名；YAML、版本、菜单映射、语言引用、RGB、章节/任务混合 DAG 校验通过；重复 ID、缺引用、环均拒绝；分支与跨章前置测试通过 |
+| 资源迁移 | 三个旧英文文件原子更名；冲突不覆盖；语言新块追加保留中文注释/未知字段；旧计数提示精准更新；重复迁移幂等，未来资源版本不改写 |
+| Genlite 回归 | `.build/dependencies/Genlite` 执行 `mvn -o -Dkotlin.compiler.daemon=false test`，105 项全部通过，包含成功事务计数、实际生产与持久化；未修改其源代码或接口 |
+| DreamSkyblock 回归 | `.build/dependencies/DreamSkyblock` 执行同样测试，81 项中 80 通过、1 项因宿主不允许创建符号链接而跳过，无失败；未修改其源代码或接口 |
+| 联动隔离服 | 公开 API 就绪；5 个原 CraftEngine ID 与真实 ItemStack 匹配；背包满拒绝和空槽规划通过 |
+| 新 GUI 与提示 | `CHAPTER_GUI_PASSED`：用真实服务端 ItemStack 渲染章节列表、章节详情和原任务奖励预览；三个任务入口、章节领奖入口、章节奖励预览存在；最终名称/Lore 递归非斜体；玩家代理捕获 Title、音效、聊天调用，全关闭时无调用 |
+| 隔离服旧版本升级 | 从首提交 `928dfd7` 准备旧资源和 v1 数据库，启动自动升级；三条完成记录、旧 sky_start 领奖、legacy-sending 奖励全部保留；章节已完成、中文任务文件存在、旧英文文件已更名 |
+| 重载与停止 | 注入非法任务 YAML 后 reload 拒绝，debug 保留三个旧定义；恢复配置后成功 reload；`stop` 正常退出码 0。错误日志来自主动注入，无未修复启动错误 |
+| 缺少可选插件 | 隔离服仅启用 Quest：三个集成 missing，无 NoClassDefFoundError，指令诊断正常，stop 退出码 0 |
+| Neuron | task_c51d4024faa64a78a6bb；本地检查与 MCP validate_task 通过，validation_id=check_2a42a9ab972349108fc2；91 个真实 TextRenderer Component 样本，issues/pending 均为空。此检查验证提交材料，不等于真人客户端验收 |
+| 最终 JAR | 14,029,498 字节，包含中文任务与章节资源，无旧英文任务资源、Paper/Bukkit/第三方插件 API、JUnit、探针、源码或缓存。源码职责检查：最大的主源文件 QuestFiles 为 127 行 |
 
-测试报告与证据：
+## 证据位置
 
 - `target/surefire-reports/`
 - `.build/dependencies/Genlite/target/surefire-reports/`
 - `.build/dependencies/DreamSkyblock/target/surefire-reports/`
 - `target/verification/components.json`
-- `target/verification/neuron-report.json`
+- `target/verification/chapter-neuron-report.json`
+- `target/verification/chapter-evidence.json`
+- `target/verification/legacy-smoke-fixture.json`
+- `target/verification/legacy-smoke-console.log`
 - `target/verification/smoke-console.log`
 - `target/verification/optional-smoke-console.log`
-- `.build/dependencies/source-manifest.json`
 
-完整依赖构建由 `build.ps1 -Offline` 执行；最后修正后单独重建 Quest 并通过测试和联动探针。测试期间没有复制 JAR 到正式服务器，没有启动/重载正式服务器，没有触及其玩家数据或世界。
+隔离服全部位于 `target/smoke`，旧数据为人工构造测试夹具，没有复制或操作正式玩家数据，没有将 JAR 部署到正式服务器。默认数据、图标和奖励 ID 沿用原项目；联动源码基线与兼容说明见 COMPATIBILITY.md。
 
-源码基线：本地 Genlite HEAD `9b5589531b64c42b5c0b9aa4ec622c86b02e1659`，DreamSkyblock HEAD `f14b11043be8e1e5723bb61ed78043a059f587de`。HEAD 不代表工作树没有本地改动；精确被覆盖文件以 source-manifest 的原始 SHA-256 为准。
+## 已有警告与未验证范围
 
-## 已有警告与测试环境情况
+Maven 本地 systemPath、Kotlin/JDK Unsafe、测试 SLF4J/SQLite native-access、Shade 的 MANIFEST/module-info 重叠以及 DreamSkyblock 原有 Bukkit 弃用警告仍存在，不属于测试失败；本次新增源码无编译警告。DreamSkyblock 的 1 项跳过为已有环境限制。
 
-- Maven `systemPath` 警告来自本地插件依赖方案；DreamSkyblock 本身也使用该方案。未来升级 Maven 或迁往其他机器时需要按 README 准备相同版本的本地 JAR。
-- DreamSkyblock 有原有的 Bukkit 弃用 API、Shade 模块资源重叠警告；未扩展为本次无关重构。其存档归档测试有 1 项原有跳过，原因为宿主环境不允许创建符号链接。
-- JDK/Kotlin 的 Unsafe 警告、JUnit 下 SLF4J 无 provider/SQLite native-access 警告不是业务测试失败；隔离服使用 native-access 参数。
-- 隔离服首次准备遗漏 CraftEngine `resources/internal`，出现方块映射容量为零的警告。补齐真实内置资源后，最终启动正确加载 5 个自定义方块，探针通过；不是 Quest 生产计数失败。
-- 早期测试发现 Windows 在异步连接尚未关闭时清理 JUnit 临时目录会失败。现已提供 `Database.closeAsync()`，生产停止保持非阻塞，测试等待真实关闭后清理，最终全部通过。
-- 最终 smoke 日志中的任务 YAML 解析错误为主动注入的重载失败场景；确认保留旧任务后已恢复文件并成功重载，不是未修复的启动错误。
-- 初次无交互控制台测试进程使用隔离数据结束后，后续验证改用保留 stdin 的独立子进程，以控制台 `stop` 正常停服。
-- Neuron MCP 的 `begin_task` 被环境当前 `approval policy=never` 拒绝，没有获得 task_id，所以没有伪造 validate_task/finish_task 回灌；已运行本地检查器。
+- 未接入真人 Java/Geyser/Floodgate 客户端，未实测菜单点击、资源包材质和高延迟。GUI 探针使用玩家代理，不宣称已通过真实客户端验收。
+- 未运行 Purpur；Leaf 26.3 是已测组合。未增加 Folia 支持或其他 Minecraft 版本声明。
+- 未用真人创建/邀请空岛、手动存入燃料或生产；验证为公开 API、既有源事务测试与不可变累计快照的服务层回归。
+- 没有硬断电/操作系统杀进程故障注入。SQLite 与玩家存档缺少跨存储原子事务；SENDING 保持隔离，由管理员核对。不能声称任意硬崩溃下零丢失或自动 exactly-once。
 
-## 尚未验证与边界
+升级步骤和基线迁移取舍详见 UPGRADE.md。首次正式升级应停服备份并保留原数据目录，再在测试环境完成两位仅有 quest.use 的成员从任务链到独立章节领奖的客户端验收。
 
-- **尚未使用真人 Java/基岩版客户端完成整条点击流程**；未实测 Geyser/Floodgate 的箱子点击、资源包材质与高延迟操作。原版箱子交互由代码实现，当前证据不等于客户端验收。
-- **Purpur 26.3 尚未运行验证**；Leaf 26.3 为已测组合。当前 Genlite 要求 26.3，26.2/其他 26.x 不在本次可宣称兼容范围。Folia 明确不支持。
-- 未对真实空岛执行创建、邀请加入、世界卸载或由真人投入燃料；已验证公开 API 就绪、事件触发位置和 Genlite 事务/实际生产逻辑，实际玩家操作仍待测试服验收。
-- SQLite 与玩家存档不能原子提交；SENDING 隔离与人工核对有实测领域覆盖，但硬断电和玩家存档保存窗口没有故障注入实测。不能将其说成严格跨存储 exactly-once 或零丢失。
-- 不识别旧服通过其他系统发放、位于离线背包/箱子中的未登记裸机器；部署前按 README 核对或移除任务中的首台机器条目。
+## 文件布局调整复验（2026-10-19）
 
-建议实际验收：两名仅有 `quest.use` 的同岛成员，创建/加入 → 启航奖励每岛一次 → 真正存入燃料 → 能源奖励 → 实际产出 32 圆石 → 两人竞争领取升级单元；其间断开玩家、重启、卸载空岛世界，再检查进度与待发奖励。重复领取输出、向收集器/仓库存取圆石不应增加生产进度。背包满时奖励必须留在待发列表。
+GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节配置移至 `chapters/章节.yml`。同步加载器、诊断路径、组件导出测试和说明文档；菜单中文文案、中文任务文件与全部稳定 ID 保持不变。
+
+执行 `mvn -o -Dkotlin.compiler.daemon=false clean package`，17 项测试全部通过。新增测试覆盖三条旧路径的原文搬迁、中文注释与未知字段保留、重复执行幂等，以及新旧路径冲突时两份文件均保留。最终 shaded JAR 已检查：包含三条新路径，不含旧路径。此次只调整资源布局，未重复运行上一轮联动实服或客户端验收；前述隔离服记录属于上一轮实现证据。
+
+## 任务关系归章复验（2026-10-19）
+
+当前格式：`quests/` 只定义任务内容；`chapters/第一章·星海初醒.yml` 独立定义第一章，以 `tasks.quest/requires` 配置本章任务前置。任务/章节 schema=2，其他资源 schema=1，SQLite user_version=2。旧 `sequential` 只在迁移代码中读取。
+
+- Maven `clean package` 及后续最终 `package` 通过，26 项 JUnit 零失败、零跳过。新增覆盖单章独立解析、多章引用、展示顺序不影响依赖、分支与 AND 汇合、同快照累计基线、重复/缺失/循环/跨章任务引用拒绝。
+- 迁移覆盖原始仅任务安装及旧章节集合拆分；ID、任务和章节奖励、未知字段、中文整行及行尾注释保留；CRLF 旧文件兼容；中断后从持久计划恢复；外部修改冲突时拒绝覆盖；章节名与旧集合文件重名时不会误删新章节。配置迁移的数据库字节不变断言通过。
+- 在 `target/smoke` 生成隔离夹具，使用首提交 928dfd7 的真实任务配置、schema1 章节集合和人工 SQLite v1 数据，启动 Leaf 26.3-4。新章节文件和 task schema2 正常加载，注释/自定义字段保留，旧集合移出活跃目录，恢复计划标记完成。
+- 隔离服迁移后核对原累计 baseline=100、progress=12，三个完成记录、sky_start 领奖和 SENDING 奖励均保留，旧岛识别章节完成。API 就绪、5 个真实 CE ID、实际 ItemStack 章节菜单/提示探针通过；非法 YAML 重载拒绝且保持旧定义；服务器正常停止。
+- 新文件布局及最终 JAR 资源检查通过，不含旧集合、英文任务文件、服务端 API、测试类或源码。源码最大文件 QuestFiles 为 127 行；章节解析、提示解析、图迁移与文件恢复计划分别归属独立文件。
+
+证据：`target/surefire-reports/`、`target/verification/upgrade-fixture.json`、`upgrade-result.json`、`smoke-console.log`、`components.json`。本次未修改联动插件源码，未重跑前述上游套件；其结果为此前阶段记录。旧阶段证据可能已被 clean 清理，不能当作本轮新日志。没有接入真人 Java/Geyser 客户端，实际菜单点击及材质验收仍待进行；Folia 继续不支持。
+
+本轮 Neuron：task_1262a9b3c507498eafa1，validation_id=check_9bacda95279d4f31b514。本地检查和 MCP 检查均 passed，91 条文本、98 个真实 TextRenderer 组件样本，issues/pending 为空。报告为 target/verification/chain-neuron-report.json；检查范围为提交源码、资源与真实测试组件，不代表客户端实测。
+
+最终 JAR 再次启动同一隔离服通过；迁移幂等，schema-migration 审计仍只有一条，baseline=100/progress=12、原完成/领奖/SENDING 记录不变。初次升级日志为 upgrade-smoke-console.log，最终重启日志为 smoke-console.log。

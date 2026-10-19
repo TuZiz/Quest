@@ -1,0 +1,42 @@
+# 聊天、ActionBar、Title 和音效均可分别关闭。音量 0–4，音调 0.5–2。
+schema-version: 1
+chapter-start:
+  chat: true
+  action-bar: false
+  title: false
+  sound-enabled: false
+  sound: minecraft:entity.player.levelup
+  volume: 0.6
+  pitch: 1.0
+task-start:
+  chat: true
+  action-bar: false
+  title: false
+  sound-enabled: false
+  sound: minecraft:entity.player.levelup
+  volume: 0.6
+  pitch: 1.0
+task-complete:
+  chat: true
+  action-bar: false
+  title: false
+  sound-enabled: true
+  sound: minecraft:entity.player.levelup
+  volume: 0.6
+  pitch: 1.0
+next-task:
+  chat: false
+  action-bar: true
+  title: false
+  sound-enabled: false
+  sound: minecraft:entity.player.levelup
+  volume: 0.6
+  pitch: 1.0
+chapter-complete:
+  chat: true
+  action-bar: false
+  title: true
+  sound-enabled: true
+  sound: minecraft:entity.player.levelup
+  volume: 0.6
+  pitch: 1.0

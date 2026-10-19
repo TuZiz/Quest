@@ -35,7 +35,7 @@ components:
     name: '<#6EE7B7>领取任务奖励'
     lore:
       - '<status>'
-      - '<#94A3B8>前置任务领取后自动解锁下一任务。'
+      - '<#94A3B8>前置目标完成即解锁，无需立即领奖。'
       - '<#94A3B8>奖励全岛只领取一次。'
   W:
     item: minecraft:chest

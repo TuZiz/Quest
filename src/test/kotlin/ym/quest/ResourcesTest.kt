@@ -23,7 +23,7 @@ class ResourcesTest {
             val yaml=YamlConfiguration().apply { loadFromString(raw) }
             assertFalse(raw.contains('\t'),p.toString())
             assertFalse(Regex("[&§][0-9a-fk-or]",RegexOption.IGNORE_CASE).containsMatchIn(raw),p.toString())
-            if(p.fileName.toString() != "plugin.yml") assertEquals(1,yaml.getInt("schema-version"),p.toString())
+            if(p.fileName.toString() != "plugin.yml") assertEquals(if(p.parent.fileName.toString() in setOf("quests","chapters")) 2 else 1,yaml.getInt("schema-version"),p.toString())
             if(p.parent.fileName.toString() == "gui") QuestFiles.validateMenu(p.toString(),yaml)
         } }
         val lang=YamlConfiguration().apply { loadFromString(Files.readString(this@ResourcesTest.root.resolve("lang/zh_cn.yml"))) }
@@ -40,10 +40,10 @@ class ResourcesTest {
         assertNull(text.clickEvent())
         val evidence=Path.of("target/verification/components.json"); Files.createDirectories(evidence.parent)
         val samples=JsonArray()
-        val values=listOf("quest","status","page","pages","info","amount","description","progress","target").associateWith {
+        val values=listOf("quest","status","page","pages","info","amount","description","progress","target","chapter").associateWith {
             renderer.render("<#7DD3FC>实际动态参数")
         }
-        for(name in listOf("lang/zh_cn.yml","gui/main.yml","gui/detail.yml")) {
+        for(name in listOf("lang/zh_cn.yml","gui/main.yml","gui/detail.yml","gui/chapters.yml","gui/chapter-detail.yml","chapters/第一章·星海初醒.yml")) {
             val yaml=YamlConfiguration().apply { loadFromString(Files.readString(this@ResourcesTest.root.resolve(name))) }
             fun record(path: String, value: Any?) {
                 when(value) {

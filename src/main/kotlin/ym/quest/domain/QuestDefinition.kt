@@ -10,7 +10,7 @@ enum class QuestStatus { LOCKED, ACTIVE, COMPLETE, CLAIMED }
 data class QuestView(val definition: QuestDefinition, val status: QuestStatus, val progress: List<ObjectiveProgress>)
 data class Parcel(val id: String, val home: String, val quest: String, val item: String, val amount: Int,
                   val phase: String, val player: String?)
-data class ProgressChange(val home: String, val quest: String, val completed: Boolean)
+data class ProgressChange(val home: String, val quest: String, val completed: Boolean, val started: Boolean = false, val chapter: Boolean = false)
 enum class ProgressScope { ISLAND, PERSONAL }
 interface ConditionType { val id: String; fun metric(resource: String?): String }
 class ConditionRegistry {

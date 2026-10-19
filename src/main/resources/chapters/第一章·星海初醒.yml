@@ -1,0 +1,26 @@
+# 每个文件定义一个章节；ID 永久稳定，不因文件名或显示名称改变。
+schema-version: 2
+id: sky_awakening
+name: '<#7DD3FC>第一章 · 星海初醒'
+icon: minecraft:ender_eye
+order: 1
+description:
+  - '<#CBD5E1>在星海中唤醒一座属于你们的空岛。'
+  - '<#94A3B8>启航、注入能源，收获第一批资源。'
+story:
+  - '<#7DD3FC>星海深处，一座沉睡的岛屿正等待你们唤醒。'
+  - '<#CBD5E1>点亮第一台生成器，让文明从第一块圆石开始。'
+# 章节前置使用 prerequisites 引用章节 ID；省略表示无前置。
+# tasks 顺序仅控制展示。requires 全部完成才解锁；只写前置，后续自动推导。
+tasks:
+  - quest: sky_start
+  - quest: first_fuel
+    requires:
+      - sky_start
+  - quest: first_resources
+    requires:
+      - first_fuel
+# 独立于任务奖励，每个空岛只可领取一次。
+rewards:
+  - item: minecraft:diamond
+    amount: 2

@@ -1,6 +1,6 @@
 # Quest
 
-Kotlin + Maven 的空岛团队任务插件。首版仅提供「星海启航 → 能源启动 → 第一批资源」三条任务及其必要基础设施。任务自动解锁，完成后手动领取；领取上一条任务后，下一条累计目标才开始计数。任一有 `quest.use` 的空岛成员均可操作，奖励每岛一次。
+Kotlin + Maven 的空岛团队任务插件。本版在原引擎上增加「第一章 · 星海初醒」，仅包含「星海启航 → 能源启动 → 第一批资源」三个现有任务。前置目标完成即自动解锁下一任务，无需先领奖；任务奖励与章节奖励独立手动领取。任一有 `quest.use` 的空岛成员均可操作，奖励每岛一次。
 
 ## 构建与安装
 
@@ -30,23 +30,27 @@ Kotlin + Maven 的空岛团队任务插件。首版仅提供「星海启航 → 
 plugins/Quest/
   config.yml
   lang/zh_cn.yml
-  quests/sky_start.yml
-  quests/first_fuel.yml
-  quests/first_resources.yml
+  chapters/第一章·星海初醒.yml
+  提示.yml
+  quests/星海启航.yml
+  quests/能源启动.yml
+  quests/第一批资源.yml
   gui/main.yml
   gui/detail.yml
+  gui/chapters.yml
+  gui/chapter-detail.yml
   data/quest.db
 ```
 
-菜单为原版 27/54 格箱子，任务中心分页，详情显示条件和实际奖励物品。没有 Java 客户端专用输入、MOD、聊天点击或依赖玩家名称的逻辑；可供 Geyser/Floodgate 映射使用。基岩客户端点击及材质展示仍需实际客户端验收。
+`/quest` 默认打开全部章节。章节列表展示状态和完成数量，章节详情展示任务链、完成奖励及独立领取入口；任务详情显示条件和原任务奖励。所有列表支持分页。菜单仍为原版箱子。没有 Java 客户端专用输入、MOD、聊天点击或依赖玩家名称的逻辑；可供 Geyser/Floodgate 映射使用。基岩客户端点击及材质展示仍需实际客户端验收。
 
 ## 默认玩法与物品证据
 
 1. 创建/加入 DreamSkyblock 空岛，或使用已有 ACTIVE 空岛，打开 `/quest` 领取「星海启航」。发放 16 个 `genlite:fuel`、8 个面包、石镐，以及有条件的首台 `genlite:cobblestone_generator`。
 2. 按 Genlite 原有操作向生成器存入燃料，领取「能源启动」，获得各 2 个 `genlite:mechanical_parts` 和 `genlite:copper_coil`。
-3. 此后由岛内生成器实际生产 32 个 `minecraft:cobblestone`，领取 2 个 `genlite:basic_upgrade_unit`，对应当前原石生成器 1→2 级的实际升级成本。
+3. 燃料目标完成后即开始计数，由岛内生成器实际生产 32 个 `minecraft:cobblestone`，领取 2 个 `genlite:basic_upgrade_unit`，对应当前原石生成器 1→2 级的实际升级成本。
 
-所有名称、目标、前置、图标与奖励都在任务 YAML 中。物品 ID 来自本地 `Genlite/craftengine/genlite/configuration/materials.yml`、`machines/cobblestone_generator.yml`，燃料和产出来自 `Genlite/src/main/resources/genlite/cobblestone_generator.yml`，没有使用展示名称匹配或猜测 ID。
+第一章全部任务完成后可独立领取章节奖励，默认 2 个 `minecraft:diamond`，可在 `chapters/第一章·星海初醒.yml` 修改。完成时默认发送聊天提示、简洁 Title 和升级音效。任务名称、目标、图标与任务奖励在 quests/ 中文任务 YAML 中；任务归属与前置关系统一配置在 chapters/ 对应章节文件。物品 ID 来自本地 `Genlite/craftengine/genlite/configuration/materials.yml`、`machines/cobblestone_generator.yml`，燃料和产出来自 `Genlite/src/main/resources/genlite/cobblestone_generator.yml`，没有使用展示名称匹配或猜测 ID。
 
 首台机器检查 Genlite 全部机器历史（包含已拆机器）、当前队员的 Genlite 待发机器，以及在线队员背包中的相应 CE 物品；Quest 自身的岛级领奖唯一约束阻止重复发放。本次核查的 DreamSkyblock 默认模板与 Genlite 启动流程没有自动赠送首台机器。**迁入旧服前若曾通过管理员、其他插件或离线背包发过未放置的裸机器，必须先核对；无法从现有公开 API 证明其发放历史。此类服请从第一任务奖励中移除首台机器条目，或先补齐既有机器历史。**不扫描玩家 NBT，不猜测其他插件的账本。
 
@@ -80,9 +84,37 @@ plugins/Quest/
 
 ## 配置和扩展
 
-每个文件均有 `schema-version: 1`；只创建缺失默认文件，不重写用户配置或注释，未知版本拒绝加载，不静默覆盖。没有旧 Quest 版本，因此没有假造迁移；后续 schema 升级应增加显式幂等迁移。reload 会先完成完整解析、前置 DAG/重复 ID、目标、菜单 Shape、语言键和真实物品校验，再替换有效配置；已开启菜单关闭，玩家重新打开。
+任务和章节 YAML 使用 `schema-version: 2`，其余资源保持 1，SQLite 保持 `user_version=2`。升级边界见 [UPGRADE.md](UPGRADE.md)。加载前校验完整任务与章节 DAG、重复 ID、缺失引用、目标、菜单及物品；reload 失败保留上一份有效运行配置。
 
-新增同类任务主要添加 `quests/*.yml`。目标支持 AND 多条件，`type` 为 `island.member`、`genlite.fuel`、`genlite.produce`；生产条件必须给出真实 `resource`。计数目标在前置任务领奖时以当前来源累计值作为基线；成员条件按当前 ACTIVE 成员事实完成。
+`quests/` 只放任务内容，一个文件一个任务；不再配置 `prerequisites`。`chapters/` 一个文件一个章节，文件名可使用中文，引用始终使用稳定 ID。默认是 `chapters/第一章·星海初醒.yml`：
+
+```yaml
+schema-version: 2
+id: sky_awakening
+name: '<#7DD3FC>第一章 · 星海初醒'
+icon: minecraft:ender_eye
+order: 1
+tasks:
+  - quest: sky_start
+  - quest: first_fuel
+    requires:
+      - sky_start
+  - quest: first_resources
+    requires:
+      - first_fuel
+rewards:
+  - item: minecraft:diamond
+    amount: 2
+```
+
+- `order` 控制章节展示顺序，`tasks` 列表控制章节内展示顺序，调换列表不会改变解锁关系。
+- 任务只写 `requires` 前置，后续任务自动推导；多个前置必须全部完成，省略表示章节解锁后即可开始。没有 `sequential` 开关，也不同时维护前后两套关系。
+- 每个任务必须且只能归属一章。任务前置只能引用本章任务；跨章节解锁使用章节根节点 `prerequisites`，引用章节 ID，同样要求全部完成，无需先领奖。
+- 章节还支持 `description`、`story`、图标和独立 `rewards`。增加后续章节主要新增 `quests/中文任务名.yml` 与 `chapters/中文章节名.yml`，无需修改引擎；默认仍只有一章三任务。
+- 旧版章节集合与任务前置会先校验再迁移为新格式；原文和恢复计划保存在 `.migrations/chapter-v2/`。中断后自动恢复；冲突拒绝覆盖。迁移不会改写玩家数据库。
+- `提示.yml` 对章节开始、任务开始、任务完成、下一任务解锁、章节完成分别控制聊天、ActionBar、Title、音效；可全部关闭。文案位于 `lang/zh_cn.yml:notices`，章节开场正文位于章节 `story`，随章节开始的聊天开关控制。默认下一任务仅显示 ActionBar，任务开始发送聊天，避免重复聊天。
+
+目标支持 AND 多条件，`type` 为 `island.member`、`genlite.fuel`、`genlite.produce`；生产条件必须给出真实 `resource`。累计目标以正式解锁时的同一份真实累计快照为基线；若来源未就绪，等待完整目标快照，菜单查询不会提前建立基线。成员条件可依据当前真实状态完成。
 
 `ConditionType` / `ConditionRegistry` 提供新条件注册，`QuestService.sync` 接受不可变绝对计数，`RewardItemProvider` 提供新物品奖励构建，`IslandGateway` / `ProductionGateway` 隔离第三方 API。新的扩展由各自适配器产生稳定、可重放的绝对计数，不能把重复的增量事件直接当绝对累计值。本版只实现物品奖励，没有任意命令奖励、每日/每周、NPC 对话、职业、商会或科技树。
 

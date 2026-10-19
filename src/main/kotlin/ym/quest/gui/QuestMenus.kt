@@ -24,15 +24,17 @@ class QuestMenus(private val plugin: JavaPlugin, private val service: QuestServi
                  private val text: TextRenderer, private val thread: GameThread,
                  private val delivery: MailboxDelivery, private val claim: (Player,UUID,String) -> Unit,
                  private val failure: (Throwable) -> Unit, var settings: Settings) : Listener, AutoCloseable {
+    private val renderer = JournalMenuRenderer(items,text)
     private val sessions = mutableMapOf<UUID,MenuSession>()
-    fun open(player: Player, quest: String? = null, page: Int = 0) {
+    fun open(player: Player, quest: String? = null, page: Int = 0, chapter: String? = null, chapters: Boolean = true) {
         if(!player.hasPermission("quest.use")) { text.send(player,"no-permission"); return }
         val island = integrations.island(player.uniqueId)
         if(island == null) { text.send(player,if(integrations.islands?.ready() == true) "no-island" else "unavailable"); return }
-        val y = if(quest == null) settings.center else settings.detail
-        val session = MenuSession(player.uniqueId,island.id,quest,page)
+        val session = MenuSession(player.uniqueId,island.id,quest,page,chapter,chapters)
+        val y = renderer.layout(settings,session)
         session.menu = plugin.server.createInventory(session,y.getStringList("Shape").size*9,text.render(y.getString("title")!!))
         player.openInventory(session.menu); sessions[player.uniqueId]=session
+        integrations.syncIsland(island.id)
         refresh(player,session)
     }
     fun refreshHome(home: UUID) { sessions.values.filter { it.home == home }.toList().forEach { s ->
@@ -41,59 +43,12 @@ class QuestMenus(private val plugin: JavaPlugin, private val service: QuestServi
     fun refreshPlayer(player: Player) { sessions[player.uniqueId]?.let { refresh(player,it) } }
     private fun refresh(player: Player, s: MenuSession) {
         val request = ++s.request
-        service.views(s.home.toString()).whenComplete { views,error -> thread.run {
+        service.journal(s.home.toString()).whenComplete { views,error -> thread.run {
             if(sessions[player.uniqueId] !== s || request != s.request || !player.isOnline) return@run
             if(integrations.island(player.uniqueId)?.id != s.home || !player.hasPermission("quest.use")) { player.closeInventory(); return@run }
             if(error != null) { failure(error); text.send(player,"error"); return@run }
-            try { render(player,s,views) } catch(e: Exception) { failure(e); text.send(player,"unavailable"); player.closeInventory() }
+            try { renderer.render(player,s,views,settings,integrations.production?.ready() == true) } catch(e: Exception) { failure(e); text.send(player,"unavailable"); player.closeInventory() }
         } }
-    }
-    private fun render(player: Player, s: MenuSession, views: List<QuestView>) {
-        val y = if(s.quest == null) settings.center else settings.detail
-        val shape = y.getStringList("Shape").joinToString("")
-        val current = views.firstOrNull { it.definition.id == s.quest }
-        val capacity = shape.count { ch -> y.getString("components.$ch.action") == "quest" }
-        val pages = if(capacity == 0) 1 else ((views.size+capacity-1)/capacity).coerceAtLeast(1)
-        s.page = s.page.coerceIn(0,pages-1)
-        val list = if(s.quest == null) views.drop(s.page*capacity).iterator() else emptyList<QuestView>().iterator()
-        val rewardList = current?.definition?.rewards?.iterator()
-        s.menu.clear(); s.actions.clear()
-        shape.forEachIndexed { slot,ch ->
-            if(ch == ' ') return@forEachIndexed
-            val section = checkNotNull(y.getConfigurationSection("components.$ch"))
-            val action = section.getString("action","")!!
-            val q = if(action == "quest") { if(list.hasNext()) list.next() else return@forEachIndexed } else current
-            val reward = if(action == "preview") { if(rewardList?.hasNext() == true) rewardList.next() else return@forEachIndexed } else null
-            val id = when { reward != null -> reward.item; action in setOf("quest","summary") -> q?.definition?.icon ?: section.getString("item")!!; else -> section.getString("item")!! }
-            var unavailable=false
-            val item = try { items.build(id,player) } catch(e: IllegalStateException) {
-                unavailable=true; items.build(y.getString("unavailable-item")!!,player)
-            }
-            val values = mutableMapOf<String,Component>("page" to Component.text(s.page+1),"pages" to Component.text(pages))
-            if(q != null) {
-                values["quest"] = text.render(q.definition.name)
-                values["status"] = text.format("status.${q.status}")
-            }
-            val lore = section.getStringList("lore").map { text.item(it,values) }.toMutableList()
-            if(unavailable || (q?.definition?.objectives?.any { it.type.startsWith("genlite.") } == true && integrations.production?.ready() != true)) {
-                lore += TextRenderer.noItalic(text.format("unavailable"))
-            }
-            if(q != null && action in setOf("quest","summary","objectives")) {
-                if(action != "objectives") lore += q.definition.description.map { text.item(it) }
-                lore += q.progress.map { p -> TextRenderer.noItalic(text.format("objective-line",mapOf(
-                    "description" to text.render(p.objective.description),"progress" to Component.text(p.progress),"target" to Component.text(p.objective.target)))) }
-            }
-            if(reward != null) {
-                item.amount = reward.amount.coerceAtMost(item.maxStackSize)
-                lore += TextRenderer.noItalic(text.format("reward-line",TextRenderer.values("amount" to reward.amount)))
-            }
-            item.editMeta { meta ->
-                section.getString("name")?.let { meta.displayName(text.item(it,values)) }
-                meta.lore(lore)
-            }
-            s.menu.setItem(slot,item)
-            s.actions[slot] = if(action == "quest") "quest:${q!!.definition.id}" else action
-        }
     }
     @EventHandler fun click(e: InventoryClickEvent) {
         val s = e.view.topInventory.holder as? MenuSession ?: return
@@ -105,12 +60,19 @@ class QuestMenus(private val plugin: JavaPlugin, private val service: QuestServi
         thread.run {
             if(sessions[player.uniqueId] !== s) return@run
             when {
-                action.startsWith("quest:") -> open(player,action.substringAfter(':'))
-                action == "back" -> open(player)
-                action == "previous" -> open(player,page=s.page-1)
-                action == "next" -> open(player,page=s.page+1)
+                action.startsWith("quest:") -> open(player,action.substringAfter(':'),chapter=s.chapter)
+                action.startsWith("chapter:") -> open(player,chapter=action.substringAfter(':'),chapters=true)
+                action == "chapters" -> open(player,chapters=true)
+                action == "back" -> when {
+                    s.quest != null && s.chapter != null -> open(player,chapter=s.chapter,chapters=true)
+                    s.chapters && s.chapter != null -> open(player,chapters=true)
+                    else -> open(player,chapters=false)
+                }
+                action == "previous" -> open(player,page=s.page-1,chapter=s.chapter,chapters=s.chapters)
+                action == "next" -> open(player,page=s.page+1,chapter=s.chapter,chapters=s.chapters)
                 action == "refresh" -> { integrations.syncIsland(s.home); refresh(player,s) }
                 action == "mailbox" -> delivery.collect(player,s.home) { refreshPlayer(player) }
+                action == "chapter-claim" && s.chapter != null -> claim(player,s.home,"chapter:${s.chapter}")
                 action == "claim" && s.quest != null -> claim(player,s.home,s.quest)
             }
         }

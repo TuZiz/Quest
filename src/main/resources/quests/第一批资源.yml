@@ -1,13 +1,12 @@
-schema-version: 1
+# 仅定义任务内容；章节及前置关系配置在 chapters/ 对应章节文件。
+schema-version: 2
 id: first_resources
 scope: island
 name: '<#6EE7B7>第一批资源'
 description:
   - '<#CBD5E1>让生成器成功生产 32 份圆石。'
-  - '<#94A3B8>领取上一任务后开始计数；领取、搬运与收集器不计进度。'
+  - '<#94A3B8>上一任务完成即开始计数；领取、搬运与收集器不计进度。'
 icon: minecraft:cobblestone
-prerequisites:
-  - first_fuel
 objectives:
   - id: cobblestone
     type: genlite.produce

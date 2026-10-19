@@ -28,10 +28,10 @@ with log.open('w',encoding='utf-8') as output:
         passed='QUEST_SMOKE_PASSED' in text and 'QUEST_SMOKE_FAILED' not in text
         print('SMOKE: '+('passed' if passed else 'failed; inspect '+str(log)),flush=True)
         if process.poll() is None:
-            config=server/'plugins/Quest/quests/sky_start.yml'
+            config=server/'plugins/Quest/quests/星海启航.yml'
             original=config.read_text(encoding='utf-8')
             try:
-                config.write_text('schema-version: 1\nid: [\n',encoding='utf-8')
+                config.write_text('schema-version: 2\nid: [\n',encoding='utf-8')
                 process.stdin.write('quest admin reload\n');process.stdin.flush();time.sleep(2)
                 process.stdin.write('quest admin debug 00000000-0000-0000-0000-000000000001\n');process.stdin.flush();time.sleep(1)
                 diagnostic=log.read_text(encoding='utf-8',errors='replace')
