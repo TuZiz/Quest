@@ -58,6 +58,7 @@ with log.open('w', encoding='utf-8') as output:
                     for child in value: collect(child)
             collect(rendered)
             collect(json.loads((root/'target/verification/xerr-compact-final.json').read_text(encoding='utf-8')))
+            collect(json.loads((root/'target/verification/xerr-sidebar-final.json').read_text(encoding='utf-8')))
             for font in fonts:
                 namespace,relative=font.split(':',1)
                 name='assets/'+namespace+'/font/'+relative+'.json'

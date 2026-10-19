@@ -27,7 +27,7 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
     private val preferences=HudPreferenceSessions(store,thread,NamespacedKey(plugin,"hud-hidden"),text,failure)
     private val tracker=QuestTrackerHud(::plain)
     private val notifications=QuestNotificationHud(text,::plain)
-    private val controls=HudControls(preferences,tracker,text,{ clock },{ options },::refreshPlayer)
+    private val controls=HudControls(preferences,tracker,text,::refreshPlayer)
     private val journals=mutableMapOf<UUID,Pair<String,JournalView>>()
     private val loaded=mutableSetOf<UUID>()
     private val pending=mutableSetOf<UUID>()
@@ -51,7 +51,7 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
     private fun render() {
         val players=plugin.server.onlinePlayers
         val api=display()
-        tracker.tick(players,api,options,settings.getBoolean("tracker"),clock,::eligible,::home,preferences::get)
+        tracker.tick(players,api,options,settings.getBoolean("tracker"),::eligible,::home,preferences::get)
         notifications.tick(players,api,settings.getBoolean("notifications"),{
             eligible(it) && preferences.get(it)?.notifications == true
         },::home,clock)
@@ -60,8 +60,8 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
         if(closed) return@safe
         plugin.server.onlinePlayers.forEach { player -> preferences.ensure(player) { counter=settings.getInt("refresh-ticks") }; packReady(player) }
         val api=display() ?: return@safe
-        if(!api.ready(options.expandedLayout) || !api.ready(options.compactLayout)) {
-            if(!warned) { warned=true; plugin.logger.warning("Xerr tracker/compact layout missing: ${options.expandedLayout}, ${options.compactLayout}; rebuild server Xerr layouts and resource pack") }
+        if(!api.ready(options.sidebarLayout)) {
+            if(!warned) { warned=true; plugin.logger.warning("Xerr sidebar layout missing: ${options.sidebarLayout}; rebuild server Xerr layouts and resource pack") }
             return@safe
         }
         counter+=20
@@ -88,7 +88,7 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
     private fun project(player: Player, home: String, journal: JournalView) {
         val preference=preferences.get(player) ?: return
         tracker.accept(player,TrackerSnapshot.target(home,journal,preference.trackedQuest),
-            journal.quests.filter { it.status == QuestStatus.ACTIVE }.map { it.definition.id }.toSet(),clock,options)
+            journal.quests.filter { it.status == QuestStatus.ACTIVE }.map { it.definition.id }.toSet())
     }
     private fun refreshPlayer(player: Player) {
         if(closed || !player.isOnline) return
@@ -99,7 +99,6 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
     fun control(player: Player, args: List<String>) { if(!closed) controls.execute(player,args) }
     fun changes(player: Player, changes: List<ProgressChange>, quests: List<QuestDefinition>, chapters: List<ChapterDefinition>) = safe {
         if(closed) return@safe
-        if(changes.any { !it.chapter && it.started }) tracker.request(player,clock,options)
         if(settings.getBoolean("notifications") && eligible(player) && preferences.get(player)?.notifications == true && display() != null)
             notifications.offer(player,HudNoticePlanner.plan(changes,quests,chapters,options.merge),options)
         counter=settings.getInt("refresh-ticks")

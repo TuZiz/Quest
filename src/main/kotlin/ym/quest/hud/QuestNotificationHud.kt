@@ -32,11 +32,12 @@ internal class QuestNotificationHud(private val text: TextRenderer, private val 
                 if(frames.remove(id) != null) api.remove(player,LAYOUT)
             } else if(frames[id] != frame || !api.present(player,LAYOUT)) {
                 val notice=frame.notice
-                val values=TextRenderer.values("name" to HudText.fit(plain(notice.name),20),"next" to HudText.fit(plain(notice.next ?: ""),12))
+                val name=HudText.label(plain(notice.name))
+                val values=TextRenderer.values("name" to name,"next" to HudText.label(plain(notice.next ?: "")))
                 fun line(field: String) = PlainTextComponentSerializer.plainText().serialize(text.format("hud-notices.${notice.event}.$field",values))
                 val detail=if(notice.next == null) line("detail") else PlainTextComponentSerializer.plainText().serialize(text.format("hud-notices.next",values))
-                api.update(player,"${LAYOUT}_${notice.event}",mapOf("heading" to HudText.fit(if(notice.next == null) line("heading") else PlainTextComponentSerializer.plainText().serialize(text.format("smart-hud.notice-merged",TextRenderer.values("heading" to line("heading"),"name" to plain(notice.name)))),20),"name" to HudText.fit(plain(notice.name),20),
-                    "detail" to HudText.fit(if(notice.next == null) plain(notice.name) else detail,20)),frame.offset,LAYOUT)
+                api.update(player,"${LAYOUT}_${notice.event}",mapOf("heading" to HudText.fit(line("heading"),24),"name" to HudText.fit(name,26),
+                    "detail" to HudText.fit(if(notice.next == null) name else detail,26)),frame.offset,LAYOUT)
                 frames[id]=frame
             }
         }

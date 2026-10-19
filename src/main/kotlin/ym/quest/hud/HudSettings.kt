@@ -5,7 +5,8 @@ import org.bukkit.configuration.file.YamlConfiguration
 data class HudSettings(val bar: Boolean, val merge: Boolean, val duration: Int, val capacity: Int,
                        val settle: Int, val slide: Int, val textUnits: Int, val compactUnits: Int,
                        val expandedLayout: String, val compactLayout: String, val expandTicks: Int,
-                       val cooldownTicks: Int, val milestones: List<Int>) {
+                       val cooldownTicks: Int, val milestones: List<Int>,
+                       val sidebarLayout: String = "quest_sidebar", val sidebarBackground: Boolean = true) {
     companion object {
         fun parse(y: YamlConfiguration): HudSettings {
             fun bool(key: String, default: Boolean): Boolean {
@@ -28,7 +29,8 @@ data class HudSettings(val bar: Boolean, val merge: Boolean, val duration: Int, 
                 int("notification-ticks",60,40..200),int("notification-limit",4,1..8),int("notification-merge-ticks",6,0..20),
                 int("notification-slide-ticks",8,0..16),int("text-half-em-limit",20,16..40),int("compact-name-half-em-limit",14,8..24),
                 layout("tracker-layout","quest_tracker"),layout("compact-layout","quest_tracker_compact"),
-                int("expand-ticks",120,100..160),int("expand-cooldown-ticks",200,180..1200),milestones)
+                int("expand-ticks",120,100..160),int("expand-cooldown-ticks",200,180..1200),milestones,
+                layout("sidebar-layout","quest_sidebar"),bool("sidebar-background",true))
         }
     }
 }

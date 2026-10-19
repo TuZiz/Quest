@@ -83,3 +83,9 @@ notices:
     message: '<#6EE7B7>章节完成：<chapter><#CBD5E1>，章节奖励会自动发放。'
     title: '<#6EE7B7>章节完成'
     subtitle: '<chapter>'
+
+# 文字任务栏；旧 smart / always 指令保持兼容，显示方式统一为常驻。
+sidebar-hud:
+  view: '<#A6B2C0>当前任务栏已刷新；没有有效任务时自动隐藏。'
+  usage: '<#A6B2C0>用法：/quest hud [on|off|view]，或 /quest hud notifications [on|off]、/quest hud track [任务ID]'
+  help: '<#DDB66D>Quest 帮助<newline><#EEF3F5>/quest hud on|off <#A6B2C0>显示 / 隐藏常驻任务栏；不带参数切换<newline><#EEF3F5>/quest hud view <#A6B2C0>刷新当前任务栏<newline><#EEF3F5>/quest hud track [任务ID] <#A6B2C0>切换有效追踪目标<newline><#EEF3F5>/quest hud notifications on|off <#A6B2C0>独立控制完成通知<newline><#EEF3F5>/quest help <#A6B2C0>查看帮助'

@@ -31,12 +31,12 @@ class QuestCommands(private val text: TextRenderer, private val service: QuestSe
                 else if(args.size != 1) text.send(sender,"smart-hud.help-admin") else reload(sender)
             } else {
                 if(!sender.hasPermission("quest.use")) text.send(sender,"no-permission")
-                else { text.send(sender,"smart-hud.help"); if(sender.hasPermission("quest.admin")) text.send(sender,"smart-hud.help-admin") }
+                else { text.send(sender,"sidebar-hud.help"); if(sender.hasPermission("quest.admin")) text.send(sender,"smart-hud.help-admin") }
             }
             return true
         }
         if(args[0] != "admin") {
-            if(sender.hasPermission("quest.use")) text.send(sender,"smart-hud.help") else text.send(sender,"no-permission")
+            if(sender.hasPermission("quest.use")) text.send(sender,"sidebar-hud.help") else text.send(sender,"no-permission")
             return true
         }
         if(!sender.hasPermission("quest.admin")) { text.send(sender,"no-permission"); return true }

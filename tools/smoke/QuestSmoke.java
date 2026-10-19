@@ -164,10 +164,71 @@ public final class QuestSmoke extends JavaPlugin {
                 if(!"left".equals(config.getString("quest_tracker."+row+".align"))) throw new AssertionError("Tracker left alignment: "+row);
             if(!"right".equals(config.getString("quest_tracker.progress.align"))) throw new AssertionError("Progress must align right");
             var notices=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/layout/quest_notifications.yml"));
-            if(notices.getInt("quest_notice_task-complete.panel.y")!=-76) throw new AssertionError("Notice must remain below tracker plus gap");
+            if(notices.getInt("quest_notice_task-complete.panel.y")!=-58) throw new AssertionError("Notice must remain below tracker plus gap");
             if(api.popups().ids().stream().anyMatch(key->key.startsWith("quest_"))) throw new AssertionError("Retired Quest popup group still active");
         } catch(ReflectiveOperationException | java.io.IOException error) { throw new IllegalStateException("Xerr component verification failed",error); }
         getLogger().info("XERR_API_PASSED: four notice layouts, compact nonoverlapping bounds, native progress and variables; proxy player, no client packets");
+    }
+    private void checkSidebar(Player player,Map<String,com.hiusers.xerr.api.builder.RefreshableComponent> components) throws ReflectiveOperationException,java.io.IOException {
+        var api=com.hiusers.xerr.api.XerrAPI.get();
+        if(!api.layouts().exists("quest_sidebar")) throw new AssertionError("Text sidebar missing");
+        var values=new HashMap<String,String>();
+        values.put("chapter","第一章 · 星海初醒");values.put("goal","用生成器产出 32 个原石");values.put("goal_more","");
+        values.put("current","8");values.put("target","32");values.put("percent","25");
+        values.put("bar_full","██");values.put("bar_empty","░░░░░░░░");values.put("show_bar","true");values.put("show_background","true");
+        String raw=api.layouts().renderString(player,"quest_sidebar",values,true,"quest:sidebar");
+        if(raw==null || !raw.contains("██") || !raw.contains("░░░░░░░░") || !raw.contains("25%") || raw.contains("xerr_progress:"))
+            throw new AssertionError("Sidebar is not text progress: "+raw);
+        if(!raw.contains("xerr_img:quest/sidebar")) throw new AssertionError("Optional dark background missing");
+        values.put("show_background","false");values.put("show_bar","false");
+        String bare=api.layouts().renderString(player,"quest_sidebar",values,true,"quest:sidebar");
+        if(bare.contains("xerr_img:") || bare.contains("██") || !bare.contains("获取进度"))
+            throw new AssertionError("Background/bar switches did not render independently: "+bare);
+        var settings=ym.quest.hud.HudSettings.Companion.parse(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Quest/显示.yml")));
+        var trackerType=Class.forName("ym.quest.hud.QuestTrackerHud");
+        var function=trackerType.getConstructors()[0].getParameterTypes()[0];
+        Object identity=Proxy.newProxyInstance(function.getClassLoader(),new Class<?>[]{function},(p,m,a)->a[0]);
+        Object tracker=trackerType.getConstructors()[0].newInstance(identity);
+        var accept=trackerType.getMethod("accept",Player.class,ym.quest.hud.TrackerTarget.class,Set.class);
+        var tick=trackerType.getMethod("tick",Collection.class,ym.quest.hud.XerrDisplay.class,ym.quest.hud.HudSettings.class,boolean.class,function,function,function);
+        var display=new ym.quest.hud.XerrDisplay();
+        var target=new ym.quest.hud.TrackerTarget("sidebar-island","first_resources","produce",8,32,
+            Map.of("chapter","第一章 · 星海初醒","task","利用原石生成器获取32个原石","objective","用生成器产出 32 个原石","current","8","target","32"));
+        var preference=new java.util.concurrent.atomic.AtomicReference<>(new ym.quest.hud.HudPreference(ym.quest.hud.HudMode.SMART,true,null));
+        Object eligible=Proxy.newProxyInstance(function.getClassLoader(),new Class<?>[]{function},(p,m,a)->true);
+        Object home=Proxy.newProxyInstance(function.getClassLoader(),new Class<?>[]{function},(p,m,a)->"sidebar-island");
+        Object pref=Proxy.newProxyInstance(function.getClassLoader(),new Class<?>[]{function},(p,m,a)->preference.get());
+        accept.invoke(tracker,player,target,Set.of("first_resources"));
+        tick.invoke(tracker,List.of(player),display,settings,true,eligible,home,pref);
+        var first=components.get("quest_tracker");
+        if(first==null) throw new AssertionError("Default smart preference did not show permanent sidebar");
+        var frame=first.getClass().getMethod("getComponent").invoke(first);
+        String json=(String)frame.getClass().getMethod("toRawMessage").invoke(frame);
+        if(!json.contains("主线任务") || !json.contains("25%") || json.contains("ui_position_0")) throw new AssertionError("Final sidebar payload invalid: "+json);
+        java.nio.file.Files.writeString(java.nio.file.Path.of("../verification/xerr-sidebar-final.json"),json);
+        for(int i=0;i<500;i++) tick.invoke(tracker,List.of(player),display,settings,true,eligible,home,pref);
+        if(first!=components.get("quest_tracker")) throw new AssertionError("Unchanged sidebar redrawn");
+        components.remove("quest_tracker");tick.invoke(tracker,List.of(player),display,settings,true,eligible,home,pref);
+        if(!components.containsKey("quest_tracker")) throw new AssertionError("Xerr reload did not recover sidebar");
+        preference.set(new ym.quest.hud.HudPreference(ym.quest.hud.HudMode.OFF,true,null));
+        tick.invoke(tracker,List.of(player),display,settings,true,eligible,home,pref);
+        if(components.containsKey("quest_tracker")) throw new AssertionError("Off left sidebar behind");
+        preference.set(new ym.quest.hud.HudPreference(ym.quest.hud.HudMode.ALWAYS,true,null));
+        tick.invoke(tracker,List.of(player),display,settings,true,eligible,home,pref);
+        if(!components.containsKey("quest_tracker")) throw new AssertionError("Always did not show sidebar");
+        accept.invoke(tracker,player,null,Set.of());tick.invoke(tracker,List.of(player),display,settings,true,eligible,home,pref);
+        if(components.containsKey("quest_tracker")) throw new AssertionError("All completed left permanent fallback");
+        accept.invoke(tracker,player,target,Set.of("first_resources"));tick.invoke(tracker,List.of(player),display,settings,true,eligible,home,pref);
+        if(!components.containsKey("quest_tracker")) throw new AssertionError("New task did not restore sidebar");
+        var layout=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/layout/quest_sidebar.yml"));
+        if(layout.getInt("quest_sidebar.background.anchor.x")!=100 || layout.getInt("quest_sidebar.background.anchor.y")!=50)
+            throw new AssertionError("Sidebar must anchor on right center");
+        var notice=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/layout/quest_notifications.yml"));
+        int bottom=-layout.getInt("quest_sidebar.background.y")+118;
+        int noticeTop=-notice.getInt("quest_notice_task-complete.panel.y");
+        if(noticeTop-bottom<12 || layout.getInt("quest_sidebar.background.x")!=notice.getInt("quest_notice_task-complete.panel.x"))
+            throw new AssertionError("Notice overlaps sidebar or right edge differs");
+        getLogger().info("XERR_SIDEBAR_PASSED: text bar, optional background, permanent smart/always, cached frame, reload restore, off/completed hidden, next task restored; proxy only");
     }
     private void checkHudComponent(String json) {
         var tree=com.google.gson.JsonParser.parseString(json);
@@ -248,6 +309,7 @@ public final class QuestSmoke extends JavaPlugin {
             if(components.size()!=1) throw new AssertionError("Compact and expanded tracker stacked");
             var compactFrame=components.get("quest_tracker").getClass().getMethod("getComponent").invoke(components.get("quest_tracker"));
             java.nio.file.Files.writeString(java.nio.file.Path.of("../verification/xerr-compact-final.json"),(String)compactFrame.getClass().getMethod("toRawMessage").invoke(compactFrame));
+            checkSidebar(player,components);
             for(String event:List.of("task-start","task-complete","chapter-start","chapter-complete")) {
                 display.getMethod("update",Player.class,String.class,Map.class,int.class,String.class)
                     .invoke(display.getConstructor().newInstance(),player,"quest_notice_"+event,Map.of("heading","通知探针","name","任务探针","detail","下一任务"),6,"quest_notice");

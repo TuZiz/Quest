@@ -17,16 +17,28 @@ class HudConfigUpgradeTest {
         val path=root.resolve("显示.yml"); Files.writeString(path,old)
         HudConfigUpgrade.migrate(root,bundled)
         val result=Files.readString(path); val y=YamlConfiguration().apply { loadFromString(result) }
-        assertEquals(3,y.getInt("schema-version")); assertFalse(y.getBoolean("enabled"))
+        assertEquals(4,y.getInt("schema-version")); assertFalse(y.getBoolean("enabled"))
         assertEquals("custom",y.getString("tracker-layout")); assertEquals(42,y.getInt("custom"));assertTrue(result.contains("# 自定义保留"))
         assertEquals(120,HudSettings.parse(y).expandTicks)
-        assertEquals(old,Files.readString(root.resolve(".migrations/hud-v3/0.before")))
+        assertEquals(old,Files.readString(root.resolve(".migrations/hud-v4/0.before")))
         HudConfigUpgrade.migrate(root,bundled);assertEquals(result,Files.readString(path))
     }
     @Test fun `invalid or future config never overwritten`() {
-        val path=root.resolve("显示.yml");val old="schema-version: 4\ncustom: 1\n";Files.writeString(path,old)
+        val path=root.resolve("显示.yml");val old="schema-version: 5\ncustom: 1\n";Files.writeString(path,old)
         assertThrows(IllegalArgumentException::class.java) { HudConfigUpgrade.migrate(root,bundled) }
         assertEquals(old,Files.readString(path))
         assertThrows(IllegalArgumentException::class.java) { HudSettings.parse(YamlConfiguration().apply { loadFromString("notification-limit: 999") }) }
+    }
+    @Test fun `schema three upgrades append only sidebar options and preserve custom switches`() {
+        val old="# 保留关闭设置与未知字段\nschema-version: 3\ntracker: false\nnotifications: false\ncustom: '我的布局'\n"
+        val file=root.resolve("显示.yml");Files.writeString(file,old)
+        HudConfigUpgrade.migrate(root,bundled)
+        val result=Files.readString(file)
+        val y=YamlConfiguration().apply { loadFromString(result) }
+        assertEquals(4,y.getInt("schema-version"));assertFalse(y.getBoolean("tracker"));assertFalse(y.getBoolean("notifications"))
+        assertEquals("我的布局",y.getString("custom"));assertTrue(result.contains("# 保留关闭设置与未知字段"))
+        assertEquals("quest_sidebar",HudSettings.parse(y).sidebarLayout);assertTrue(HudSettings.parse(y).sidebarBackground)
+        assertEquals(old,Files.readString(root.resolve(".migrations/hud-v4/0.before")))
+        HudConfigUpgrade.migrate(root,bundled);assertEquals(result,Files.readString(file))
     }
 }

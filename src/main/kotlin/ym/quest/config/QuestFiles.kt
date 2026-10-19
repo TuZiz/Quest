@@ -41,7 +41,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             val text = Files.readString(plugin.dataFolder.toPath().resolve(name))
             return YamlConfiguration().apply {
                 try { loadFromString(text) } catch(e: Exception) { throw IllegalArgumentException("$name: YAML解析失败",e) }
-                val expected = if(name == "显示.yml") 3 else if(name.startsWith("quests/") || name.startsWith("chapters/") || name in setOf("gui/main.yml")) 2 else 1
+                val expected = if(name == "显示.yml") 4 else if(name.startsWith("quests/") || name.startsWith("chapters/") || name in setOf("gui/main.yml")) 2 else 1
                 require(get("schema-version") == expected) { "$name:schema-version=${get("schema-version")} expected $expected; original preserved" }
             }
         }

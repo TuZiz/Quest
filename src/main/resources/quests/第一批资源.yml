@@ -2,7 +2,7 @@
 schema-version: 2
 id: first_resources
 scope: island
-name: '<#6EE7B7>第一批资源'
+name: '<#78FFD6>利用原石生成器获取32个原石'
 description:
   - '<#CBD5E1>让生成器成功生产 32 份圆石。'
   - '<#94A3B8>上一任务完成即开始计数；领取、搬运与收集器不计进度。'
