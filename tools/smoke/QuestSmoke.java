@@ -193,6 +193,14 @@ public final class QuestSmoke extends JavaPlugin {
             var display=Class.forName("ym.quest.hud.XerrDisplay");
             display.getMethod("update",Player.class,String.class,Map.class).invoke(display.getConstructor().newInstance(),player,"quest_tracker",vars);
             var stored=components.get("quest_tracker");
+            if(!Boolean.TRUE.equals(display.getMethod("present",Player.class,String.class).invoke(display.getConstructor().newInstance(),player,"quest_tracker")))
+                throw new AssertionError("Quest layout presence check missed installed tracker");
+            components.remove("quest_tracker");
+            if(!Boolean.FALSE.equals(display.getMethod("present",Player.class,String.class).invoke(display.getConstructor().newInstance(),player,"quest_tracker")))
+                throw new AssertionError("Quest cached a tracker removed by Xerr reload");
+            display.getMethod("update",Player.class,String.class,Map.class).invoke(display.getConstructor().newInstance(),player,"quest_tracker",vars);
+            if(!components.containsKey("quest_tracker")) throw new AssertionError("Unchanged tracker cannot be restored after Xerr removal");
+            stored=components.get("quest_tracker");
             var frame=stored.getClass().getMethod("getComponent").invoke(stored);
             var json=(String)frame.getClass().getMethod("toRawMessage").invoke(frame);
             if(java.util.regex.Pattern.compile("ui_position_[0-9]+").matcher(json).find()) throw new AssertionError("Intermediate font leaked to player HUD");

@@ -7,8 +7,8 @@ notifications: true
 refresh-ticks: 40
 tracker-layout: quest_tracker
 
-# 没有进行中任务时隐藏；关闭后可保留旧章节完成状态。
-hide-completed: true
+# 默认常驻：全部完成后保留章节完成状态；设为 true 可自动隐藏。
+hide-completed: false
 progress-bar: true
 # 通知最多一条可见；下列时长单位均为 tick（20 tick = 1秒）。
 merge-notifications: true

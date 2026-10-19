@@ -19,7 +19,7 @@ class HudConfigUpgradeTest {
         val result=Files.readString(path); val y=YamlConfiguration().apply { loadFromString(result) }
         assertEquals(2,y.getInt("schema-version")); assertFalse(y.getBoolean("enabled"))
         assertEquals("custom",y.getString("tracker-layout")); assertEquals(42,y.getInt("custom"));assertTrue(result.contains("# 自定义保留"))
-        assertTrue(HudSettings.parse(y).hideCompleted)
+        assertFalse(HudSettings.parse(y).hideCompleted)
         assertEquals(old,Files.readString(root.resolve(".migrations/hud-v2/0.before")))
         HudConfigUpgrade.migrate(root,bundled);assertEquals(result,Files.readString(path))
     }

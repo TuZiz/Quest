@@ -85,7 +85,7 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
                         members.forEach { id ->
                             val p = plugin.server.getPlayer(id)?.takeIf { it.isOnline && eligible(it) && islands.island(id)?.id == home } ?: return@forEach
                             if(values == null) { if(shown.remove(id)) current.remove(p,layout); lastValues.remove(id) }
-                            else if(lastValues[id] != values) { current.update(p,layout,values); shown.add(id); lastValues[id]=values }
+                            else if(lastValues[id] != values || !current.present(p,layout)) { current.update(p,layout,values); shown.add(id); lastValues[id]=values }
                         }
                     }
                 } }
@@ -123,7 +123,11 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
         lastValues.clear(); notifications.clear(plugin.server.onlinePlayers,display())
     }
     @EventHandler fun pack(e: PlayerResourcePackStatusEvent) {
-        if(e.status == PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED) loaded.add(e.player.uniqueId)
+        if(e.status == PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED) {
+            loaded.add(e.player.uniqueId)
+            lastValues.remove(e.player.uniqueId)
+            counter=settings.getInt("refresh-ticks")
+        }
     }
     @EventHandler fun quit(e: PlayerQuitEvent) { loaded.remove(e.player.uniqueId); shown.remove(e.player.uniqueId); lastValues.remove(e.player.uniqueId); notifications.remove(e.player,display()) }
     override fun close() { if(closed) return; closed=true; timer.cancel(); notificationTimer.cancel(); clear(); loaded.clear(); HandlerList.unregisterAll(this) }

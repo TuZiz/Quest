@@ -4,12 +4,12 @@
 
 ## 修改文件
 
-- `hud/QuestHud.kt`、`TrackerSnapshot.kt`：只读追踪、完成自动隐藏、个人显示偏好、清理和刷新缓存。
+- `hud/QuestHud.kt`、`TrackerSnapshot.kt`：只读追踪、完成后常驻、个人显示偏好、清理和刷新缓存。
 - `hud/HudNotice.kt`、`HudNoticeQueue.kt`、`QuestNotificationHud.kt`：事件投影、合并去重、有界队列和单槽位通知；`XerrDisplay.kt` 保留原生定位转换并支持轻滑偏移。
 - `hud/HudSettings.kt`、`HudText.kt`：参数校验及等宽文案截断。
 - `platform/QuestRuntime.kt`、`QuestCommands.kt`：批量传递显示事件；普通 `quest.use` 玩家可 `/quest hud [on|off]`。
 - `config/HudConfigUpgrade.kt`、`QuestFiles.kt`、`ResourceUpgrade.kt`：显示配置 schema 1→2，可恢复、保留自定义开关和注释；追加缺失语言块。
-- `src/main/resources/显示.yml`、`lang/zh_cn.yml`：行为开关、时长、队列、进度条、完成隐藏及单引号文案。
+- `src/main/resources/显示.yml`、`lang/zh_cn.yml`：行为开关、时长、队列、进度条、完成状态保留及单引号文案。
 - `HudNotificationsTest`、`HudConfigUpgradeTest`、`TrackerSnapshotTest`、`ResourcesTest`、`tools/smoke/QuestSmoke.java`：本次自动验证。
 - `tools/install_compact_hud.py`：部署服务器侧贴图及布局，覆盖前备份，重复执行不重复修改。
 
@@ -36,9 +36,9 @@ python D:/codex/Quest/tools/install_compact_hud.py C:/Users/32633/Desktop/leaf/p
 
 ## 游戏内验收
 
-1. 用有进行中任务的测试空岛、仅拥有 `quest.use` 的账号加载新包；不要重置正式玩家任务。已完成所有章节的空岛默认不显示追踪，这是预期行为。
+1. 用有进行中任务的测试空岛、仅拥有 `quest.use` 的账号加载新包；不要重置正式玩家任务。已完成所有章节的空岛默认仍显示章节完成状态。
 2. GUI缩放 2、3、4及自动分别检查：追踪右上，通知在其下方，间距不重叠，文字不越界；较小窗口也检查计分板。资源包 HUD 无法自动探测其他插件计分板尺寸，如冲突通过布局偏移调整。
-3. 完成任务1、2：显示一条“任务完成 / 下一任务”通知，追踪自动切换，奖励正常自动发放；完成任务3：章节完成通知后追踪隐藏。
+3. 完成任务1、2：显示一条“任务完成 / 下一任务”通知，追踪自动切换，奖励正常自动发放；完成任务3：章节完成通知后追踪保留简洁完成状态。
 4. 快速触发多个事件，确认始终仅一个通知；通知按序关闭，重复不刷屏，队列不会无限增长。
 5. `/quest hud off` 隐藏、重新登录仍隐藏；`/quest hud on` 恢复有效任务。检查退出、切换空岛、Quest配置重载不会残留通知。
 6. `/quest` 菜单按原服务器访问设置使用；此次未修改菜单业务或奖励策略。基岩端未加载 Java 资源包时不强制显示 Java HUD。

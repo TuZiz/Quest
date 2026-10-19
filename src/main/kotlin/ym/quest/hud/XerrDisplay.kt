@@ -10,6 +10,7 @@ import org.bukkit.entity.Player
 /** Version-bound Xerr 2.1 API. Never clears another plugin's HUD or popup group. Paper thread only. */
 internal class XerrDisplay {
     fun ready(layout: String) = XerrAPI.get().layouts().exists(layout)
+    fun present(player: Player, layout: String) = BossbarHudRenderer.getBossbarContext(player).components.containsKey(layout)
     @JvmOverloads fun update(player: Player, layout: String, values: Map<String,String>, offset: Int = 0, slot: String = layout) {
         // Xerr 2.1 appendLayout leaves intermediate _position_N fonts unresolved.
         // Resolve through its own positioned-text pipeline before the raw HUD API.
