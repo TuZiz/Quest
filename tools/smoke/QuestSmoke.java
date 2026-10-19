@@ -71,9 +71,13 @@ public final class QuestSmoke extends JavaPlugin {
             };
         });
         var vars=Map.of("chapter","章节探针","task","生产探针","objective","原石","current","7","target","32","progress","7 / 32","completed","2","total","3","pending","2");
-        String raw=api.layouts().renderString(player,"quest_tracker",vars,false,"quest:smoke");
+        String raw=api.layouts().renderString(player,"quest_tracker",vars,true,"quest:smoke");
+        try { java.nio.file.Files.writeString(java.nio.file.Path.of("../verification/xerr-tracker-render.txt"),raw); }
+        catch(java.io.IOException error) { throw new IllegalStateException("Cannot export Xerr render evidence",error); }
         if(raw==null || !raw.contains("章节探针") || !raw.contains("7")) throw new AssertionError("HUD variable render failed: "+raw);
-        getLogger().info("XERR_API_PASSED: five popup IDs, tracker and real Xerr font/image/variable render; proxy player, no client packets");
+        if(!raw.contains("font=xerr_img:quest/panels/gui") || !raw.contains("font=xerr_position:space"))
+            throw new AssertionError("HUD missing anchored bitmap font or positioning markers: "+raw);
+        getLogger().info("XERR_API_PASSED: five popup IDs, anchored tracker bitmap/markers and variables; proxy player, no client packets");
     }
     private void checkChapterMenus(Object runtime,ItemFactory original) throws Exception {
         var menus=(QuestMenus)field(runtime,"menus");

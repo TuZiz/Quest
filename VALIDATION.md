@@ -96,3 +96,13 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 
 证据：target/surefire-reports、.build/dependencies/Genlite/target/surefire-reports、target/verification/smoke-console.log、.build/hud/live-genlite-config-hashes.json。
 
+## HUD 位置及字体图集修复（2026-10-19）
+
+用户截图确认文本位于右下且面板缺失。读取实际客户端 26.2 的 FontTexture/GlyphStitcher/FontSet 字节码，确认 256×256 图集容量与超大字形无法烘焙；客户端加载缓存与服务端 CE 包 SHA1 相同，包内源图仍为 677×719、950×161，因此不是图片未合并或客户端仍用旧包。Xerr 的坐标及图片字体编码也通过实际 JAR 字节码核对。
+
+服务端配置锚点从右中改为右上，运行 PNG 转换为 151×160、236×40；修复前文件备份于 Xerr/backups/Quest-HUD-atlas-20261019-182652，原设计稿保留。没有修改任务、奖励或玩家数据库。
+
+修正先前探针使用非锚定模式且仅验证变量的问题：现在使用与 Bossbar 相同的锚定渲染，断言图片字体及定位标记存在，导出 xerr-tracker-render.txt。资源包验证增加所有 Quest bitmap provider 源字形大小检查，继续核对 CE 合并 PNG 像素与透明度。API/包检查不替代真实客户端显示验证。
+
+实际运行 tools/run_smoke.py、tools/run_xerr_smoke.py 均通过：锚定渲染、变量、非法重载保留原任务状态通过；8 张 Quest 贴图合并后像素一致，958 个 bitmap provider 的单格源尺寸均不超过 256×256，隔离服正常退出。正式服 RCON 未启用，没有发送重载命令或主动停服；需要按 XERR.md 顺序重载并重新加载资源包，真实客户端结果待确认。此次仅修改服务端素材/锚点与验证脚本，没有重新构建或更换 Quest JAR。
+

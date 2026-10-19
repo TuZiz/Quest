@@ -5,6 +5,7 @@ import subprocess
 import time
 import zipfile
 import io
+import json
 from PIL import Image
 
 root = Path(__file__).resolve().parents[1]
@@ -45,6 +46,26 @@ with log.open('w', encoding='utf-8') as output:
         ce = server / 'plugins/CraftEngine/generated/resource_pack.zip'
         wait_for(lambda: ce.exists() and ce.stat().st_mtime >= stamp and zipfile.is_zipfile(ce), 90)
         with zipfile.ZipFile(xerr) as source, zipfile.ZipFile(ce) as merged:
+            # Display height does not shrink bitmap source cells. Vanilla font atlases
+            # cannot stitch a single source glyph larger than 256x256.
+            checked = 0
+            for name in source.namelist():
+                if '/font/' not in name or not name.endswith('.json') or 'quest' not in name:
+                    continue
+                for provider in json.loads(source.read(name)).get('providers', []):
+                    if provider.get('type') != 'bitmap':
+                        continue
+                    namespace, relative = provider['file'].split(':', 1)
+                    texture = 'assets/' + namespace + '/textures/' + relative
+                    bitmap = Image.open(io.BytesIO(source.read(texture)))
+                    rows = provider['chars']
+                    columns = len(rows[0])
+                    if not columns or any(len(row) != columns for row in rows):
+                        raise AssertionError('Invalid bitmap grid: ' + name)
+                    width, height = bitmap.width / columns, bitmap.height / len(rows)
+                    if width > 256 or height > 256:
+                        raise AssertionError(f'Bitmap source glyph exceeds font atlas: {texture} {width}x{height}')
+                    checked += 1
             textures = [n for n in source.namelist() if n.endswith('.png') and 'quest' in n]
             if not textures:
                 raise AssertionError('Quest textures absent in Xerr pack')
@@ -55,6 +76,7 @@ with log.open('w', encoding='utf-8') as output:
                 if before.size != after.size or before.tobytes() != after.tobytes():
                     raise AssertionError('CE native merge mismatch: ' + name)
         print('XERR_PACK_AND_CE_NATIVE_MERGE_PASSED: ' + str(len(textures)) + ' Quest textures', flush=True)
+        print('XERR_BITMAP_ATLAS_PASSED: ' + str(checked) + ' providers', flush=True)
         command('quest admin reload')
         time.sleep(2)
         command('stop')

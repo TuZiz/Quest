@@ -37,3 +37,11 @@ Quest 仅增加可选显示适配，不修改任务推进、累计基线、SQLit
 2026-10-19 正式服的旧 Genlite 兼容构建要求英文机器文件，遇到中文文件名启动失败，Quest 随依赖停用暂停。修正版基于当前 Genlite 中文配置实现重新构建，保留原文件和物品名称解析，已用正式服 12 个 YAML 的副本完成隔离启动验证。
 
 修正 JAR 暂存于 `plugins/update/Genlite-1.0.0.jar`；配套的 `DreamSkyblock-1.0-SNAPSHOT.jar` 同时暂存，下一次完整重启自动替换。后者用于修复 18:12 外部更换旧依赖后出现的 `HomeMembershipCommittedEvent` 缺失。必须先确认 Genlite 和 Quest 正常启用，再进服加载资源包检查 HUD；仅重载 Xerr 无法恢复已暂停的 Quest。不需要改名、删除配置或重置玩家数据。
+
+## HUD 位置和贴图修复
+
+常驻面板使用右上角锚点 `anchor.x: 100`、`anchor.y: 0`。Xerr 的负 Y 值表示向下偏移，原先 `anchor.y: 50` 会把整个面板放到右侧中线以下。面板及全部文本必须使用相同锚点。
+
+图片配置的 `height` 只控制显示高度，不会缩小 PNG 源字形。Minecraft 26.2 的原版字体图集为 256×256；原 tracker.png（677×719）及 notification.png（950×161）无法作为单个字形放入图集。服务端运行素材分别转换为 151×160、236×40，保留透明度，原图留在 design/quest 及修复前备份。以后生成面板也必须在导入前将每个源字形控制在 256×256 以内；超过时应拆分字形，而非只调小 height。
+
+修改均位于服务端 Xerr 目录，没有将材质加入 Quest JAR。生效顺序仍是 `xerr reload` → `xerr pack async`（等完成）→ `ce reload pack`。没有命令通道时不自动停服或修改 RCON 设置。
