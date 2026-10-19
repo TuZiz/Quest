@@ -57,3 +57,11 @@ Quest 仅增加可选显示适配，不修改任务推进、累计基线、SQLit
 - `ui_position_N` 是 Xerr 中间定位字体，最终应该由 `PositionedText.render` 转成资源包内的 `ui_position_dark/light` 和位置标记；颜色由 Xerr 的着色器载荷携带。Quest 原 `appendLayout` 路径省略了转换，现改用 Xerr 自己的 ComponentBuilder → PositionedText → appendLayoutRaw，不自建渲染引擎。
 - 自动验证捕获实际 Quest update 提交的数据，断言没有中间字体和格式语法，检查最终 RGB 载荷；同时检查同步、异步、最终字体引用、所有版本定位着色器及 CE 合并后的实际资源。只搜索 JSON 中有颜色字符串并不能证明格式已生效。
 - 这些测试仍不代表真人客户端像素验收。补丁部署后需完整重启加载 Quest/Xerr，使用重新生成并由 CE 合并的资源包。
+
+## 中文字形及居中校准
+
+服务端 `ui` 使用官方 Fusion Pixel 12px Monospaced zh_hans 字体，以原生 `size: 12`、`oversample: 1.0` 显示，避免 10px 字形将“章”的笔画过度简化。字体及 OFL 许可证仅保存在服务端 Xerr 目录，不打包进 Quest。官方来源：https://github.com/TakWolf/fusion-pixel-font/releases/tag/2026.09.01 。
+
+Xerr 2.1 使用 `size / 2 × regex 字符宽度`，并不读取 TTF 的实际 advance。“·”及 ©®¼½¾ 在这套字体里是全角，默认 Latin-1 分类却按半角计算。`core/regex/common.yml` 为 `ui` 单独修正这些符号；其他字体保持原宽度。六行文案中心使用 `x: -76`，对应宽 151、左边 -151 的面板中心 -75.5（整数定位误差不超过 1px）；标题上移至 -50，使 12px 字形留在顶部栏内。
+
+运行 `python tools/tune_xerr_quest_font.py <服务端Xerr目录> <官方12px简体等宽TTF>` 可备份并安装这些配置；再次运行不改文件。保留旧字体，拒绝覆盖自定义 ui 字体。应用顺序为 `xerr reload` → `xerr pack async`（等待完成）→ `ce reload pack`（包含 upload/send_pack）。不能只同步 generated ZIP：实际发送的是 CraftEngine `cache/hosted/default/resource_pack.zip`，必须核实它与 generated 包一致；旧托管包会造成字体映射、图片字符和定位着色器错配。

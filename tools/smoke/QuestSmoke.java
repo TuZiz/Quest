@@ -154,6 +154,17 @@ public final class QuestSmoke extends JavaPlugin {
             if(!texts.contains(expected)) throw new AssertionError("HUD visible row differs from plain text: "+expected+" / "+texts);
     }
     private void checkFinalHud(Player player,Map<String,String> vars) throws ReflectiveOperationException,java.io.IOException {
+        var fontConfig=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/assets/font/text.yml"));
+        if("quest_pixel_12".equals(fontConfig.getString("ui.ttf"))) {
+            var font=com.hiusers.xerr.api.container.FontContainer.INSTANCE.get("ui");
+            if(font.getSize()!=12 || font.getOversample()!=1.0) throw new AssertionError("Quest pixel font must render at native 12px");
+            var widths=com.hiusers.xerr.api.container.RegexContainer.INSTANCE;
+            for(char c:new char[]{'章','·','©','®','¼','½','¾'})
+                if(widths.getWidth(c,"ui")!=2) throw new AssertionError("Fullwidth Quest glyph measured as halfwidth: "+c);
+            if(widths.getWidth('3',"ui")!=1 || widths.getWidth(' ',"ui")!=1 || widths.getWidth('·',"pixel")!=1)
+                throw new AssertionError("Quest width correction changed unrelated glyphs/fonts");
+            getLogger().info("XERR_QUEST_FONT_METRICS_PASSED: native 12px SC font and font-specific fullwidth symbols");
+        }
         // Capture exactly what Quest submits to the production Xerr HUD API.
         var renderer=com.hiusers.xerr.api.container.BossbarHudRenderer.INSTANCE;
         var contextsField=renderer.getClass().getDeclaredField("playerBossbar");contextsField.setAccessible(true);
