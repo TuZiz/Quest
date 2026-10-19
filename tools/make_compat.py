@@ -1,7 +1,9 @@
 from pathlib import Path
+import sys
 root = Path(__file__).resolve().parents[1]
+base = Path(sys.argv[1]) if len(sys.argv) > 1 else root.parent
 def read(project, path):
-    return (root.parent / project / path).read_text(encoding='utf-8-sig')
+    return (base / project / path).read_text(encoding='utf-8-sig')
 def write(project, path, text):
     p = root / 'compat' / project / path
     p.parent.mkdir(parents=True, exist_ok=True)

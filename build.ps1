@@ -13,7 +13,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Preparing compatibility sources failed' }
 $mavenOptions = @('-Dkotlin.compiler.daemon=false')
 if ($Offline) { $mavenOptions += '-o' }
 foreach ($project in @('DreamSkyblock', 'Genlite')) {
-    & mvn @mavenOptions "-Dplugins.dir=$PluginsDir" -f ".build/dependencies/$project/pom.xml" package
+    & mvn @mavenOptions "-Dplugins.dir=$PluginsDir" -f ".build/dependencies/$project/pom.xml" clean package
     if ($LASTEXITCODE -ne 0) { throw "$project build failed" }
 }
 & mvn @mavenOptions "-Dplugins.dir=$PluginsDir" package

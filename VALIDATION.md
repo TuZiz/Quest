@@ -81,3 +81,18 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 - 初次测试下载语言文件等待、未暂存 PacketEvents 的测试环境缺类、Xerr 多字号复制同一 TTF 的竞争均已定位；最终测试使用缓存、完整依赖及单字体配置通过。原 Windows OSHI 性能计数器警告仍属已有环境问题。
 - 未执行真人 Java/Geyser 客户端显示、点击或资源包拒绝/重新加载操作；API 渲染代理不作为客户端验收。没有操作正式玩家数据库。
 
+## 正式服启动失败修复（2026-10-19）
+
+正式服日志确认：旧暂存源码生成的 Genlite 补丁仍要求英文机器文件，导致中文配置校验失败并停用；Quest 随后因依赖停用而暂停任务与 HUD。修复兼容源码生成流程：每次从当前联动项目重新生成覆盖文件，清空一次性源码暂存目录，依赖执行 clean package，保留当前 Genlite 的中文文件和物品名称解析。
+
+- 更新后的 Genlite 110 项测试、Quest 29 项测试全部通过，无失败或跳过。
+- 复制正式服全部 12 个 Genlite YAML 到隔离服，Leaf 26.3 启动通过；Genlite、Quest API、Xerr 五类通知及字体/图片/变量渲染探针通过，非法重载保留原任务配置，正常退出。
+- 正式服 12 个 YAML 的 SHA256 全部不变；隔离启动也没有改写这 12 个副本。未操作正式玩家数据库。
+- 更新的 Genlite JAR 放入正式服 plugins/update/，供下一次完整重启加载；当前进程中已经暂停的 Quest 不能只靠 xerr reload 恢复。未停止正式服务器，重启后的真实客户端显示仍待验证。
+
+后续观察到正式服于 18:12 再次启动，Genlite 配置/JAR 已被外部更换为旧英文版本，DreamSkyblock 也已更换；新日志报 HomeMembershipCommittedEvent 缺失。保留这些外部文件变更，为下次重启同时暂存测试过的配套 DreamSkyblock 与 Genlite JAR。上述 12 文件不变结论对应首次配置副本验证时点，不表示外部更换后仍与原快照相同。
+
+配套 DreamSkyblock 使用 Java 25 重新构建通过，81 项测试无失败或错误，1 项已有环境限制跳过。首次误用 Java 21 运行 Java 25 测试类导致版本错误，切换至目标 JDK 后通过；此环境失败不计为业务测试失败。
+
+证据：target/surefire-reports、.build/dependencies/Genlite/target/surefire-reports、target/verification/smoke-console.log、.build/hud/live-genlite-config-hashes.json。
+

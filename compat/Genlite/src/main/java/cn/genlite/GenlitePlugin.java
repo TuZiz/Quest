@@ -49,7 +49,7 @@ public final class GenlitePlugin extends JavaPlugin {
         var actions=new MachineActions(files.rules(),dream::member);
         var messages=new Messages(files.language());
         var text=new MachineText(files.rules(),files.displays(),messages);
-        items=new CraftItems(this,text,engine::snapshot);
+        items=new CraftItems(this,text,engine::snapshot,files.itemNames());
         transfers=new InventoryTransfers(this,tasks,engine,items,messages,dream::member);
         warehouse=new ContainerMenus(files.menus(),engine,dream,items,messages,transfers,tasks,text);
         menus=new MachineMenus(files.menus(),engine,actions,dream,items,messages,transfers,text,warehouse);

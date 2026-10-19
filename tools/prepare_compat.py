@@ -4,17 +4,26 @@ import shutil
 import hashlib
 import json
 import sys
+import subprocess
 
 root = Path(__file__).resolve().parents[1]
 base = Path(sys.argv[1]) if len(sys.argv) > 1 else root.parent
+# Regenerate narrow overlays against the CURRENT sources; fail on source drift instead of
+# silently replacing newer integration behavior with an earlier full-file overlay.
+subprocess.run([sys.executable, str(root / 'tools/make_compat.py'), str(base)], check=True)
 manifest = {}
 for name in ('Genlite', 'DreamSkyblock'):
     source = base / name
     target = root / '.build/dependencies' / name
     target.mkdir(parents=True, exist_ok=True)
     for folder in ('src', 'libs', 'craftengine'):
+        staged = target / folder
+        # Only disposable build staging is cleared; never touch source projects or server data.
+        assert staged.resolve().is_relative_to((root / '.build/dependencies').resolve())
+        if staged.exists():
+            shutil.rmtree(staged)
         if (source / folder).exists():
-            shutil.copytree(source / folder, target / folder, dirs_exist_ok=True)
+            shutil.copytree(source / folder, staged)
     shutil.copy2(source / 'pom.xml', target / 'pom.xml')
     manifest[name] = {}
     for overlay in (root / 'compat' / name).rglob('*'):
