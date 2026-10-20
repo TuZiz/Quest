@@ -6,14 +6,14 @@ schema-version: 2
 id: sky_awakening
 
 # 章节名称：使用暖金章节标识搭配亮金加粗主标题
-name: '<#FFB75E>✦ <#FFD700><bold>第一章 · 星海初醒</bold>'
+name: '<#FFB75E>✦ <#FFD700><bold>第一章 · 初入星辰</bold>'
 
 icon: minecraft:ender_eye
 order: 1
 
 # 章节简述 (用于章节列表悬浮展示)
 description:
-  - ' <#89F7FE>▪ <#E0F7FA>在无垠星海中唤醒一座属于你们的空岛'
+  - ' <#89F7FE>▪ <#E0F7FA>唤醒一座属于你们的空岛'
   - ' <#89F7FE>▪ <#C2E9FB>扬帆启航、注入能源，收获第一批基础物资'
 
 # 章节背景故事 (用于详情展开或引导展示)

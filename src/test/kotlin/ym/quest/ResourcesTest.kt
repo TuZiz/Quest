@@ -43,10 +43,10 @@ class ResourcesTest {
         assertNull(text.clickEvent())
         val evidence=Path.of("target/verification/components.json"); Files.createDirectories(evidence.parent)
         val samples=JsonArray()
-        val values=listOf("quest","status","page","pages","info","amount","description","objectives","rewards","reward","progress","target","chapter","mode","notifications","heading","name","next").associateWith {
+        val values=listOf("quest","status","page","pages","info","amount","description","objectives","rewards","reward","progress","target","chapter","mode","notifications","heading","name","next","value","objective","completed","total","hint","step").associateWith {
             renderer.render("<#7DD3FC>实际动态参数")
         }
-        for(name in listOf("lang/zh_cn.yml","gui/main.yml","gui/chapters.yml","chapters/第一章·星海初醒.yml")) {
+        for(name in listOf("lang/zh_cn.yml","gui/main.yml","gui/chapters.yml","chapters/第一章·星海初醒.yml","quests/能源启动.yml","quests/星海启航.yml","quests/第一批资源.yml")) {
             val yaml=YamlConfiguration().apply { loadFromString(Files.readString(this@ResourcesTest.root.resolve(name))) }
             fun record(path: String, value: Any?) {
                 when(value) {

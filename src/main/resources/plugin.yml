@@ -9,6 +9,7 @@ softdepend:
   - DreamSkyblock
   - Genlite
   - CraftEngine
+  - TAB
 commands:
   quest:
     description: 任务中心

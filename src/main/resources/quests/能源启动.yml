@@ -11,7 +11,8 @@ name: '<#89F7FE>✦ <#78FFD6><bold>能源启动</bold>'
 
 # 任务描述 (用于 GUI 悬浮展示)
 description:
-  - ' <#89F7FE>▪ <#E0F7FA>右键 <#FFD700>原石生成器<#E0F7FA>，在面板中点击燃料按钮存入燃料'
+  - '<#E2E8F0>右键原石生成器<newline>   打开管理面板'
+  - '<#E2E8F0>点击<#FDE68A><bold>「燃料」</bold><#E2E8F0><newline>   放入燃料即可'
 
 icon: genlite:fuel
 
@@ -20,7 +21,7 @@ objectives:
   - id: fuel
     type: genlite.fuel
     target: 1
-    description: '<#E0F7FA>成功向生成器存入燃料'
+    description: '<#E2E8F0>为生成器<#FDE68A><bold>添加燃料</bold>'
 
 # 任务奖励
 rewards:

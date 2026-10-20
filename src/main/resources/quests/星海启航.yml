@@ -21,7 +21,7 @@ objectives:
   - id: island
     type: island.member
     target: 1
-    description: '<#E0F7FA>创建或加入空岛'
+    description: '<#FDE68A><bold>创建或加入</bold><#E2E8F0>空岛'
 
 # 任务奖励
 rewards:

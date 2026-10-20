@@ -4,18 +4,20 @@ import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.java.JavaPlugin
 import ym.quest.domain.*
+import ym.quest.tab.TabSettings
+import ym.quest.tab.TabQuestProjection
 import java.nio.file.Files
 
 data class Settings(val quests: List<QuestDefinition>, val language: YamlConfiguration,
                     val center: YamlConfiguration,
                     val chapters: List<ChapterDefinition>, val chapterMenu: YamlConfiguration,
-                    val notices: Map<String,NoticeProfile>, val rewards: RewardSettings)
+                    val notices: Map<String,NoticeProfile>, val rewards: RewardSettings, val tab: TabSettings)
 
 /** IO executor only. No save of existing YAML: comments/unknown fields remain byte-for-byte intact. */
 class QuestFiles(private val plugin: JavaPlugin, private val conditions: ConditionRegistry) {
     private val defaults = listOf("config.yml","lang/zh_cn.yml","gui/main.yml",
         "quests/星海启航.yml","quests/能源启动.yml","quests/第一批资源.yml",
-        "提示.yml","奖励.yml","gui/chapters.yml")
+        "提示.yml","奖励.yml","gui/chapters.yml","tab.yml")
     fun load(): Settings {
         NoticeConfigUpgrade.migrate(plugin.dataFolder.toPath())
         ResourceUpgrade.relocateLayout(plugin.dataFolder.toPath())
@@ -47,6 +49,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         }
         val config = yaml("config.yml")
         val rewards = RewardSettings.parse(yaml("奖励.yml"))
+        val tab = TabSettings.parse(yaml("tab.yml"))
         if(rewards.automatic) RewardTextUpgrade.migrate(plugin.dataFolder.toPath().resolve("lang/zh_cn.yml"))
         require(config.getString("storage") == "data/quest.db") { "config.yml:storage=${config.get("storage")} unsupported" }
         val quests = Files.list(plugin.dataFolder.toPath().resolve("quests")).use { paths ->
@@ -58,6 +61,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         validateGraph(quests)
         val language = yaml("lang/zh_cn.yml")
         requiredMessages.forEach { require(language.isString(it)) { "lang/zh_cn.yml:$it missing" } }
+        TabQuestProjection.requiredMessages.forEach { require(language.isString(it)) { "lang/zh_cn.yml:$it missing" } }
         val center = yaml("gui/main.yml")
         validateMenu("gui/main.yml",center)
         require(center.isString("reward-format")) { "gui/main.yml:reward-format missing" }
@@ -73,7 +77,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             require(language.isString("notices.$event.$field")) { "lang/zh_cn.yml:notices.$event.$field missing" }
         } }
         ChapterStatus.entries.forEach { require(language.isString("chapter-status.$it")) { "lang/zh_cn.yml:chapter-status.$it missing" } }
-        return Settings(ordered,language,center,chapters,chapterMenu,notices,rewards)
+        return Settings(ordered,language,center,chapters,chapterMenu,notices,rewards,tab)
     }
     private fun parse(file: String, y: YamlConfiguration): QuestDefinition {
         fun text(s: ConfigurationSection, key: String) = s.getString(key)?.takeIf { it.isNotBlank() }

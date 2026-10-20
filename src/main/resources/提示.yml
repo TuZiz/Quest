@@ -27,7 +27,7 @@ task-complete:
   pitch: 1.0
 next-task:
   chat: false
-  action-bar: true
+  action-bar: false
   title: false
   sound-enabled: false
   sound: minecraft:entity.player.levelup

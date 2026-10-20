@@ -6,6 +6,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.server.PluginDisableEvent
+import org.bukkit.event.server.PluginEnableEvent
 import org.bukkit.plugin.java.JavaPlugin
 import ym.quest.config.*
 import ym.quest.domain.*
@@ -15,6 +16,8 @@ import ym.quest.reward.*
 import ym.quest.storage.Database
 import ym.quest.text.TextRenderer
 import ym.quest.text.StoryNotices
+import ym.quest.tab.TabQuestBridge
+import ym.quest.tab.TabSettings
 import java.util.UUID
 import java.util.logging.Level
 
@@ -31,12 +34,15 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     private val claiming = mutableSetOf<UUID>()
     private var reloading = false
     private var closed = false
+    private var tabSettings = settings.tab
+    private var tab: TabQuestBridge? = null
     private val heartbeat = plugin.server.scheduler.runTaskTimer(plugin,Runnable { if(!closed) integrations.discover() },1,20)
     init {
         service.claimChanges = ::notify
         validateItems(settings)
         plugin.server.pluginManager.registerEvents(menus,plugin)
         plugin.server.pluginManager.registerEvents(this,plugin)
+        configureTab(settings.tab)
         val commands = QuestCommands(text,service,integrations,thread,delivery,{
             if(closed) text.send(it,"unavailable")
             else if(it.hasPermission("quest.admin") || menus.settings.center.getBoolean("player-access",false)) menus.open(it)
@@ -44,9 +50,15 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
         },::reload,::failure)
         plugin.getCommand("quest")!!.apply { setExecutor(commands); tabCompleter=commands }
         plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=3; task/chapter YAML schema=2; quests=${settings.quests.size}; chapters=${settings.chapters.size}; Paper ownership; Folia=false; completion=chat")
-        listOf("DreamSkyblock","Genlite","CraftEngine").forEach { id ->
+        listOf("DreamSkyblock","Genlite","CraftEngine","TAB").forEach { id ->
             plugin.logger.info("Integration $id=${plugin.server.pluginManager.getPlugin(id)?.pluginMeta?.version ?: "missing"}")
         }
+    }
+    private fun configureTab(settings: TabSettings) {
+        tab?.close(); tab=null; tabSettings=settings
+        if(!settings.enabled || !plugin.server.pluginManager.isPluginEnabled("TAB")) return
+        try { tab=TabQuestBridge(plugin,service,integrations,thread,text,settings) }
+        catch(e: LinkageError) { plugin.logger.log(Level.WARNING,"TAB API incompatible; Quest task display disabled",e) }
     }
     private fun validateItems(settings: Settings) {
         if(custom == null) { plugin.logger.warning("CraftEngine missing; custom rewards remain unavailable"); return }
@@ -115,17 +127,21 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
                 reloading=false
                 if(configureError != null) { failure(configureError); text.send(sender,"error"); return@run }
                 menus.close(); menus.settings=settings; text.language=settings.language; notices.profiles=settings.notices
-                automatic.reload(settings.rewards); integrations.refresh(); text.send(sender,"reloaded")
+                automatic.reload(settings.rewards); integrations.refresh(); configureTab(settings.tab); text.send(sender,"reloaded")
             } }
         } }
     }
     private fun failure(error: Throwable) = plugin.logger.log(Level.SEVERE,"Quest operation failed; configuration/database retained; see cause",error)
     @EventHandler fun join(e: PlayerJoinEvent) { integrations.island(e.player.uniqueId)?.let { integrations.syncIsland(it.id) } }
+    @EventHandler fun dependencyEnabled(e: PluginEnableEvent) {
+        if(!closed && e.plugin.name == "TAB") configureTab(tabSettings)
+    }
     @EventHandler fun dependencyDisabled(e: PluginDisableEvent) {
+        if(e.plugin.name == "TAB") { tab?.close(); tab=null }
         if(e.plugin.name in setOf("DreamSkyblock","Genlite","CraftEngine")) { plugin.logger.warning("Dependency ${e.plugin.name} disabled; Quest paused until restart"); close() }
     }
     override fun close() {
         if(closed) return
-        closed=true; service.claimChanges = {}; heartbeat.cancel(); automatic.close(); menus.close(); delivery.close(); integrations.close(); claiming.clear()
+        closed=true; service.claimChanges = {}; heartbeat.cancel(); tab?.close(); tab=null; automatic.close(); menus.close(); delivery.close(); integrations.close(); claiming.clear()
     }
 }

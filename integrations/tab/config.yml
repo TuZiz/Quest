@@ -1,0 +1,99 @@
+# TAB 6.2.1 专用：左侧任务、中间与右侧玩家；不启用侧边计分板或 BossBar。
+# 这是新安装模板。已有 TAB 配置时只合并 layout、components 和占位符刷新项。
+# TAB 自身使用 config-version 管理迁移，不要修改此版本号。
+config-version: 7
+header-footer:
+  enabled: true
+  designs:
+    default:
+      header:
+        - '<gradient:#89F7FE:#A78BFA>星海旅程</gradient>'
+        - ''
+      footer:
+        - ''
+tablist-name-formatting:
+  enabled: false
+scoreboard-teams:
+  enabled: false
+  case-sensitive-sorting: false
+  sorting-types:
+    - 'PLACEHOLDER_A_TO_Z:%player%'
+playerlist-objective:
+  enabled: false
+belowname-objective:
+  enabled: false
+prevent-spectator-effect:
+  enabled: false
+bossbar:
+  enabled: false
+scoreboard:
+  enabled: false
+layout:
+  enabled: true
+  direction: 'COLUMNS'
+  default-skin: 'mineskin:37e93c8e12cd426cb28fce31969e0674'
+  # 中间和右侧共 38 个玩家槽位；超出时由 TAB 显示剩余人数，保持三列。
+  enable-remaining-players-text: true
+  remaining-players-text: '<#A6B5CC>另有 %s 位玩家在线'
+  empty-slot-ping-value: 0
+  layouts:
+    quest-and-players:
+      slot-count: 60
+      fixed-slots:
+        - '1|<#89F7FE>✦ 当前任务'
+        - '2|%quest_line_1%'
+        - '3|%quest_line_2%'
+        - '4|%quest_line_3%'
+        - '5|%quest_line_4%'
+        - '6|%quest_line_5%'
+        - '7|%quest_line_6%'
+        - '8|%quest_line_7%'
+        - '9|%quest_line_8%'
+        - '10|%quest_line_9%'
+        - '11|%quest_line_10%'
+        - '12|%quest_line_11%'
+        - '13|%quest_line_12%'
+        - '14|%quest_line_13%'
+        - '15|%quest_line_14%'
+        - '16|%quest_line_15%'
+        - '17|%quest_line_16%'
+        - '18|%quest_line_17%'
+        - '19|%quest_line_18%'
+        - '20| '
+        - '21|<#89F7FE>在线玩家 <#FFFFFF>%online%'
+        - '41|<#89F7FE>在线玩家 <#A6B5CC>· 续'
+      groups:
+        players:
+          slots:
+            - '22-40'
+            - '42-60'
+ping-spoof:
+  enabled: false
+global-playerlist:
+  enabled: false
+per-world-playerlist:
+  enabled: false
+placeholders:
+  register-tab-expansion: false
+  locale: 'zh-CN'
+  date-format: 'yyyy.MM.dd'
+  time-format: 'HH:mm:ss'
+  time-offset: 0
+placeholder-refresh-intervals:
+  default-refresh-interval: 1000
+components:
+  minimessage-support: true
+  disable-shadow-for-heads: true
+debug: false
+# TAB 会读取此结构；本服未接入代理，保持关闭。
+proxy-support:
+  enabled: false
+  type: 'PLUGIN'
+  channel-name-suffix: 'custom'
+  plugin:
+    name: 'RedisBungee'
+  redis:
+    url: 'redis://:password@localhost:6379/0'
+  rabbitmq:
+    exchange: 'plugin'
+    url: 'amqp://guest:guest@localhost:5672/%2F'

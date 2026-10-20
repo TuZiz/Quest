@@ -104,7 +104,7 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 
 修正先前探针使用非锚定模式且仅验证变量的问题：现在使用与 Bossbar 相同的锚定渲染，断言图片字体及定位标记存在，导出 xerr-tracker-render.txt。资源包验证增加所有 Quest bitmap provider 源字形大小检查，继续核对 CE 合并 PNG 像素与透明度。API/包检查不替代真实客户端显示验证。
 
-实际运行 tools/run_smoke.py、tools/run_xerr_smoke.py 均通过：锚定渲染、变量、非法重载保留原任务状态通过；8 张 Quest 贴图合并后像素一致，958 个 bitmap provider 的单格源尺寸均不超过 256×256，隔离服正常退出。正式服 RCON 未启用，没有发送重载命令或主动停服；需要按 XERR.md 顺序重载并重新加载资源包，真实客户端结果待确认。此次仅修改服务端素材/锚点与验证脚本，没有重新构建或更换 Quest JAR。
+实际运行 tools/run_smoke.py、tools/run_xerr_smoke.py 均通过：锚定渲染、变量、非法重载保留原任务状态通过；8 张 Quest 贴图合并后像素一致，958 个 bitmap provider 的单格源尺寸均不超过 256×256，隔离服正常退出。正式服 RCON 未启用，没有发送重载命令或主动停服；当时需要重载 Xerr 并重新加载资源包，真实客户端结果待确认；该集成现已退役。此次仅修改服务端素材/锚点与验证脚本，没有重新构建或更换 Quest JAR。
 
 用户后续截图确认贴图已显示但位置仍旧。检查正式服 Xerr 与 CE 包，均仍含右侧中线的旧着色器；Xerr 生成 ZIP 时间未更新，虽已重载配置，CE 仍合并旧生成内容。核对正式服/隔离服 19 个输入文件 SHA256 完全一致，提取前轮验证通过的 Xerr ZIP 到同卷暂存目录，备份并替换正式服生成目录及 ZIP，51 个输出逐字节与验证 ZIP 一致，清除旧输出目录残留，右上锚点着色器不再含 50% Y。没有重发正式服命令、停止服务器或改动玩家数据；只待用户执行 ce reload pack，客户端位置仍未确认。部署记录：.build/hud/generated-sync-evidence.json。
 
@@ -146,7 +146,7 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 - 重新执行 Xerr 原生生成和 CE 合并，8 张任务 PNG 像素及透明度一致、26 个 bitmap provider 符合256像素图集限制、4 个最终字体 JSON 和26个定位着色器文件语义/内容一致。JSON比较按解析结构进行，CE会压缩编码，不能以字节变化误报失败。
 - 先核对正式服所有 Xerr/core、CE/resources及其他实际存在的外部合并输入与隔离副本哈希相同，再备份部署 Xerr/CE生成输出；原贴图不改，服务端两个布局改用单引号 MiniMessage，重复迁移字节不变。两 JAR 暂存 plugins/update，未重启正式服，未改玩家数据库。
 - 正式备份：plugins/Quest/backups/xerr-render-20261019-193802；布局原文：plugins/Xerr/backups/quest-minimessage-20261019-193735。未进行真人客户端像素、不同 GUI 缩放及 Geyser 显示验收；自动化验证不作实机声明。
-- 证据：target/verification/xerr-render-*.json、xerr-tracker-final.json、xerr-tracker-async.json、xerr-smoke-console.log、smoke-console.log及surefire-reports。补丁重建说明见XERR.md。
+- 证据：target/verification/xerr-render-*.json、xerr-tracker-final.json、xerr-tracker-async.json、xerr-smoke-console.log、smoke-console.log及surefire-reports。该旧版 Xerr 补丁现已退役。
 
 
 ## 移除HUD并改为聊天完成提示（2026-10-20）
@@ -156,3 +156,27 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 - 提示配置1→2迁移验证：仅两类完成事件默认聊天开启，保留其他事件、用户未知字段及注释、迁移前备份，重复执行不改；未来版本拒绝覆盖。旧数据库版本及HUD偏好行仅保留历史数据，不再加载HUD功能。
 - 无Xerr的隔离Leaf通过启动、三方API/五种CE物品、两套箱子菜单、帮助和Tab补全、聊天完成提示及坏任务配置重载回滚。故意放入损坏的旧显示.yml不影响启动。
 - JAR确认无HUD类、显示.yml、Xerr软依赖或其API字节码引用。服务器Quest专属Xerr布局、图像及设计配置移动到Xerr/backups/quest-hud-retired-*；其他插件资源与共享字体不改。新JAR预置plugins/update，未重启正式服、未修改玩家数据库或CE当前托管包。
+
+## TAB 左侧任务与右侧玩家（2026-10-20）
+
+- 用户提供的 TAB 6.1.0 在隔离 Leaf 26.3 启动时明确报告仅支持至 26.2，API 未初始化；未将不兼容 JAR 部署正式服。改用官方 TAB 6.2.1，下载文件 SHA-256 与 GitHub release asset digest 一致：`0b6a21af6fd3b113c05821daaed00ff92234a84ca94b29b3aec0ef1bd313b8a9`。
+- Maven 离线构建与 42 项测试通过。新增 6 项验证覆盖中文换行、当前未完成目标、后续任务切换、完成/无岛/不可用状态、同岛只读共享与不发奖励、语言幂等追加及布局槽位。旧提示测试硬编码了已被用户修改的章节名，改为验证配置中的真实名称，保留用户章节修改。
+- 最终 Quest JAR 在隔离 Leaf 26.3 + Java 25 + TAB 6.2.1 下验证：40 个固定布局槽位、21 个固定条目、19 个右侧玩家槽位、溢出人数开关、18 个原生按玩家占位符、玩家之间缓存隔离及实际 TAB MiniMessage 解析；未启用 TAB 侧边计分板或 BossBar。
+- `tab reload` 与 `quest reload` 后重新验证通过；隔离服务器正常停止。移除所有可选依赖后 Quest 单独启动与管理命令路径通过，正常退出。证据：`target/tab-build.log`、`target/verification/tab-smoke-console.log`、`target/verification/optional-smoke-console.log`、Surefire 报告。
+- 默认不使用任务 ActionBar。任务投影只读取原空岛 journal，不修改业务模型、Genlite 生产、奖励发放、SQLite 表或 schema。TAB API 仅编译使用，不打进 Quest JAR。
+- 真人客户端的两列宽度、长任务观感、多人实际名单溢出与基岩版 Tab 可见性未实测，保持待验收；服务端解析和配置检查不等同于这些客户端结果。Quest 的 Folia 不支持声明保持不变。
+## 2026-10-20 TAB 三列调整
+
+- 布局调整为左侧任务、中间和右侧玩家：60 槽，22 个固定槽、38 个玩家位；保留原 18 个任务占位符和人数溢出提示。
+- `mvn -o -Dkotlin.compiler.daemon=false -Dtest=TabQuestProjectionTest test`：6 项通过，无失败；SQLite 原有 native-access 警告不影响测试。
+- `python tools/run_tab_smoke.py`：真实 TAB 6.2.1 + 隔离 Leaf 26.3 启动、TAB 重载、Quest 重载均通过，已校验两个玩家槽位区间与原生占位符；隔离服务器正常停止。
+- 已备份后精准更新正式服 `plugins/TAB/config.yml`，只改槽数、新增第三列标题及玩家区间，其他配置逐项比较保持不变。本次只修改布局，无需替换 Quest JAR；运行中的正式服需执行 `tab reload`。
+- 三列真人客户端观感、38 人以上溢出及基岩版显示尚未实测。
+
+## 2026-10-20 TAB 紧凑文案
+
+- 用户确认的七行能源启动文案已通过真实资源与 `TabQuestProjection` 逐行断言，预览见 `target/verification/tab-compact-preview.txt`。不插入内部空白行，保留三列及 18 个任务占位符。
+- 离线 Maven package 成功，43 项测试通过；只出现原有 SQLite native-access 与 shade 元数据重复警告。
+- 最终 JAR 使用真实 TAB 6.2.1 / 隔离 Leaf 26.3 验证初始启动、TAB 重载和 Quest 重载，均通过并正常停服；正式服务器没有被停止或重载。
+- 正式语言、能源启动文案及 TAB 左列配置备份后精准更新；玩家两列及其他配置保持原值。新 JAR 已放入 `plugins/update/Quest-1.0.0.jar`，需要正常重启正式服加载，单独 `tab reload` 不会应用新版投影代码。
+- 三列真人客户端观感、多人溢出和基岩版仍待实测；任务条件、奖励、Genlite 和数据库未修改。

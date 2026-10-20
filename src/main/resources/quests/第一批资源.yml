@@ -22,7 +22,7 @@ objectives:
     type: genlite.produce
     resource: minecraft:cobblestone
     target: 32
-    description: '<#E0F7FA>生成器实际生产原石'
+    description: '<#E2E8F0>生成器<#FDE68A><bold>实际生产</bold><#E2E8F0>原石'
 
 # 任务奖励
 rewards:

@@ -3,6 +3,24 @@
 #   延续全服统一视觉色系，使用 MiniMessage
 # ==========================================
 schema-version: 1
+
+# TAB 左侧任务栏；实际任务名称、目标与操作说明来自原任务配置。
+tab:
+  loading: '<#C2E9FB>正在读取空岛任务…'
+  no-island: '<#FFD700>创建或加入空岛后，即可开启任务。'
+  no-permission: '<#FFB75E>暂无任务查看权限。'
+  unavailable: '<#FFB75E>空岛服务尚未就绪，请稍候。'
+  error: '<#FFB75E>任务暂时无法读取，稍后自动重试。'
+  done: '<#86EFAC><bold>当前任务全部达成</bold>，继续建设你的空岛吧！'
+  waiting: '<#C2E9FB>正在等待下一项任务解锁。'
+  state-line: '<#C2E9FB><value>'
+  chapter-line: '<#94A3B8><chapter>'
+  quest-line: '<#FBBF24><bold><quest></bold>'
+  objective-line: '<#94A3B8>目标  <#E2E8F0><objective>'
+  progress-line: '<#94A3B8>进度  <#67E8F9><bold><progress> / <target></bold>'
+  objectives-line: '<#94A3B8>已达成目标  <#67E8F9><bold><completed> / <total></bold>'
+  hint-line: '<#67E8F9><bold><step>.</bold> <#E2E8F0><hint>'
+  shared-line: '<#A6B5CC>空岛成员共享任务进度'
 automatic-rewards: '<#89F7FE>任务进度会自动追踪，<#A8FF78>完成奖励自动发放<#89F7FE>，无需打开任务菜单。'
 
 # ── 错误与限制提示 (柔和珊瑚红 #FF6B6B + 冰晶白 #E0F7FA) ──

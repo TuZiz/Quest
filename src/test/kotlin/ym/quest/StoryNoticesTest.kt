@@ -34,7 +34,8 @@ class StoryNoticesTest {
             notices.send(player,change,listOf(quest),listOf(chapter))
             assertEquals(listOf("sendMessage"),calls)
             assertEquals(1,messages.size);assertFalse(messages.single().contains("<#"))
-            assertTrue(messages.single().contains(if(change.chapter) "星海初醒" else "能源启动"))
+            val expected = if(change.chapter) plain.serialize(TextRenderer(yaml("lang/zh_cn.yml")).render(chapter.name)) else "能源启动"
+            assertTrue(messages.single().contains(expected))
         }
         calls.clear()
         notices.send(player,ProgressChange("home",quest.id,false),listOf(quest),listOf(chapter))
