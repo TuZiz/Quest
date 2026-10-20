@@ -23,7 +23,7 @@ right: 6
 top: -72
 width: 180
 height: 118
-# 通知位置=任务栏顶部+高度+间距，避免两个HUD互相遮挡。
+# 旧版通知参数保留兼容；当前通知独立配置于完成通知.yml。
 gap: 12
 notice-height: 40
 # 纯色背景透明度0..255，不使用旧装饰面板；追踪背景可在Quest/显示.yml关闭。
@@ -63,16 +63,7 @@ sidebar={
     'bar':label(106,'<#75D6BB>{{ get bar_full }}<#414C57>{{ get bar_empty }} <#A6B2C0>{{ get percent }}%',
                 condition="check get show_bar == 'true'")}
 dump('core/layout/quest_sidebar.yml',{'defaults':{'font':'ui'},'quest_sidebar':sidebar})
-notices={'defaults':{'font':'ui'}}
-notice_top=top+s['height']+s['gap']
-for event,color,icon in [('task-start','#82B7EF','active'),('task-complete','#88D3A0','complete'),
-                         ('chapter-start','#DDB66D','chapter-complete'),('chapter-complete','#E8C477','chapter-complete')]:
-    notices['quest_notice_'+event]={
-        'panel':element(left,notice_top,image={'id':'notice','namespace':'quest','basename':'sidebar'}),
-        'icon':element(left+7,notice_top+6,layer=10,image={'id':icon,'namespace':'quest','basename':'icons'}),
-        'heading':element(left+25,notice_top+6,layer=10,value=f'<{color}>{{{{ get heading }}}}',align='left'),
-        'detail':element(left+10,notice_top+23,layer=10,value='<#A6B2C0>{{ get detail }}',align='left')}
-dump('core/layout/quest_notifications.yml',notices)
+# Notifications have an independent installer and top-right anchor.
 # Validate all YAML before modifying anything; replacements are individually atomic and backed up.
 for path,data in outputs.items():
     if path.suffix=='.yml':yaml.safe_load(data.decode('utf-8'))
@@ -85,4 +76,4 @@ for path,data in changed.items():
     path.parent.mkdir(parents=True,exist_ok=True)
     temp=path.with_name(path.name+'.quest-tmp');temp.write_bytes(data);os.replace(temp,path)
 print(f'Installed {len(changed)} server-only files; backup: {backup}')
-print(f'Sidebar {s["width"]}x{s["height"]}, anchor 100/50, right {s["right"]}, top {top}; notice top {notice_top}')
+print(f'Sidebar {s["width"]}x{s["height"]}, anchor 100/50, right {s["right"]}, top {top}; notification layout left unchanged')

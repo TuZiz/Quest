@@ -89,3 +89,18 @@ sidebar-hud:
   view: '<#A6B2C0>当前任务栏已刷新；没有有效任务时自动隐藏。'
   usage: '<#A6B2C0>用法：/quest hud [on|off|view]，或 /quest hud notifications [on|off]、/quest hud track [任务ID]'
   help: '<#DDB66D>Quest 帮助<newline><#EEF3F5>/quest hud on|off <#A6B2C0>显示 / 隐藏常驻任务栏；不带参数切换<newline><#EEF3F5>/quest hud view <#A6B2C0>刷新当前任务栏<newline><#EEF3F5>/quest hud track [任务ID] <#A6B2C0>切换有效追踪目标<newline><#EEF3F5>/quest hud notifications on|off <#A6B2C0>独立控制完成通知<newline><#EEF3F5>/quest help <#A6B2C0>查看帮助'
+
+# 右上角完成卡片，任务名动态显示；奖励发放仍由原奖励系统负责。
+completion-hud:
+  task-complete:
+    heading: '<#94E88B>任务完成 · <name>'
+    detail: '<#C9C6C0>奖励自动发放'
+  task-start:
+    heading: '<#82B7EF>新任务 · <name>'
+    detail: '<#C9C6C0>新的目标已开启'
+  chapter-complete:
+    heading: '<#E8C477>章节完成 · <name>'
+    detail: '<#C9C6C0>章节奖励自动发放'
+  chapter-start:
+    heading: '<#DDB66D>新章节 · <name>'
+    detail: '<#C9C6C0>新的旅程开始了'

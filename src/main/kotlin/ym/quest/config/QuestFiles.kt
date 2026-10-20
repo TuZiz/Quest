@@ -109,7 +109,10 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         return QuestDefinition(id,text(y,"name"),y.getStringList("description"),text(y,"icon"),emptyList(),objectives,rewards)
     }
     companion object {
-        val requiredMessages = listOf("no-permission","unavailable","no-island","loading","error","busy","claimed","not-complete","inventory-full","uncertain","delivered","progress","complete","reloaded","reset","usage","debug","resolved","player-only","reward-line","objective-line","status.LOCKED","status.ACTIVE","status.COMPLETE","status.CLAIMED","chapter-progress","chapter-reward-status")
+        val requiredMessages = listOf("no-permission","unavailable","no-island","loading","error","busy","claimed","not-complete","inventory-full","uncertain","delivered","progress","complete","reloaded","reset","usage","debug","resolved","player-only","reward-line","objective-line","status.LOCKED","status.ACTIVE","status.COMPLETE","status.CLAIMED","chapter-progress","chapter-reward-status") +
+            listOf("task-complete","task-start","chapter-complete","chapter-start").flatMap { event ->
+                listOf("heading","detail").map { "completion-hud.$event.$it" }
+            }
         fun validateGraph(quests: List<QuestDefinition>) {
             val byId = quests.associateBy { it.id }
             require(quests.isNotEmpty() && byId.size == quests.size) { "quests/: empty or duplicate quest IDs" }

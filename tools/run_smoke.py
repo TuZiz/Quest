@@ -11,9 +11,10 @@ jdk=Path('C:/Program Files/Zulu/zulu-25/bin')
 report=ET.parse(root/'target/surefire-reports/TEST-ym.quest.ResourcesTest.xml')
 classpath=next(p.attrib['value'] for p in report.findall('.//property') if p.attrib['name']=='java.class.path')
 classes=root/'target/verification/smoke-classes';classes.mkdir(parents=True,exist_ok=True)
-subprocess.run([str(jdk/'javac.exe'),'-encoding','UTF-8','-cp',classpath,'-d',str(classes),str(root/'tools/smoke/QuestSmoke.java')],check=True)
+subprocess.run([str(jdk/'javac.exe'),'-encoding','UTF-8','-cp',classpath,'-d',str(classes),str(root/'tools/smoke/QuestSmoke.java'),str(root/'tools/smoke/CompletionHudSmoke.java')],check=True)
 with zipfile.ZipFile(server/'plugins/QuestSmoke.jar','w') as jar:
-    jar.write(classes/'ym/quest/smoke/QuestSmoke.class','ym/quest/smoke/QuestSmoke.class')
+    for compiled in classes.rglob('*.class'):
+        jar.write(compiled,compiled.relative_to(classes).as_posix())
     jar.writestr('plugin.yml','name: QuestSmoke\nversion: 1.0\nmain: ym.quest.smoke.QuestSmoke\napi-version: \'26.3\'\ndepend:\n  - Quest\n  - CraftEngine\n  - Genlite\n  - DreamSkyblock\n')
 log=root/'target/verification/smoke-console.log'
 with log.open('w',encoding='utf-8') as output:

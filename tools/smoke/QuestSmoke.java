@@ -164,9 +164,9 @@ public final class QuestSmoke extends JavaPlugin {
                 if(!"left".equals(config.getString("quest_tracker."+row+".align"))) throw new AssertionError("Tracker left alignment: "+row);
             if(!"right".equals(config.getString("quest_tracker.progress.align"))) throw new AssertionError("Progress must align right");
             var notices=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/layout/quest_notifications.yml"));
-            if(notices.getInt("quest_notice_task-complete.panel.y")!=-58) throw new AssertionError("Notice must remain below tracker plus gap");
+            if(notices.getInt("quest_notice_task-complete.panel.y")!=-2) throw new AssertionError("Notice must use top-right inset");
             if(api.popups().ids().stream().anyMatch(key->key.startsWith("quest_"))) throw new AssertionError("Retired Quest popup group still active");
-        } catch(ReflectiveOperationException | java.io.IOException error) { throw new IllegalStateException("Xerr component verification failed",error); }
+        } catch(Exception error) { throw new IllegalStateException("Xerr component verification failed",error); }
         getLogger().info("XERR_API_PASSED: four notice layouts, compact nonoverlapping bounds, native progress and variables; proxy player, no client packets");
     }
     private void checkSidebar(Player player,Map<String,com.hiusers.xerr.api.builder.RefreshableComponent> components) throws ReflectiveOperationException,java.io.IOException {
@@ -224,10 +224,8 @@ public final class QuestSmoke extends JavaPlugin {
         if(layout.getInt("quest_sidebar.background.anchor.x")!=100 || layout.getInt("quest_sidebar.background.anchor.y")!=50)
             throw new AssertionError("Sidebar must anchor on right center");
         var notice=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/layout/quest_notifications.yml"));
-        int bottom=-layout.getInt("quest_sidebar.background.y")+118;
-        int noticeTop=-notice.getInt("quest_notice_task-complete.panel.y");
-        if(noticeTop-bottom<12 || layout.getInt("quest_sidebar.background.x")!=notice.getInt("quest_notice_task-complete.panel.x"))
-            throw new AssertionError("Notice overlaps sidebar or right edge differs");
+        if(notice.getInt("quest_notice_task-complete.panel.anchor.y")!=0)
+            throw new AssertionError("Notice must keep its independent top-right anchor");
         getLogger().info("XERR_SIDEBAR_PASSED: text bar, optional background, permanent smart/always, cached frame, reload restore, off/completed hidden, next task restored; proxy only");
     }
     private void checkHudComponent(String json) {
@@ -251,7 +249,7 @@ public final class QuestSmoke extends JavaPlugin {
         for(String expected:List.of("章节探针","生产探针","原石","7/32"))
             if(!texts.contains(expected)) throw new AssertionError("HUD visible row differs from plain text: "+expected+" / "+texts);
     }
-    private void checkFinalHud(Player player,Map<String,String> vars) throws ReflectiveOperationException,java.io.IOException {
+    private void checkFinalHud(Player player,Map<String,String> vars) throws Exception {
         var fontConfig=org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.File("plugins/Xerr/core/assets/font/text.yml"));
         if("quest_pixel_12".equals(fontConfig.getString("ui.ttf"))) {
             var font=com.hiusers.xerr.api.container.FontContainer.INSTANCE.get("ui");
@@ -310,6 +308,8 @@ public final class QuestSmoke extends JavaPlugin {
             var compactFrame=components.get("quest_tracker").getClass().getMethod("getComponent").invoke(components.get("quest_tracker"));
             java.nio.file.Files.writeString(java.nio.file.Path.of("../verification/xerr-compact-final.json"),(String)compactFrame.getClass().getMethod("toRawMessage").invoke(compactFrame));
             checkSidebar(player,components);
+            CompletionHudSmoke.run(player,components);
+            getLogger().info("XERR_COMPLETION_PASSED: approved opaque card, all rows top-right, dynamic title/detail, single deduplicated notice, unchanged hold frame and expiry cleanup; proxy only");
             for(String event:List.of("task-start","task-complete","chapter-start","chapter-complete")) {
                 display.getMethod("update",Player.class,String.class,Map.class,int.class,String.class)
                     .invoke(display.getConstructor().newInstance(),player,"quest_notice_"+event,Map.of("heading","通知探针","name","任务探针","detail","下一任务"),6,"quest_notice");
