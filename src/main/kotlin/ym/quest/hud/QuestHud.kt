@@ -54,7 +54,7 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
         tracker.tick(players,api,options,settings.getBoolean("tracker"),::eligible,::home,preferences::get)
         notifications.tick(players,api,settings.getBoolean("notifications"),{
             eligible(it) && preferences.get(it)?.notifications == true
-        },::home,clock)
+        },{ home(it) ?: "" },clock)
     }
     private fun tick() = safe {
         if(closed) return@safe
@@ -96,7 +96,25 @@ class QuestHud(private val plugin: JavaPlugin, private val service: QuestService
         counter=settings.getInt("refresh-ticks")
         safe { render() }
     }
-    fun control(player: Player, args: List<String>) { if(!closed) controls.execute(player,args) }
+    fun control(player: Player, args: List<String>) {
+        if(closed) return
+        if(args == listOf("test")) safe { testNotice(player) } else controls.execute(player,args)
+    }
+    /** Presentation probe only; no service writes, completion events or reward delivery. */
+    private fun testNotice(player: Player) {
+        val preference=preferences.get(player) ?: run { text.send(player,"loading"); return }
+        if(!settings.getBoolean("notifications") || !preference.notifications) {
+            text.send(player,"hud-test.disabled"); return
+        }
+        if(!packReady(player)) { text.send(player,"hud-test.pack-required"); return }
+        val api=display()
+        if(api == null || !api.ready("quest_notice_task-complete")) {
+            text.send(player,"hud-test.unavailable"); return
+        }
+        val name=PlainTextComponentSerializer.plainText().serialize(text.format("hud-test.name"))
+        notifications.offer(player,listOf(HudNotice(home(player) ?: "","preview-${clock / options.duration}","task-complete",name)),options)
+        text.send(player,"hud-test.queued")
+    }
     fun changes(player: Player, changes: List<ProgressChange>, quests: List<QuestDefinition>, chapters: List<ChapterDefinition>) = safe {
         if(closed) return@safe
         if(settings.getBoolean("notifications") && eligible(player) && preferences.get(player)?.notifications == true && display() != null)

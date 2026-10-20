@@ -59,7 +59,7 @@ object ResourceUpgrade {
         val existing = YamlConfiguration().apply { loadFromString(old) }
         require(existing.getInt("schema-version",-1) == 1) { "$file:schema-version=${existing.get("schema-version")} unsupported; original preserved" }
         val defaults = YamlConfiguration().apply { loadFromString(bundled) }
-        val missing = listOf("chapter-status","chapter-progress","chapter-reward-status","notices","automatic-rewards","hud-completed","hud-controls","hud-notices","smart-hud","sidebar-hud","completion-hud").filter { !existing.contains(it) }
+        val missing = listOf("chapter-status","chapter-progress","chapter-reward-status","notices","automatic-rewards","hud-completed","hud-controls","hud-notices","smart-hud","sidebar-hud","completion-hud","hud-test").filter { !existing.contains(it) }
         if(missing.isEmpty()) return
         // Append complete new root blocks only. Malformed existing keys are rejected by the loader.
         val lines = bundled.lines()

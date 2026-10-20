@@ -46,6 +46,7 @@ class CompletionNoticeTextTest {
         val y=YamlConfiguration().apply { loadFromString(next) }
         assertEquals("自定义下一任务",y.getString("hud-notices.next"))
         assertTrue(y.isString("completion-hud.task-complete.heading"))
+        assertTrue(y.isString("hud-test.help"))
         ResourceUpgrade.appendLanguage(file,bundled);assertEquals(next,Files.readString(file))
     }
 }

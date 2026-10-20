@@ -110,6 +110,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
     }
     companion object {
         val requiredMessages = listOf("no-permission","unavailable","no-island","loading","error","busy","claimed","not-complete","inventory-full","uncertain","delivered","progress","complete","reloaded","reset","usage","debug","resolved","player-only","reward-line","objective-line","status.LOCKED","status.ACTIVE","status.COMPLETE","status.CLAIMED","chapter-progress","chapter-reward-status") +
+            listOf("name","help","queued","disabled","pack-required","unavailable").map { "hud-test.$it" } +
             listOf("task-complete","task-start","chapter-complete","chapter-start").flatMap { event ->
                 listOf("heading","detail").map { "completion-hud.$event.$it" }
             }

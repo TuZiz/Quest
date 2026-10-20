@@ -31,7 +31,7 @@ class QuestCommands(private val text: TextRenderer, private val service: QuestSe
                 else if(args.size != 1) text.send(sender,"smart-hud.help-admin") else reload(sender)
             } else {
                 if(!sender.hasPermission("quest.use")) text.send(sender,"no-permission")
-                else { text.send(sender,"sidebar-hud.help"); if(sender.hasPermission("quest.admin")) text.send(sender,"smart-hud.help-admin") }
+                else { text.send(sender,"sidebar-hud.help"); text.send(sender,"hud-test.help"); if(sender.hasPermission("quest.admin")) text.send(sender,"smart-hud.help-admin") }
             }
             return true
         }
@@ -79,7 +79,7 @@ class QuestCommands(private val text: TextRenderer, private val service: QuestSe
         if(!sender.hasPermission("quest.use")) return emptyList()
         val choices = when {
             args.size == 1 -> listOf("hud","help") + if(sender.hasPermission("quest.admin")) listOf("reload","admin") else emptyList()
-            args.size == 2 && args[0] == "hud" -> listOf("smart","always","off","view","track","notifications")
+            args.size == 2 && args[0] == "hud" -> listOf("smart","always","off","view","track","notifications","test")
             args.size == 3 && args[0] == "hud" && args[1] == "notifications" -> listOf("on","off")
             args.size == 3 && args[0] == "hud" && args[1] == "track" -> service.definitions.map { it.id }
             !sender.hasPermission("quest.admin") -> emptyList()

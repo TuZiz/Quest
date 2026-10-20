@@ -73,6 +73,7 @@ public final class QuestSmoke extends JavaPlugin {
         messages.clear();command.execute(sender,"quest",new String[]{"reload"});
         if(messages.isEmpty() || messages.stream().anyMatch(s->s.contains("/quest hud"))) throw new AssertionError("Unprivileged reload was not rejected");
         if(command.tabComplete(sender,"quest",new String[]{""}).contains("reload")) throw new AssertionError("Unprivileged reload completion");
+        if(!command.tabComplete(sender,"quest",new String[]{"hud","t"}).contains("test")) throw new AssertionError("HUD test completion missing");
         admin.set(true);messages.clear();command.execute(sender,"quest",new String[]{"help"});
         if(messages.stream().noneMatch(s->s.contains("/quest reload")) || !command.tabComplete(sender,"quest",new String[]{""}).contains("reload")) throw new AssertionError("Admin direct reload help missing");
         getLogger().info("QUEST_COMMANDS_PASSED: player/admin help, direct reload permission and completion");
@@ -80,10 +81,14 @@ public final class QuestSmoke extends JavaPlugin {
     private void checkHudStartup(Object runtime) throws Exception {
         var hud=(ym.quest.hud.QuestHud)field(runtime,"hud");
         var status=new java.util.concurrent.atomic.AtomicReference<org.bukkit.event.player.PlayerResourcePackStatusEvent.Status>();
+        var messages=new ArrayList<String>();
+        var plain=net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText();
         var id=UUID.randomUUID();
         var player=(Player)Proxy.newProxyInstance(Player.class.getClassLoader(),new Class<?>[]{Player.class},(proxy,method,args)->switch(method.getName()) {
             case "getUniqueId" -> id;
             case "getResourcePackStatus" -> status.get();
+            case "hasPermission", "isOnline" -> true;
+            case "sendMessage" -> { if(args!=null) for(Object arg:args) if(arg instanceof Component component) messages.add(plain.serialize(component)); yield null; }
             default -> null;
         });
         var ready=hud.getClass().getDeclaredMethod("packReady",Player.class);ready.setAccessible(true);
@@ -94,6 +99,24 @@ public final class QuestSmoke extends JavaPlugin {
         if(!(boolean)ready.invoke(hud,player)) throw new AssertionError("Missed startup pack event not recovered");
         hud.reload(((QuestMenus)field(runtime,"menus")).getSettings().getHud());
         if(!(boolean)ready.invoke(hud,player)) throw new AssertionError("HUD reload lost loaded player");
+        var preferences=field(hud,"preferences");
+        var sessions=(Map)field(preferences,"sessions");
+        var sessionType=Class.forName("ym.quest.hud.HudPreferenceSessions$Session");
+        var constructor=sessionType.getDeclaredConstructor();constructor.setAccessible(true);
+        var session=constructor.newInstance();
+        var value=sessionType.getDeclaredField("value");value.setAccessible(true);
+        value.set(session,new ym.quest.hud.HudPreference(ym.quest.hud.HudMode.OFF,true,null));sessions.put(id,session);
+        var command=getServer().getPluginCommand("quest");
+        command.execute(player,"quest",new String[]{"hud","test"});
+        var notifications=field(hud,"notifications");
+        var queues=(Map)field(notifications,"queues");
+        if(queues.size()!=1 || messages.stream().noneMatch(s->s.contains("只是预览"))) throw new AssertionError("HUD test command did not enqueue with tracking off and no island");
+        command.execute(player,"quest",new String[]{"hud","test"});
+        if(((ym.quest.hud.HudNoticeQueue)queues.get(id)).getSize()!=1) throw new AssertionError("HUD preview duplicate not deduplicated");
+        value.set(session,new ym.quest.hud.HudPreference(ym.quest.hud.HudMode.OFF,false,null));messages.clear();
+        command.execute(player,"quest",new String[]{"hud","test"});
+        if(messages.stream().noneMatch(s->s.contains("任务通知已关闭"))) throw new AssertionError("HUD preview ignored notifications preference");
+        getLogger().info("HUD_TEST_COMMAND_PASSED: real command, no island, tracker off, dedup and notification preference");
         hud.quit(new org.bukkit.event.player.PlayerQuitEvent(player,Component.empty(),org.bukkit.event.player.PlayerQuitEvent.QuitReason.DISCONNECTED));
         status.set(null);
         if((boolean)ready.invoke(hud,player)) throw new AssertionError("Quit leaked resource pack readiness");
