@@ -1,59 +1,77 @@
+# ==========================================
+#          Quest 任务系统全局语言配置
+#   延续全服统一视觉色系，使用 MiniMessage
+# ==========================================
 schema-version: 1
 automatic-rewards: '<#89F7FE>任务进度会自动追踪，<#A8FF78>完成奖励自动发放<#89F7FE>，无需打开任务菜单。'
-no-permission: '<#FCA5A5>你没有使用此功能的权限。'
-unavailable: '<#FCA5A5>相关插件或物品尚未就绪，请稍后再试。'
-no-island: '<#FBBF24>请先创建或加入空岛。'
-loading: '<#94A3B8>正在读取任务数据…'
-error: '<#FCA5A5>操作未能完成，请联系管理员查看 Quest 日志。'
-busy: '<#FBBF24>正在处理，请稍后再试。'
-claimed: '<#6EE7B7>任务奖励正在自动发放。'
-not-complete: '<#FBBF24>任务尚未完成、已经领取，或记录状态不允许此操作。'
-inventory-full: '<#FBBF24>背包空间不足，奖励已安全保留。腾出空间后会自动发放。'
-uncertain: '<#FBBF24>存在发放结果待核对的奖励。请管理员检查 /quest admin debug。'
-delivered: '<#6EE7B7>奖励已放入背包。'
-progress: '<#7DD3FC>任务进度更新：<quest>'
-complete: '<#6EE7B7>任务完成：<quest><#CBD5E1>，奖励会自动发放。'
-reloaded: '<#6EE7B7>Quest 配置已重载。'
-reset: '<#6EE7B7>进度已重置；已有领奖记录保留，防止重复奖励。'
-usage: '<#CBD5E1>/quest admin reload | reset 〈空岛UUID〉 〈任务ID〉 | debug 〈空岛UUID〉 | resolve 〈奖励UUID〉 delivered/retry'
-debug: '<#CBD5E1><info>'
-resolved: '<#6EE7B7>发放核对结果已保存到审计记录。'
-player-only: '<#FBBF24>请在游戏内打开任务中心。'
-reward-line: '<#FBBF24>奖励数量：<amount>'
-objective-line: '<description> <#7DD3FC><progress><#94A3B8>/<target>'
+
+# ── 错误与限制提示 (柔和珊瑚红 #FF6B6B + 冰晶白 #E0F7FA) ──
+no-permission: '<#FF6B6B>✖ <#E0F7FA>你没有使用此功能的权限。'
+unavailable: '<#FF6B6B>✖ <#E0F7FA>相关插件或物品数据尚未就绪，请稍后再试。'
+error: '<#FF6B6B>✖ <#E0F7FA>操作未能完成，请联系管理员查看 Quest 日志。'
+player-only: '<#FF6B6B>✖ <#E0F7FA>该操作仅限玩家在游戏内打开任务中心。'
+
+# ── 警告与状态提示 (暖金 #FFB75E / 冰蓝 #89F7FE + 冰晶白 #E0F7FA) ──
+no-island: '<#FFB75E>⚠ <#E0F7FA>请先创建或加入一个专属家园空岛。'
+loading: '<#89F7FE>⏳ <#C2E9FB>正在读取家园任务数据，请稍候…'
+busy: '<#FFB75E>⏳ <#E0F7FA>操作正在处理中，请勿频繁点击。'
+not-complete: '<#FFB75E>✖ <#E0F7FA>该任务尚未完成、奖励已领取，或当前状态不支持此操作。'
+inventory-full: '<#FFB75E>⚠ <#E0F7FA>背包空间不足！奖励已安全保留，腾出空位后会自动发放。'
+uncertain: '<#FFB75E>⚠ <#E0F7FA>存在发放结果待核对的奖励，请联系管理员使用 <#FFF9C4>/quest admin debug <#E0F7FA>核实。'
+
+# ── 成功与进度提示 (薄荷绿 #A8FF78 / 冰蓝 #89F7FE + 冰晶白 #E0F7FA) ──
+claimed: '<#A8FF78>✔ <#E0F7FA>任务奖励正在自动发放。'
+delivered: '<#A8FF78>✔ <#E0F7FA>任务奖励已成功发放至你的背包。'
+progress: '<#89F7FE>✦ <#C2E9FB>任务进度更新：<#FFFFFF><quest>'
+complete: '<#A8FF78>✦ <#E0F7FA>任务达成：<#78FFD6><quest><#E0F7FA>！奖励会自动发放。'
+
+# ── 管理与调试指令 ──
+reloaded: '<#A8FF78>✔ <#E0F7FA>Quest 任务配置文件已成功重载。'
+reset: '<#A8FF78>✔ <#E0F7FA>任务进度已重置（历史领奖记录已保留，防止重复刷取奖励）。'
+usage: '<#FFB75E>✦ <#E0F7FA>用法：<#FFF9C4>/quest admin reload <#7F8C8D>| <#FFF9C4>reset 〈空岛UUID〉 〈任务ID〉 <#7F8C8D>| <#FFF9C4>debug 〈空岛UUID〉 <#7F8C8D>| <#FFF9C4>resolve 〈奖励UUID〉 delivered/retry'
+debug: '<#89F7FE>ℹ <#E0F7FA><info>'
+resolved: '<#A8FF78>✔ <#E0F7FA>发放核对结果已成功保存至审计记录。'
+
+# ── GUI 面板条目格式 (统一 ▪ 前缀与高亮配色) ──
+reward-line: ' <#FFB75E>▪ <#FFE0B2>奖励数量：<#FFD700><amount>'
+objective-line: ' <#89F7FE>▪ <#E0F7FA><description> <#A8FF78><progress><#7F8C8D>/<#89F7FE><target>'
+
 status:
-  LOCKED: '<#64748B>未解锁'
-  ACTIVE: '<#7DD3FC>进行中'
-  COMPLETE: '<#6EE7B7>已完成'
-  CLAIMED: '<#94A3B8>已领取'
+  LOCKED: '<#7F8C8D>🔒 未解锁'
+  ACTIVE: '<#89F7FE>⏳ 进行中'
+  COMPLETE: '<#A8FF78>✦ 已完成'
+  CLAIMED: '<#90A4AE>✔ 已领取'
 
 chapter-status:
-  LOCKED: '<#64748B>未解锁'
-  ACTIVE: '<#7DD3FC>进行中'
-  COMPLETE: '<#6EE7B7>已完成'
-chapter-progress: '<#CBD5E1>章节进度：<progress>/<target>'
-chapter-reward-status: '<#FBBF24>章节奖励：<status>'
+  LOCKED: '<#7F8C8D>🔒 未解锁'
+  ACTIVE: '<#89F7FE>⏳ 进行中'
+  COMPLETE: '<#A8FF78>✔ 已完成'
+
+chapter-progress: ' <#89F7FE>▪ <#C2E9FB>章节进度：<#A8FF78><progress><#7F8C8D>/<#89F7FE><target>'
+chapter-reward-status: ' <#FFB75E>▪ <#FFE0B2>章节奖励：<status>'
+
+# ── 屏幕 Title 与聊天播报通知 ──
 notices:
   chapter-start:
-    message: '<#7DD3FC>章节开启：<chapter>'
-    title: '<chapter>'
-    subtitle: '<#CBD5E1>新的旅程开始了'
+    message: '<#FFB75E>✦ <#E0F7FA>新章节已开启：<#FFD700><chapter>'
+    title: '<#FFB75E>✦ <#FFD700><bold><chapter></bold> <#FFB75E>✦'
+    subtitle: '<#89F7FE>▪ <#E0F7FA>新的空岛旅程开始了'
   task-start:
-    message: '<#7DD3FC>任务开始：<quest>'
-    title: '<quest>'
-    subtitle: '<#CBD5E1>目标已解锁'
+    message: '<#89F7FE>✦ <#E0F7FA>新任务已解锁：<#78FFD6><quest>'
+    title: '<#89F7FE>✦ <#E0F7FA><bold><quest></bold>'
+    subtitle: '<#C2E9FB>新的目标已解锁'
   task-complete:
-    message: '<#6EE7B7>任务完成：<quest><#CBD5E1>，奖励会自动发放。'
-    title: '<#6EE7B7>任务完成'
-    subtitle: '<quest>'
+    message: '<#A8FF78>✔ <#E0F7FA>任务完成：<#FFD700><quest><#E0F7FA>，奖励会自动发放。'
+    title: '<#A8FF78>✦ <#78FFD6><bold>任 务 完 成</bold> <#A8FF78>✦'
+    subtitle: '<#FFD700><quest>'
   next-task:
-    message: '<#7DD3FC>下一任务已解锁：<quest>'
-    title: '<quest>'
-    subtitle: '<#CBD5E1>新的目标已解锁，继续前进吧'
+    message: '<#89F7FE>▶ <#E0F7FA>下一阶段任务已解锁：<#78FFD6><quest>'
+    title: '<#89F7FE>✦ <#E0F7FA><bold><quest></bold>'
+    subtitle: '<#C2E9FB>新的目标已解锁，继续前进吧'
   chapter-complete:
-    message: '<#6EE7B7>章节完成：<chapter><#CBD5E1>，章节奖励会自动发放。'
-    title: '<#6EE7B7>章节完成'
-    subtitle: '<chapter>'
+    message: '<#FFB75E>🎉 <#E0F7FA>恭喜完成章节：<#FFD700><chapter><#E0F7FA>！章节奖励会自动发放。'
+    title: '<#FFB75E>✦ <#FFD700><bold>章 节 完 成</bold> <#FFB75E>✦'
+    subtitle: '<#78FFD6><chapter>'
 
 # 文字任务栏；旧 smart / always 指令保持兼容，显示方式统一为常驻。
 

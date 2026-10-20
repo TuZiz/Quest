@@ -1,16 +1,28 @@
-# 仅定义任务内容；章节及前置关系配置在 chapters/ 对应章节文件。
+# ==========================================
+#          任务配置：能源启动
+#   仅定义任务内容；章节及前置配置于 chapters/
+# ==========================================
 schema-version: 2
 id: first_fuel
 scope: island
-name: '<#FBBF24>能源启动'
+
+# 任务名称：使用冰蓝星标搭配青绿加粗标题，保持全任务线视觉统一
+name: '<#89F7FE>✦ <#78FFD6><bold>能源启动</bold>'
+
+# 任务描述 (用于 GUI 悬浮展示)
 description:
-  - '<#CBD5E1>右键原石生成器，点击燃料按钮存入燃料。'
+  - ' <#89F7FE>▪ <#E0F7FA>右键 <#FFD700>原石生成器<#E0F7FA>，在面板中点击燃料按钮存入燃料'
+
 icon: genlite:fuel
+
+# 任务目标 (自动套用全局语言文件中的 objective-line 格式)
 objectives:
   - id: fuel
     type: genlite.fuel
     target: 1
-    description: '<#CBD5E1>成功向生成器存入燃料'
+    description: '<#E0F7FA>成功向生成器存入燃料'
+
+# 任务奖励
 rewards:
   - item: genlite:mechanical_parts
     amount: 2

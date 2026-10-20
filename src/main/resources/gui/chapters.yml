@@ -5,6 +5,8 @@ unavailable-item: 'minecraft:barrier'
 Shape:
 - '########R'
 - '#CCCCCCC#'
+- '#CCCCCCC#'
+- '#CCCCCCC#'
 - 'P###B###N'
 components:
   '#':
