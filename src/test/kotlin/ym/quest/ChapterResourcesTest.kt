@@ -34,8 +34,10 @@ class ChapterResourcesTest {
         assertEquals(listOf("sky_start","first_fuel","first_resources"),chapter.quests)
         assertTrue(chapter.story.isNotEmpty()); assertTrue(chapter.rewards.isNotEmpty())
         val profiles=NoticeFiles.parse(yaml("提示.yml"))
-        assertTrue(profiles.getValue("chapter-complete").title)
-        assertNotNull(profiles.getValue("chapter-complete").sound)
+        for(event in listOf("task-complete","chapter-complete")) {
+            val p=profiles.getValue(event)
+            assertTrue(p.chat); assertFalse(p.title); assertFalse(p.actionBar); assertNull(p.sound)
+        }
         val disabled=yaml("提示.yml")
         NoticeFiles.events.forEach { event -> listOf("chat","action-bar","title","sound-enabled").forEach { disabled.set("$event.$it",false) } }
         assertTrue(NoticeFiles.parse(disabled).values.all { !it.chat && !it.actionBar && !it.title && it.sound == null })
@@ -61,8 +63,8 @@ class ChapterResourcesTest {
         assertTrue(upgraded.startsWith("# 自定义中文注释\nschema-version: 1\nunknown: 原值\n"))
         val y=YamlConfiguration().apply { loadFromString(upgraded) }
         assertTrue(y.isString("notices.chapter-complete.title"));assertTrue(y.isString("chapter-status.COMPLETE"))
-        assertTrue(y.isString("hud-completed.task")); assertTrue(y.isString("hud-completed.objective"))
-        val custom=upgraded.replace(y.getString("hud-completed.task")!!,"<#123456>自定义完成提示")
+        assertTrue(y.isString("command-help.player")); assertFalse(y.contains("hud-completed"))
+        val custom=upgraded.replace(y.getString("command-help.player")!!,"<#123456>自定义帮助")
         Files.writeString(language,custom)
         ResourceUpgrade.appendLanguage(language,bundled)
         assertEquals(custom,Files.readString(language))

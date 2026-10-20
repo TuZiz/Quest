@@ -23,6 +23,6 @@
 
 `tools/make_compat.py` 保留本次补丁的生成依据，会核对需要替换的原始片段；日常构建不需要重新运行它。运行 `build.ps1` 即可应用已保存的覆盖包。
 
-## Xerr 2.1
+## 显示集成
 
-本次仅有本地 JAR，补丁源码及可复现构建器分别为 `compat/Xerr/LayoutMiniMessage.java`、`tools/smoke/PatchXerr.java`、`tools/patch_xerr.py`。固定原始 LayoutEntity 字节码 SHA256 为 `d4ee2d49edd57ab3435de87a82d69f0bcb69f0e80e2ddfee3374a47978cf2784`，只在变量处理后的三个字符串出口调用颜色适配器，其他类保留；新运行类仅依赖 Paper 已提供的 Adventure。材料、配置、字体不进入 Quest 或补丁 JAR。该补丁仅验收 Paper/Leaf26.3 + Java25 + Xerr2.1，不声称支持其他平台版本。详情见 XERR.md。
+Quest已移除Xerr运行/构建依赖、HUD适配及其补丁工具。任务和章节完成默认通过聊天消息提示，不需要Quest资源包。

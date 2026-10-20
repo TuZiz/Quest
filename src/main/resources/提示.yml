@@ -1,5 +1,6 @@
-# 聊天、ActionBar、Title 和音效均可分别关闭。音量 0–4，音调 0.5–2。
-schema-version: 1
+# 任务及章节完成默认仅发送聊天消息；其他事件通道仍可分别配置。
+# 音量 0–4，音调 0.5–2。
+schema-version: 2
 chapter-start:
   chat: true
   action-bar: false
@@ -20,7 +21,7 @@ task-complete:
   chat: true
   action-bar: false
   title: false
-  sound-enabled: true
+  sound-enabled: false
   sound: minecraft:entity.player.levelup
   volume: 0.6
   pitch: 1.0
@@ -35,8 +36,8 @@ next-task:
 chapter-complete:
   chat: true
   action-bar: false
-  title: true
-  sound-enabled: true
+  title: false
+  sound-enabled: false
   sound: minecraft:entity.player.levelup
   volume: 0.6
   pitch: 1.0

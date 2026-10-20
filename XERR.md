@@ -1,3 +1,5 @@
+> 历史归档：Quest现已移除Xerr集成、贴图HUD及构建工具，完成通知改为聊天。以下指令及补丁路径仅作旧版本记录，不适用于当前版本。
+
 # Quest × Xerr 部署
 
 Quest 仅增加可选显示适配，不修改任务推进、累计基线、既有任务数据或奖励发放流程。目标版本：Leaf/Paper 26.3、Java 25、Xerr 2.1.0、PacketEvents 2.14.0、CraftEngine 26.9.2；不声明 Folia 兼容。

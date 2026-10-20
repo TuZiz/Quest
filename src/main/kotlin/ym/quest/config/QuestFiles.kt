@@ -9,15 +9,15 @@ import java.nio.file.Files
 data class Settings(val quests: List<QuestDefinition>, val language: YamlConfiguration,
                     val center: YamlConfiguration,
                     val chapters: List<ChapterDefinition>, val chapterMenu: YamlConfiguration,
-                    val notices: Map<String,NoticeProfile>, val hud: YamlConfiguration, val rewards: RewardSettings)
+                    val notices: Map<String,NoticeProfile>, val rewards: RewardSettings)
 
 /** IO executor only. No save of existing YAML: comments/unknown fields remain byte-for-byte intact. */
 class QuestFiles(private val plugin: JavaPlugin, private val conditions: ConditionRegistry) {
     private val defaults = listOf("config.yml","lang/zh_cn.yml","gui/main.yml",
         "quests/星海启航.yml","quests/能源启动.yml","quests/第一批资源.yml",
-        "提示.yml","显示.yml","奖励.yml","gui/chapters.yml")
+        "提示.yml","奖励.yml","gui/chapters.yml")
     fun load(): Settings {
-        HudConfigUpgrade.migrate(plugin.dataFolder.toPath(),checkNotNull(plugin.getResource("显示.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
+        NoticeConfigUpgrade.migrate(plugin.dataFolder.toPath())
         ResourceUpgrade.relocateLayout(plugin.dataFolder.toPath())
         GuiConfigUpgrade.migrate(plugin.dataFolder.toPath(),checkNotNull(plugin.getResource("gui/main.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
         ResourceUpgrade.renameQuests(plugin.dataFolder.toPath())
@@ -41,7 +41,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             val text = Files.readString(plugin.dataFolder.toPath().resolve(name))
             return YamlConfiguration().apply {
                 try { loadFromString(text) } catch(e: Exception) { throw IllegalArgumentException("$name: YAML解析失败",e) }
-                val expected = if(name == "显示.yml") 4 else if(name.startsWith("quests/") || name.startsWith("chapters/") || name in setOf("gui/main.yml")) 2 else 1
+                val expected = if(name.startsWith("quests/") || name.startsWith("chapters/") || name in setOf("gui/main.yml","提示.yml")) 2 else 1
                 require(get("schema-version") == expected) { "$name:schema-version=${get("schema-version")} expected $expected; original preserved" }
             }
         }
@@ -57,7 +57,6 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         }
         validateGraph(quests)
         val language = yaml("lang/zh_cn.yml")
-        listOf("task","objective").forEach { require(language.isString("hud-completed.$it")) { "lang/zh_cn.yml:hud-completed.$it missing" } }
         requiredMessages.forEach { require(language.isString(it)) { "lang/zh_cn.yml:$it missing" } }
         val center = yaml("gui/main.yml")
         validateMenu("gui/main.yml",center)
@@ -74,12 +73,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             require(language.isString("notices.$event.$field")) { "lang/zh_cn.yml:notices.$event.$field missing" }
         } }
         ChapterStatus.entries.forEach { require(language.isString("chapter-status.$it")) { "lang/zh_cn.yml:chapter-status.$it missing" } }
-        val hud = yaml("显示.yml")
-        ym.quest.hud.HudSettings.parse(hud)
-        listOf("enabled","tracker","notifications").forEach { require(hud.isBoolean(it)) { "显示.yml:$it=${hud.get(it)} expected boolean" } }
-        require(hud.isInt("refresh-ticks") && hud.getInt("refresh-ticks") in 20..1200) { "显示.yml:refresh-ticks=${hud.get("refresh-ticks")} expected 20..1200" }
-        require(!hud.getString("tracker-layout").isNullOrBlank()) { "显示.yml:tracker-layout missing" }
-        return Settings(ordered,language,center,chapters,chapterMenu,notices,hud,rewards)
+        return Settings(ordered,language,center,chapters,chapterMenu,notices,rewards)
     }
     private fun parse(file: String, y: YamlConfiguration): QuestDefinition {
         fun text(s: ConfigurationSection, key: String) = s.getString(key)?.takeIf { it.isNotBlank() }
@@ -110,10 +104,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
     }
     companion object {
         val requiredMessages = listOf("no-permission","unavailable","no-island","loading","error","busy","claimed","not-complete","inventory-full","uncertain","delivered","progress","complete","reloaded","reset","usage","debug","resolved","player-only","reward-line","objective-line","status.LOCKED","status.ACTIVE","status.COMPLETE","status.CLAIMED","chapter-progress","chapter-reward-status") +
-            listOf("name","help","queued","disabled","pack-required","unavailable").map { "hud-test.$it" } +
-            listOf("task-complete","task-start","chapter-complete","chapter-start").flatMap { event ->
-                listOf("heading","detail").map { "completion-hud.$event.$it" }
-            }
+            listOf("command-help.player","command-help.admin")
         fun validateGraph(quests: List<QuestDefinition>) {
             val byId = quests.associateBy { it.id }
             require(quests.isNotEmpty() && byId.size == quests.size) { "quests/: empty or duplicate quest IDs" }

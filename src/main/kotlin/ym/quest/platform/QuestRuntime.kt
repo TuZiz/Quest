@@ -22,7 +22,6 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
                    private val files: QuestFiles, private val thread: GameThread, settings: Settings) : Listener, AutoCloseable {
     private val text = TextRenderer(settings.language)
     private val integrations = Integrations(plugin,service,::notify,::failure)
-    private val hud = ym.quest.hud.QuestHud(plugin,service,integrations,thread,::failure,settings.hud,text,ym.quest.storage.HudPreferenceStore(db))
     private val notices = StoryNotices(text,settings.notices)
     private val custom = if(plugin.server.pluginManager.isPluginEnabled("CraftEngine")) CraftEngineItemProvider() else null
     private val items = ItemFactory(listOfNotNull(custom))
@@ -42,10 +41,10 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
             if(closed) text.send(it,"unavailable")
             else if(it.hasPermission("quest.admin") || menus.settings.center.getBoolean("player-access",false)) menus.open(it)
             else text.send(it,"automatic-rewards")
-        },::reload,::failure,hud::control)
+        },::reload,::failure)
         plugin.getCommand("quest")!!.apply { setExecutor(commands); tabCompleter=commands }
-        plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=3; task/chapter YAML schema=2; quests=${settings.quests.size}; chapters=${settings.chapters.size}; Paper ownership; Folia=false; Xerr HUD=${settings.hud.getBoolean("enabled")}")
-        listOf("DreamSkyblock","Genlite","CraftEngine","Xerr").forEach { id ->
+        plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=3; task/chapter YAML schema=2; quests=${settings.quests.size}; chapters=${settings.chapters.size}; Paper ownership; Folia=false; completion=chat")
+        listOf("DreamSkyblock","Genlite","CraftEngine").forEach { id ->
             plugin.logger.info("Integration $id=${plugin.server.pluginManager.getPlugin(id)?.pluginMeta?.version ?: "missing"}")
         }
     }
@@ -92,7 +91,6 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
                 integrations.islands?.byId(id)?.members?.forEach { member ->
                     plugin.server.getPlayer(member)?.takeIf { it.hasPermission("quest.use") }?.let { player ->
                         list.forEach { notices.send(player,it,service.definitions,service.chapters) }
-                        hud.changes(player,list,service.definitions,service.chapters)
                     }
                 }
                 menus.refreshHome(id)
@@ -117,7 +115,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
                 reloading=false
                 if(configureError != null) { failure(configureError); text.send(sender,"error"); return@run }
                 menus.close(); menus.settings=settings; text.language=settings.language; notices.profiles=settings.notices
-                hud.reload(settings.hud); automatic.reload(settings.rewards); integrations.refresh(); text.send(sender,"reloaded")
+                automatic.reload(settings.rewards); integrations.refresh(); text.send(sender,"reloaded")
             } }
         } }
     }
@@ -128,6 +126,6 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     }
     override fun close() {
         if(closed) return
-        closed=true; service.claimChanges = {}; heartbeat.cancel(); automatic.close(); hud.close(); menus.close(); delivery.close(); integrations.close(); claiming.clear()
+        closed=true; service.claimChanges = {}; heartbeat.cancel(); automatic.close(); menus.close(); delivery.close(); integrations.close(); claiming.clear()
     }
 }

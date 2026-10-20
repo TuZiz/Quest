@@ -11,32 +11,25 @@ import java.util.UUID
 class QuestCommands(private val text: TextRenderer, private val service: QuestService,
                     private val integrations: Integrations, private val thread: GameThread,
                     private val delivery: MailboxDelivery, private val open: (Player) -> Unit,
-                    private val reload: (CommandSender) -> Unit, private val failure: (Throwable) -> Unit,
-                    private val hud: (Player,List<String>) -> Unit) : CommandExecutor, TabCompleter {
+                    private val reload: (CommandSender) -> Unit, private val failure: (Throwable) -> Unit) : CommandExecutor, TabCompleter {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if(args.isEmpty()) {
             if(!sender.hasPermission("quest.use")) text.send(sender,"no-permission")
             else if(sender is Player) open(sender) else text.send(sender,"player-only")
             return true
         }
-        if(args[0] == "hud") {
-            if(!sender.hasPermission("quest.use")) text.send(sender,"no-permission")
-            else if(sender !is Player) text.send(sender,"player-only")
-            else hud(sender,args.drop(1))
-            return true
-        }
         if(args[0] in setOf("help","reload")) {
             if(args[0] == "reload") {
                 if(!sender.hasPermission("quest.admin")) text.send(sender,"no-permission")
-                else if(args.size != 1) text.send(sender,"smart-hud.help-admin") else reload(sender)
+                else if(args.size != 1) text.send(sender,"command-help.admin") else reload(sender)
             } else {
                 if(!sender.hasPermission("quest.use")) text.send(sender,"no-permission")
-                else { text.send(sender,"sidebar-hud.help"); text.send(sender,"hud-test.help"); if(sender.hasPermission("quest.admin")) text.send(sender,"smart-hud.help-admin") }
+                else { text.send(sender,"command-help.player"); if(sender.hasPermission("quest.admin")) text.send(sender,"command-help.admin") }
             }
             return true
         }
         if(args[0] != "admin") {
-            if(sender.hasPermission("quest.use")) text.send(sender,"sidebar-hud.help") else text.send(sender,"no-permission")
+            if(sender.hasPermission("quest.use")) text.send(sender,"command-help.player") else text.send(sender,"no-permission")
             return true
         }
         if(!sender.hasPermission("quest.admin")) { text.send(sender,"no-permission"); return true }
@@ -78,10 +71,7 @@ class QuestCommands(private val text: TextRenderer, private val service: QuestSe
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> {
         if(!sender.hasPermission("quest.use")) return emptyList()
         val choices = when {
-            args.size == 1 -> listOf("hud","help") + if(sender.hasPermission("quest.admin")) listOf("reload","admin") else emptyList()
-            args.size == 2 && args[0] == "hud" -> listOf("smart","always","off","view","track","notifications","test")
-            args.size == 3 && args[0] == "hud" && args[1] == "notifications" -> listOf("on","off")
-            args.size == 3 && args[0] == "hud" && args[1] == "track" -> service.definitions.map { it.id }
+            args.size == 1 -> listOf("help") + if(sender.hasPermission("quest.admin")) listOf("reload","admin") else emptyList()
             !sender.hasPermission("quest.admin") -> emptyList()
             args[0] != "admin" -> emptyList()
             else -> when(args.size) { 2 -> listOf("reload","reset","debug","resolve")

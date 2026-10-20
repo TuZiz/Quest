@@ -23,7 +23,7 @@ class ResourcesTest {
             val yaml=YamlConfiguration().apply { loadFromString(raw) }
             assertFalse(raw.contains('\t'),p.toString())
             assertFalse(Regex("[&§][0-9a-fk-or]",RegexOption.IGNORE_CASE).containsMatchIn(raw),p.toString())
-            if(p.fileName.toString() != "plugin.yml") assertEquals(if(p == root.resolve("显示.yml")) 4 else if(p.parent.fileName.toString() in setOf("quests","chapters") || p in setOf(root.resolve("gui/main.yml"))) 2 else 1,yaml.getInt("schema-version"),p.toString())
+            if(p.fileName.toString() != "plugin.yml") assertEquals(if(p.parent.fileName.toString() in setOf("quests","chapters") || p in setOf(root.resolve("gui/main.yml"),root.resolve("提示.yml"))) 2 else 1,yaml.getInt("schema-version"),p.toString())
             if(p.parent.fileName.toString() == "gui") {
                 QuestFiles.validateMenu(p.toString(),yaml)
                 assertEquals(yaml.getStringList("Shape").joinToString("").filter { it != ' ' }.map { it.toString() }.toSet(),yaml.getConfigurationSection("components")!!.getKeys(false))

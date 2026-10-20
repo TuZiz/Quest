@@ -147,3 +147,12 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 - 先核对正式服所有 Xerr/core、CE/resources及其他实际存在的外部合并输入与隔离副本哈希相同，再备份部署 Xerr/CE生成输出；原贴图不改，服务端两个布局改用单引号 MiniMessage，重复迁移字节不变。两 JAR 暂存 plugins/update，未重启正式服，未改玩家数据库。
 - 正式备份：plugins/Quest/backups/xerr-render-20261019-193802；布局原文：plugins/Xerr/backups/quest-minimessage-20261019-193735。未进行真人客户端像素、不同 GUI 缩放及 Geyser 显示验收；自动化验证不作实机声明。
 - 证据：target/verification/xerr-render-*.json、xerr-tracker-final.json、xerr-tracker-async.json、xerr-smoke-console.log、smoke-console.log及surefire-reports。补丁重建说明见XERR.md。
+
+
+## 移除HUD并改为聊天完成提示（2026-10-20）
+
+- 移除Xerr编译/运行依赖、HUD渲染及轮询、玩家HUD指令、贴图生成安装器与兼容补丁。原HUD测试随功能删除，保留现有任务、奖励、章节和迁移测试；当前36项测试及Maven构建通过。
+- 新增任务与章节完成的真实TextRenderer/Player调用验证：只调用sendMessage，不访问资源包状态、Title、ActionBar或音效；无进度变化不提示。
+- 提示配置1→2迁移验证：仅两类完成事件默认聊天开启，保留其他事件、用户未知字段及注释、迁移前备份，重复执行不改；未来版本拒绝覆盖。旧数据库版本及HUD偏好行仅保留历史数据，不再加载HUD功能。
+- 无Xerr的隔离Leaf通过启动、三方API/五种CE物品、两套箱子菜单、帮助和Tab补全、聊天完成提示及坏任务配置重载回滚。故意放入损坏的旧显示.yml不影响启动。
+- JAR确认无HUD类、显示.yml、Xerr软依赖或其API字节码引用。服务器Quest专属Xerr布局、图像及设计配置移动到Xerr/backups/quest-hud-retired-*；其他插件资源与共享字体不改。新JAR预置plugins/update，未重启正式服、未修改玩家数据库或CE当前托管包。

@@ -40,7 +40,7 @@ plugins/Quest/
   data/quest.db
 ```
 
-普通玩家默认使用常驻任务 HUD，不开放 `/quest` 菜单；管理员仍可打开全部章节作检查。`gui/main.yml:player-access` 缺省为 false。`chapters.yml` 展示全部章节，`main.yml` 展示单章任务链。任务说明、实时目标进度及奖励物品真实名称/数量直接显示在任务 Lore 中，点击任务不会再打开详情页。所有列表支持分页。菜单仍为原版箱子。没有 Java 客户端专用输入、MOD、聊天点击或依赖玩家名称的逻辑；可供 Geyser/Floodgate 映射使用。基岩客户端点击及材质展示仍需实际客户端验收。
+普通玩家通过聊天接收任务完成提示，不开放 `/quest` 菜单；管理员仍可打开全部章节作检查。`gui/main.yml:player-access` 缺省为 false。`chapters.yml` 展示全部章节，`main.yml` 展示单章任务链。任务说明、实时目标进度及奖励物品真实名称/数量直接显示在任务 Lore 中，点击任务不会再打开详情页。所有列表支持分页。菜单仍为原版箱子。没有 Java 客户端专用输入、MOD、聊天点击或依赖玩家名称的逻辑；可供 Geyser/Floodgate 映射使用。基岩客户端点击及材质展示仍需实际客户端验收。
 
 ## 默认玩法与物品证据
 
@@ -82,7 +82,7 @@ plugins/Quest/
 
 ## 配置和扩展
 
-任务、章节及 `gui/main.yml` 使用 `schema-version: 2`，其余资源保持 1，SQLite 保持 `user_version=2`。升级边界见 [UPGRADE.md](UPGRADE.md)。加载前校验完整任务与章节 DAG、重复 ID、缺失引用、目标、菜单及物品；reload 失败保留上一份有效运行配置。
+任务、章节、`gui/main.yml` 及 `提示.yml` 使用 `schema-version: 2`，其余资源保持 1，SQLite 保持 `user_version=3`，原HUD偏好表仅保留历史数据。升级边界见 [UPGRADE.md](UPGRADE.md)。加载前校验完整任务与章节 DAG、重复 ID、缺失引用、目标、菜单及物品；reload 失败保留上一份有效运行配置。
 
 `quests/` 只放任务内容，一个文件一个任务；不再配置 `prerequisites`。`chapters/` 一个文件一个章节，文件名可使用中文，引用始终使用稳定 ID。默认是 `chapters/第一章·星海初醒.yml`：
 
@@ -120,8 +120,6 @@ rewards:
 
 验证结果、已知上游警告和待实机验收范围见 [VALIDATION.md](VALIDATION.md)。
 
-HUD 材质与布局仅配置在服务端 `plugins/Xerr/core/`：常驻面板贴右边缘、文字居中并分层配色；通知固定最右上角单槽排队，面板留在通知区下方。移除待领奖数与 `/quest` 帮助。修改布局后必须重建 Xerr 资源包并由 CraftEngine 合并。
-
-章节全部完成后仍保留常驻面板，显示章节完成状态和章节进度，不受奖励是否发放影响；完成文案配置在 `lang/zh_cn.yml:hud-completed`，升级时只补充缺失区块。启动和重载后会补读玩家当前资源包成功状态，避免异步装配错过加载事件；客户端尚未加载成功时仍不显示贴图 HUD。此次仅更新 Quest 逻辑与语言，无需重新生成材质包。
+任务追踪侧栏、完成贴图弹窗和Xerr运行/构建依赖已移除，`/quest hud`及其测试指令不再提供。任务及章节完成默认仅发送聊天消息，不要求客户端加载资源包。`提示.yml` 从版本1安全迁移至2：仅将两种完成事件改为聊天开启、ActionBar/Title/音效关闭，其他字段和注释保留；迁移前原文保存到 `.migrations/notices-v2/0.before`，版本2已有配置不会被重复覆盖。旧 `显示.yml` 和语言HUD字段不再加载，数据库不删表、不删数据。`/quest help` 显示当前帮助，管理员仍使用 `/quest reload` 重载。
 
 GUI 只保留 `gui/main.yml` 与 `gui/chapters.yml`，严格按用户 Shape 渲染按钮；未放入 Shape 的组件不会补回。默认主界面沿用 5 行、21 个任务位布局。Lore 中整行 `<description>`、`<objectives>`、`<rewards>` 分别展开任务说明、条件进度和奖励列表；根级 `reward-format` 配置每条奖励的 `<reward>` 真实名称及 `<amount>` 数量。文案统一以 YAML 单引号包裹。章节列表原返回入口改为关闭，主界面返回章节列表。

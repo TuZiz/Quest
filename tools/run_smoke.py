@@ -11,7 +11,7 @@ jdk=Path('C:/Program Files/Zulu/zulu-25/bin')
 report=ET.parse(root/'target/surefire-reports/TEST-ym.quest.ResourcesTest.xml')
 classpath=next(p.attrib['value'] for p in report.findall('.//property') if p.attrib['name']=='java.class.path')
 classes=root/'target/verification/smoke-classes';classes.mkdir(parents=True,exist_ok=True)
-subprocess.run([str(jdk/'javac.exe'),'-encoding','UTF-8','-cp',classpath,'-d',str(classes),str(root/'tools/smoke/QuestSmoke.java'),str(root/'tools/smoke/CompletionHudSmoke.java')],check=True)
+subprocess.run([str(jdk/'javac.exe'),'-encoding','UTF-8','-cp',classpath,'-d',str(classes),str(root/'tools/smoke/QuestSmoke.java')],check=True)
 with zipfile.ZipFile(server/'plugins/QuestSmoke.jar','w') as jar:
     for compiled in classes.rglob('*.class'):
         jar.write(compiled,compiled.relative_to(classes).as_posix())
@@ -24,10 +24,10 @@ with log.open('w',encoding='utf-8') as output:
         while time.monotonic()<deadline and process.poll() is None:
             text=log.read_text(encoding='utf-8',errors='replace')
             if 'QUEST_SMOKE_FAILED' in text: break
-            if 'QUEST_SMOKE_PASSED' in text and (not (server/'plugins/Xerr-2.1.0.jar').exists() or 'XERR_ASYNC_PASSED' in text): break
+            if 'QUEST_SMOKE_PASSED' in text: break
             time.sleep(1)
         text=log.read_text(encoding='utf-8',errors='replace')
-        passed='QUEST_SMOKE_PASSED' in text and 'QUEST_SMOKE_FAILED' not in text and (not (server/'plugins/Xerr-2.1.0.jar').exists() or 'XERR_ASYNC_PASSED' in text)
+        passed='QUEST_SMOKE_PASSED' in text and 'QUEST_SMOKE_FAILED' not in text
         print('SMOKE: '+('passed' if passed else 'failed; inspect '+str(log)),flush=True)
         if process.poll() is None:
             config=server/'plugins/Quest/quests/星海启航.yml'

@@ -1,33 +1,4 @@
 schema-version: 1
-smart-hud:
-  notice-merged: '<#88D3A0><heading> · <name>'
-  usage: '<#A6B2C0>用法：/quest hud [smart|always|off|view]，或 /quest hud notifications [on|off]、/quest hud track [任务ID]'
-  saved: '<#75D6BB>HUD设置已保存：<#EEF3F5><mode><#A6B2C0>，完成通知：<notifications>'
-  view: '<#A6B2C0>已请求展开当前任务；连续请求受展开时长限制。'
-  invalid-task: '<#E7AD87>只能追踪当前空岛已激活的任务。'
-  help: '<#DDB66D>Quest 帮助<newline><#EEF3F5>/quest hud smart|always|off <#A6B2C0>智能 / 常展开 / 关闭；不带参数循环切换<newline><#EEF3F5>/quest hud view <#A6B2C0>临时展开当前任务<newline><#EEF3F5>/quest hud track [任务ID] <#A6B2C0>切换有效追踪目标<newline><#EEF3F5>/quest hud notifications on|off <#A6B2C0>独立控制完成通知<newline><#EEF3F5>/quest help <#A6B2C0>查看帮助'
-  help-admin: '<#DDB66D>管理指令<newline><#EEF3F5>/quest reload <#A6B2C0>重载配置<newline><#EEF3F5>/quest admin debug [空岛UUID] <#A6B2C0>诊断任务状态<newline><#EEF3F5>/quest admin reset [空岛UUID] [任务ID] <#A6B2C0>重置指定任务'
-hud-controls:
-  shown: '<#75D6BB>任务HUD已显示。'
-  hidden: '<#A6B2C0>任务HUD已隐藏，可用 /quest hud on 恢复。'
-  usage: '<#A6B2C0>用法：/quest hud [on|off]'
-hud-notices:
-  next: '<#A6B2C0>下一任务：<next>'
-  task-start:
-    heading: '<#82B7EF>新任务已解锁'
-    detail: '<#A6B2C0>新的目标已开启'
-  task-complete:
-    heading: '<#88D3A0>任务完成'
-    detail: '<#A6B2C0>奖励自动发放'
-  chapter-start:
-    heading: '<#DDB66D>新章节已开启'
-    detail: '<#A6B2C0>新的旅程开始了'
-  chapter-complete:
-    heading: '<#E8C477>章节完成'
-    detail: '<#A6B2C0>章节奖励自动发放'
-hud-completed:
-  task: '<#A8FF78>章节已完成'
-  objective: '<#E0F7FA>期待新的冒险'
 automatic-rewards: '<#89F7FE>任务进度会自动追踪，<#A8FF78>完成奖励自动发放<#89F7FE>，无需打开任务菜单。'
 no-permission: '<#FCA5A5>你没有使用此功能的权限。'
 unavailable: '<#FCA5A5>相关插件或物品尚未就绪，请稍后再试。'
@@ -85,31 +56,8 @@ notices:
     subtitle: '<chapter>'
 
 # 文字任务栏；旧 smart / always 指令保持兼容，显示方式统一为常驻。
-sidebar-hud:
-  view: '<#A6B2C0>当前任务栏已刷新；没有有效任务时自动隐藏。'
-  usage: '<#A6B2C0>用法：/quest hud [on|off|view]，或 /quest hud notifications [on|off]、/quest hud track [任务ID]'
-  help: '<#DDB66D>Quest 帮助<newline><#EEF3F5>/quest hud on|off <#A6B2C0>显示 / 隐藏常驻任务栏；不带参数切换<newline><#EEF3F5>/quest hud view <#A6B2C0>刷新当前任务栏<newline><#EEF3F5>/quest hud track [任务ID] <#A6B2C0>切换有效追踪目标<newline><#EEF3F5>/quest hud notifications on|off <#A6B2C0>独立控制完成通知<newline><#EEF3F5>/quest help <#A6B2C0>查看帮助'
 
-# 右上角完成卡片，任务名动态显示；奖励发放仍由原奖励系统负责。
-completion-hud:
-  task-complete:
-    heading: '<#94E88B>任务完成 · <name>'
-    detail: '<#C9C6C0>奖励自动发放'
-  task-start:
-    heading: '<#82B7EF>新任务 · <name>'
-    detail: '<#C9C6C0>新的目标已开启'
-  chapter-complete:
-    heading: '<#E8C477>章节完成 · <name>'
-    detail: '<#C9C6C0>章节奖励自动发放'
-  chapter-start:
-    heading: '<#DDB66D>新章节 · <name>'
-    detail: '<#C9C6C0>新的旅程开始了'
-
-# 仅预览任务完成弹窗，不结算任务或发放奖励。
-hud-test:
-  name: '<#94E88B>弹窗测试'
-  help: '<#EEF3F5>/quest hud test <#A6B2C0>测试右上角任务完成弹窗，不改变任务或发放奖励'
-  queued: '<#94E88B>测试通知已加入队列。<#A6B2C0>这只是预览，不会完成任务或发放奖励。'
-  disabled: '<#E8C477>任务通知已关闭，请先使用 /quest hud notifications on；也请检查服务端通知开关。'
-  pack-required: '<#E8C477>请先接受并加载服务器资源包，再测试弹窗。'
-  unavailable: '<#E8C477>任务弹窗不可用，请检查Quest显示开关、Xerr及通知布局是否已加载。'
+# 玩家与管理员指令帮助。
+command-help:
+  player: '<#DDB66D>Quest 帮助<newline><#EEF3F5>/quest help <#A6B2C0>查看帮助；任务自动推进，完成后发送聊天消息，奖励自动发放。'
+  admin: '<#DDB66D>Quest 管理<newline><#EEF3F5>/quest reload <#A6B2C0>重载配置<newline><#EEF3F5>/quest admin debug [空岛UUID] <#A6B2C0>查看任务与奖励状态<newline><#EEF3F5>/quest admin reset 〈空岛UUID〉 〈任务ID〉 <#A6B2C0>重置进度<newline><#EEF3F5>/quest admin resolve 〈奖励UUID〉 delivered|retry <#A6B2C0>核对异常奖励'
