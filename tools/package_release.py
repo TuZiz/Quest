@@ -11,6 +11,8 @@ with zipfile.ZipFile(artifacts[0]) as jar:
     forbidden=('org/bukkit/','io/papermc/','net/momirealms/','com/hiusers/','me/neznamy/','cn/genlite/','ym/dreamSkyblock/','org/junit/','ym/quest/smoke/')
     assert not any(name.startswith(forbidden) or name.endswith(('.kt','.java')) for name in jar.namelist()), 'Unexpected bundled classes/resources'
     assert not any(name.endswith(('.png','.ttf')) or name.startswith(('core/assets/','core/layout/')) for name in jar.namelist()), 'Quest no longer ships HUD materials'
+    assert {name for name in jar.namelist() if name.startswith('gui/') and name.endswith('.yml')} == {'gui/chapters.yml','gui/tasks.yml','gui/settings.yml'}, 'Only three GUI resources may ship'
+    assert not any(name in jar.namelist() for name in ('ym/quest/gui/QuestMenus.class','ym/quest/gui/JournalMenuRenderer.class','ym/quest/gui/MenuSession.class','ym/quest/config/GuiConfigUpgrade.class')), 'Retired GUI runtime class bundled'
 hashes={}
 for artifact in artifacts:
     destination=release/artifact.name

@@ -1,0 +1,19 @@
+# 入岛领取生成器，实际放置后才发燃料；物品在背包中不算完成。
+schema-version: 2
+id: place_generator
+scope: island
+name: '<#78FFD6>安放生成器'
+description:
+  - '<#E0F7FA>将背包中的原石生成器放置在自己的空岛上'
+  - '<#C2E9FB>放置成功后自动获得16份燃料'
+icon: minecraft:furnace
+objectives:
+  - id: placed
+    type: genlite.placed
+    target: 1
+    description: '<#E0F7FA>在空岛放置一台生成器'
+rewards:
+  - item: genlite:fuel
+    amount: 16
+    # 旧版入岛奖励已有同种物品记录时不重复发放，包括尚待送达的记录。
+    unless-rewarded-by: sky_start

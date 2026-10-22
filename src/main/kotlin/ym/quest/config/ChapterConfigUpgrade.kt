@@ -12,7 +12,7 @@ object ChapterConfigUpgrade {
     fun migrate(root: Path, bundledChapter: String) {
         val plan = ConfigMigrationPlan(root)
         plan.resume()
-        val taskFiles = files(root.resolve("quests")).associate { root.relativize(it).toString().replace('\\','/') to Files.readString(it) }
+        val taskFiles = QuestTaskFiles.files(root.resolve("quests")).associate { root.relativize(it).toString().replace('\\','/') to Files.readString(it) }
         val tasks = taskFiles.mapValues { (path,text) -> yaml(path,text).also {
             require(it.get("schema-version") in listOf(1,2)) { "$path:schema-version=${it.get("schema-version")} unsupported; original preserved" }
             require(it.get("schema-version") != 2 || !it.contains("prerequisites")) { "$path: schema 2 forbids prerequisites; move them to chapters/*.yml tasks.requires" }
@@ -51,7 +51,9 @@ object ChapterConfigUpgrade {
         if(chapterTexts.isEmpty()) {
             val ch = ChapterFiles.parse(yaml(defaultFile,bundledChapter),defaultFile)
             // Original Quest had the same three-task chain, with dependencies in quests/.
-            chapterTexts[defaultFile] = replaceTasks(bundledChapter,ch.quests,ch.quests.associateWith { oldDeps[it].orEmpty() })
+            // New optional stages are introduced by their own migration after v1 relationships are converted.
+            val present = ch.quests.filter { it in ids }
+            chapterTexts[defaultFile] = replaceTasks(bundledChapter,present,present.associateWith { oldDeps[it].orEmpty() })
         }
         val chapters = chapterTexts.map { (path,text) -> ChapterFiles.parse(yaml(path,text),path) }
         if(oldChapters.isEmpty()) chapters.forEach { ch -> ch.quests.forEach { id ->

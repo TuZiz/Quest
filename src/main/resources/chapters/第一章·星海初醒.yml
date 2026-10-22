@@ -25,9 +25,12 @@ story:
 # tasks 顺序仅控制展示。requires 全部完成才解锁；只写前置，后续自动推导。
 tasks:
   - quest: sky_start
-  - quest: first_fuel
+  - quest: place_generator
     requires:
       - sky_start
+  - quest: first_fuel
+    requires:
+      - place_generator
   - quest: first_resources
     requires:
       - first_fuel

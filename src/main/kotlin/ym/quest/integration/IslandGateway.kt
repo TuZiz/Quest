@@ -14,4 +14,5 @@ interface ProductionGateway {
     fun ready(): Boolean
     fun counters(): Map<String,Long>
     fun hasGenerator(island: Island): Boolean
+    fun hasPlacedGenerator(island: Island): Boolean
 }

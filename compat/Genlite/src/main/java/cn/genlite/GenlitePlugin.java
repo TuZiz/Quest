@@ -52,7 +52,7 @@ public final class GenlitePlugin extends JavaPlugin {
         items=new CraftItems(this,text,engine::snapshot,files.itemNames());
         transfers=new InventoryTransfers(this,tasks,engine,items,messages,dream::member);
         warehouse=new ContainerMenus(files.menus(),engine,dream,items,messages,transfers,tasks,text);
-        menus=new MachineMenus(files.menus(),engine,actions,dream,items,messages,transfers,text,warehouse);
+        menus=new MachineMenus(files.menus(),engine,actions,dream,items,messages,transfers,text,warehouse,tasks);
         holograms=new MachineHolograms(this,engine,text);
         collectorParticles=new CollectorParticles(this,tasks,engine,files.collectorParticles());
         drops=new ShellDrops(this,tasks,engine,items);
@@ -63,6 +63,7 @@ public final class GenlitePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(listener,this);
         getServer().getPluginManager().registerEvents(interactions,this);
         getServer().getPluginManager().registerEvents(menus,this);
+        getServer().getPluginManager().registerEvents(menus.fuel(),this);
         getServer().getPluginManager().registerEvents(holograms,this);
         getServer().getPluginManager().registerEvents(collectorParticles,this);
         getServer().getPluginManager().registerEvents(warehouse,this);
@@ -83,7 +84,7 @@ public final class GenlitePlugin extends JavaPlugin {
         engine.questListener(counters -> getServer().getPluginManager().callEvent(new cn.genlite.api.GenliteCountersCommittedEvent(counters)));
         engine.start().whenComplete((v,error) -> {
             if(error!=null) {getLogger().log(Level.SEVERE,"Genlite state load failed; refusing to overwrite saved data",error);tasks.global(() -> getServer().getPluginManager().disablePlugin(this));return;}
-            tasks.global(() -> tasks.repeat(() -> {dream.refresh(engine);presence.refresh();drops.refresh();warehouse.refresh();collectorParticles.refresh();}));
+            tasks.global(() -> tasks.repeat(() -> {dream.refresh(engine);presence.refresh();drops.refresh();warehouse.refresh();menus.fuel().refresh();collectorParticles.refresh();}));
         });
         getLogger().info("Genlite 1.0.0; Minecraft="+getServer().getMinecraftVersion()+"; Java="+System.getProperty("java.version")+
                 "; CraftEngine="+getServer().getPluginManager().getPlugin("CraftEngine").getPluginMeta().getVersion()+"; config schema=1; output text/menu schema=3; genlite/ files=4; warehouseSlots="+files.rules().warehouseSlots()+"; modes=DROP/COLLECTOR/WAREHOUSE; async durable storage");
@@ -94,6 +95,7 @@ public final class GenlitePlugin extends JavaPlugin {
         if(collectorParticles!=null) collectorParticles.close();
         if(holograms!=null) holograms.close();
         if(warehouse!=null) warehouse.clear();
+        if(menus!=null) menus.fuel().clear();
         if(tasks!=null) tasks.close();
         if(interactions!=null) interactions.clear();if(menus!=null) menus.clear();if(transfers!=null) transfers.clear();
         if(presence!=null) presence.clear();if(dismantling!=null) dismantling.clear();if(drops!=null) drops.clear();if(dream!=null) dream.clear();

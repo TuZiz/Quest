@@ -11,7 +11,9 @@ class JournalLore(private val items: ItemFactory, private val text: TextRenderer
     fun render(player: Player, templates: List<String>, values: Map<String,Component>,
                quest: QuestView?, chapter: ChapterView?, rewardFormat: String?): MutableList<Component> =
         templates.flatMap { line -> when(line.trim()) {
-            "<description>" -> (quest?.definition?.description ?: chapter?.definition?.description ?: emptyList()).map { text.item(it,values) }
+            "<description>" -> (quest?.definition?.description ?: chapter?.definition?.description ?: emptyList()).flatMap {
+                ym.quest.tab.TabTextWrap(56).lines(text.item(it,values)).map(TextRenderer::noItalic)
+            }
             "<objectives>" -> quest?.progress?.map { p -> TextRenderer.noItalic(text.format("objective-line",mapOf(
                 "description" to text.render(p.objective.description),"progress" to Component.text(p.progress),"target" to Component.text(p.objective.target)))) } ?: emptyList()
             "<rewards>" -> (quest?.definition?.rewards ?: chapter?.definition?.rewards ?: emptyList()).flatMap { reward ->
@@ -19,7 +21,7 @@ class JournalLore(private val items: ItemFactory, private val text: TextRenderer
                 val name = try { items.build(reward.item,player).effectiveName() }
                     catch(e: IllegalStateException) { unavailable=true; Component.text(reward.item) }
                 buildList {
-                    add(text.item(checkNotNull(rewardFormat) { "gui/main.yml:reward-format missing" },values+mapOf(
+                    add(text.item(checkNotNull(rewardFormat) { "Menu reward-format missing" },values+mapOf(
                         "reward" to name,"amount" to Component.text(reward.amount))))
                     if(unavailable) add(TextRenderer.noItalic(text.format("unavailable")))
                 }

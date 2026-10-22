@@ -10,6 +10,22 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class QuestCountersTest {
     @TempDir Path directory;
+    @Test void fuelChestDepositsCountSuccessfulItemsAndRejectWrongFuelOverflowOrDeniedAccess() throws Exception {
+        var rules=TestRules.load();var stock=new ContainerStock(rules,(h,p)->true);
+        var machine=TestRules.machine("cobblestone_generator",1,0);
+        var draft=new WorldState(1,Map.of(machine.id(),machine),Map.of()).draft();
+        var source=new ContainerStock.Source(ContainerStock.Kind.FUEL,machine.id(),rules.fuelItem(machine));
+        assertTrue(draft.questCounters.isEmpty());
+        // Cursor/drag and Shift-click both commit via this same ContainerStock FUEL branch.
+        stock.deposit(draft,TestRules.PLAYER,source,1);
+        stock.deposit(draft,TestRules.PLAYER,source,2);
+        assertEquals(3L,draft.questCounters.get(TestRules.HOME+"|genlite.fuel"));
+        assertThrows(IllegalArgumentException.class,()->stock.deposit(draft,TestRules.PLAYER,new ContainerStock.Source(ContainerStock.Kind.FUEL,machine.id(),"minecraft:dirt"),1));
+        assertThrows(IllegalArgumentException.class,()->stock.deposit(draft,TestRules.PLAYER,source,1000000));
+        assertThrows(IllegalArgumentException.class,()->new ContainerStock(rules,(h,p)->false).deposit(draft,UUID.randomUUID(),source,1));
+        stock.reserve(draft,TestRules.PLAYER,source,1);
+        assertEquals(3L,draft.questCounters.get(TestRules.HOME+"|genlite.fuel"));
+    }
     @Test void realDepositCountsButWithdrawalAndCollectorMovesDoNotAndCountersSurviveStorage() throws Exception {
         var rules=TestRules.load();var actions=new MachineActions(rules,(h,p)->true);
         var m=TestRules.machine("cobblestone_generator",1,0);

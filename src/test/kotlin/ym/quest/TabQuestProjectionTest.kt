@@ -30,7 +30,7 @@ class TabQuestProjectionTest {
         listOf(Objective("produce","genlite.produce",target,"minecraft:cobblestone","<#E0F7FA>生成器实际生产原石")),emptyList())
 
     @Test fun `fuel task renders hierarchy numbered steps and deliberate line breaks`() {
-        val fuel = YamlConfiguration().apply { loadFromString(Files.readString(Path.of("src/main/resources/quests/能源启动.yml"))) }
+        val fuel = YamlConfiguration().apply { loadFromString(Files.readString(Path.of("src/main/resources/quests/第一章/能源启动.yml"))) }
         val objective = fuel.getMapList("objectives").single()
         val q = QuestDefinition(fuel.getString("id")!!, fuel.getString("name")!!, fuel.getStringList("description"),
             fuel.getString("icon")!!, emptyList(), listOf(Objective(objective["id"].toString(), objective["type"].toString(),
@@ -40,16 +40,16 @@ class TabQuestProjectionTest {
         })
         val lines = projection.project(JournalView(listOf(QuestView(q, QuestStatus.ACTIVE,
             listOf(ObjectiveProgress(q.objectives.single(), 0)))), listOf(ChapterView(chapter, ChapterStatus.ACTIVE, 0, false))))
-        assertEquals(listOf("第一章·初入星辰", "", "能源启动", "目标  为生成器添加燃料", "进度  0 / 1", "",
-            "1. 右键原石生成器", "   打开管理面板", "2. 点击「燃料」", "   放入燃料即可"), plain(lines.take(10)).split('\n'))
-        assertTrue(lines.drop(10).all { it.isEmpty() })
+        assertEquals(listOf("第一章·初入星辰", "", "能源启动", "目标  向燃料仓存入燃料", "进度  0 / 1", "",
+            "1. 右键原石生成器", "   打开管理面板", "2. 点击「燃料」", "   打开燃料仓", "3. Shift点击背包燃料", "   或放入上方格子"), plain(lines.take(12)).split('\n'))
+        assertTrue(lines.drop(12).all { it.isEmpty() })
         val mini = MiniMessage.miniMessage()
         val title = mini.deserialize(lines[2])
         val gson = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson()
-        val json = lines.take(10).map { gson.serialize(mini.deserialize(it)) }
+        val json = lines.take(12).map { gson.serialize(mini.deserialize(it)) }
         val output = Path.of("target/verification")
         Files.createDirectories(output)
-        Files.writeString(output.resolve("tab-compact-preview.txt"), plain(lines.take(10)))
+        Files.writeString(output.resolve("tab-compact-preview.txt"), plain(lines.take(12)))
         Files.writeString(output.resolve("tab-emphasis-components.json"), json.joinToString(",", "[", "]"))
         assertTrue(gson.serialize(title).contains("#FBBF24", ignoreCase=true))
         assertTrue(gson.serialize(title).contains("\"bold\":true"))
@@ -132,6 +132,7 @@ class TabQuestProjectionTest {
         settings.set("refresh-ticks",1)
         assertThrows(IllegalArgumentException::class.java) { TabSettings.parse(settings) }
         val layout=YamlConfiguration().apply { loadFromString(Files.readString(Path.of("integrations/tab/config.yml"))) }
+        assertTrue(layout.getBoolean("layout.enabled"))
         assertEquals(60,layout.getInt("layout.layouts.quest-and-players.slot-count"))
         val fixed=layout.getStringList("layout.layouts.quest-and-players.fixed-slots").map { it.substringBefore('|').toInt() }.toSet()
         assertEquals((1..21).toSet() + 41,fixed)

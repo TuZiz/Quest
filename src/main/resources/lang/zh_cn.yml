@@ -4,10 +4,39 @@
 # ==========================================
 schema-version: 1
 
+# 任务日志与玩家个人显示偏好。
+journal:
+  loading: '<#89F7FE>正在读取任务日志…'
+  empty: '<#94A3B8>此分类暂无已配置的任务。'
+  browse: '<#94A3B8>悬停查看说明，点击选择章节或任务。'
+  no-selection: '<#94A3B8>暂无任务'
+  tracked: '<#89F7FE>正在追踪'
+  not-tracked: '<#94A3B8>未追踪'
+  track-unavailable: '<#FFB75E>当前只可追踪进行中的任务，请重新选择。'
+  saved: '<#A8FF78>显示设置已保存。'
+  enabled: '<#A8FF78>开启'
+  disabled: '<#94A3B8>关闭'
+  mode-ALWAYS: '<#89F7FE>常驻'
+  mode-OFF: '<#94A3B8>关闭'
+  category-MAIN: '<#89F7FE>主线任务'
+  category-SIDE: '<#A8FF78>支线任务'
+  category-SPECIAL: '<#C4B5FD>特殊任务'
+
+# HUD 动态文案；布局、字体与图片仅保存在服务端 Xerr 文件夹。
+hud:
+  personal: '个人引导任务'
+  shared: '空岛成员共享进度'
+  task-complete: '任务完成'
+  chapter-complete: '章节完成'
+  task-detail: '查看右侧任务栏，继续旅程'
+  chapter-detail: '新的旅程正在等待'
+  next: '下一任务：{next}'
+  help: '查看右侧任务栏'
+
 # TAB 左侧任务栏；实际任务名称、目标与操作说明来自原任务配置。
 tab:
   loading: '<#C2E9FB>正在读取空岛任务…'
-  no-island: '<#FFD700>创建或加入空岛后，即可开启任务。'
+  no-island: '<#FFD700>下一步：创建或加入空岛，继续后续任务。'
   no-permission: '<#FFB75E>暂无任务查看权限。'
   unavailable: '<#FFB75E>空岛服务尚未就绪，请稍候。'
   error: '<#FFB75E>任务暂时无法读取，稍后自动重试。'
@@ -95,5 +124,27 @@ notices:
 
 # 玩家与管理员指令帮助。
 command-help:
-  player: '<#DDB66D>Quest 帮助<newline><#EEF3F5>/quest help <#A6B2C0>查看帮助；任务自动推进，完成后发送聊天消息，奖励自动发放。'
+  player: '<#DDB66D>Quest 帮助<newline><#EEF3F5>/quest <#A6B2C0>打开任务日志、章节总览和个人设置<newline><#EEF3F5>/quest help <#A6B2C0>查看帮助；任务自动推进，奖励自动发放。'
   admin: '<#DDB66D>Quest 管理<newline><#EEF3F5>/quest reload <#A6B2C0>重载配置<newline><#EEF3F5>/quest admin debug [空岛UUID] <#A6B2C0>查看任务与奖励状态<newline><#EEF3F5>/quest admin reset 〈空岛UUID〉 〈任务ID〉 <#A6B2C0>重置进度<newline><#EEF3F5>/quest admin resolve 〈奖励UUID〉 delivered|retry <#A6B2C0>核对异常奖励'
+
+# 个人交谈任务；不发奖励，不改变空岛团队任务结算。
+introduction:
+  actionbar: '<#FFD700>✦ 当前任务：<#E0F7FA>右键大厅中的引航员交谈 <#A6B2C0>｜ <#C2E9FB>查看右侧任务栏'
+  task-name: '<#FFD700>初见引航员'
+  objective: '<#E0F7FA>与引航员交谈'
+  hints:
+    - '<#C2E9FB>右键大厅中的引航员'
+    - '<#C2E9FB>查看右侧任务栏与操作提示'
+  dialogue:
+    - '<#FFD700>✦ 引航员 <#E0F7FA>欢迎来到星辰，这里是你旅程的起点。'
+    - '<#E0F7FA>右侧任务栏会显示当前目标、进度和操作步骤。'
+    - '<#C2E9FB>基岩版可直接阅读这段聊天引导，用蹲下键确认交谈。'
+    - '<#E0F7FA>你可以创建自己的空岛，也可以加入好友的空岛。'
+    - '<#E0F7FA>准备好后，再次右键我打开空岛面板。入岛领取生成器，放置后获得燃料，再为它添加燃料。'
+  confirm: '<#A8FF78>蹲下确认交谈 <#A6B2C0>｜ <click:run_command:''/quest guide skip''><#FFD700>[跳过引导]</click>'
+  fallback-confirm: '<click:run_command:''/quest guide finish''><#A8FF78>[点击完成交谈]</click><#A6B2C0> 或输入 /quest guide finish；跳过：/quest guide skip'
+  complete: '<#A8FF78>✔ 交谈完成。<#E0F7FA>查看右侧任务栏；再次右键引航员打开空岛面板。'
+  interrupted: '<#A6B2C0>交谈已中断，进度保留。再次右键引航员即可重新交谈。'
+  no-dialogue: '<#A6B2C0>当前没有等待确认的聊天引导，请先右键引航员。'
+  npc-unavailable: '<#C2E9FB>请右键大厅中的引航员开始交谈；若NPC不可用，可用 /quest guide skip 跳过。'
+  help: '<#DDB66D>引导帮助<newline><#EEF3F5>/quest guide skip <#A6B2C0>跳过个人引导<newline><#EEF3F5>/quest guide replay <#A6B2C0>完成后重看对话<newline><#EEF3F5>/quest guide finish <#A6B2C0>确认聊天降级引导'

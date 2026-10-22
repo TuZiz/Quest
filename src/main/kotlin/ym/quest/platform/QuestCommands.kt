@@ -11,11 +11,18 @@ import java.util.UUID
 class QuestCommands(private val text: TextRenderer, private val service: QuestService,
                     private val integrations: Integrations, private val thread: GameThread,
                     private val delivery: MailboxDelivery, private val open: (Player) -> Unit,
-                    private val reload: (CommandSender) -> Unit, private val failure: (Throwable) -> Unit) : CommandExecutor, TabCompleter {
+                    private val reload: (CommandSender) -> Unit, private val failure: (Throwable) -> Unit,
+                    private val guide: (Player,String) -> Unit = { player,_ -> text.send(player,"unavailable") }) : CommandExecutor, TabCompleter {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if(args.isEmpty()) {
             if(!sender.hasPermission("quest.use")) text.send(sender,"no-permission")
             else if(sender is Player) open(sender) else text.send(sender,"player-only")
+            return true
+        }
+        if(args[0] == "guide") {
+            if(!sender.hasPermission("quest.use")) text.send(sender,"no-permission")
+            else if(sender !is Player) text.send(sender,"player-only")
+            else guide(sender,if(args.size == 2) args[1] else "help")
             return true
         }
         if(args[0] in setOf("help","reload")) {
@@ -71,7 +78,8 @@ class QuestCommands(private val text: TextRenderer, private val service: QuestSe
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> {
         if(!sender.hasPermission("quest.use")) return emptyList()
         val choices = when {
-            args.size == 1 -> listOf("help") + if(sender.hasPermission("quest.admin")) listOf("reload","admin") else emptyList()
+            args.size == 1 -> listOf("help","guide") + if(sender.hasPermission("quest.admin")) listOf("reload","admin") else emptyList()
+            args.size == 2 && args[0] == "guide" -> listOf("skip","replay","finish")
             !sender.hasPermission("quest.admin") -> emptyList()
             args[0] != "admin" -> emptyList()
             else -> when(args.size) { 2 -> listOf("reload","reset","debug","resolve")

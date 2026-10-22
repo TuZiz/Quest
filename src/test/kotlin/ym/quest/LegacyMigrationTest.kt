@@ -56,7 +56,7 @@ class LegacyMigrationTest {
         assertEquals(ChapterStatus.COMPLETE,s.journal("done").await().chapters.single().status)
         assertFalse(s.journal("done").await().chapters.single().claimed)
         assertEquals(listOf("WAITING","SENDING","DELIVERED"),s.mailbox("done").await().map { it.phase })
-        assertEquals(3L,db.submit { db.transaction { it.number("PRAGMA user_version") } }.await())
+        assertEquals(5L,db.submit { db.transaction { it.number("PRAGMA user_version") } }.await())
         assertEquals(100L,db.submit { db.transaction { it.number("SELECT baseline FROM objectives WHERE home='partial'") } }.await())
         s.sync("partial",facts(50,120)).await()
         assertEquals(20L,s.views("partial").await().last().progress.single().progress)

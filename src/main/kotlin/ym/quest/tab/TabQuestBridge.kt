@@ -11,10 +11,12 @@ import ym.quest.text.TextRenderer
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
+import org.bukkit.entity.Player
 
 /** Paper main-thread ownership for players/islands/TAB updates; DB stays on Quest's IO executor. */
 class TabQuestBridge(private val plugin: JavaPlugin, private val service: QuestService,
-    private val integrations: Integrations, private val thread: GameThread, text: TextRenderer, settings: TabSettings) : AutoCloseable {
+    private val integrations: Integrations, private val thread: GameThread, text: TextRenderer, settings: TabSettings,
+    private val personalLines: (Player) -> List<String>? = { null }) : AutoCloseable {
     private val projection = TabQuestProjection(text, settings.lineWidth)
     private val states = listOf("loading", "no-island", "no-permission", "unavailable", "error").associateWith(projection::state)
     private val cache = ConcurrentHashMap<UUID, List<String>>()
@@ -66,6 +68,9 @@ class TabQuestBridge(private val plugin: JavaPlugin, private val service: QuestS
         val homes = mutableSetOf<UUID>()
         plugin.server.onlinePlayers.forEach { player ->
             val id = player.uniqueId
+            if(player.hasPermission("quest.use")) personalLines(player)?.let { lines ->
+                bindings.remove(id); publish(api,id,lines); return@forEach
+            }
             val state = when {
                 !player.hasPermission("quest.use") -> "no-permission"
                 integrations.islands?.ready() != true -> "unavailable"
@@ -92,7 +97,7 @@ class TabQuestBridge(private val plugin: JavaPlugin, private val service: QuestS
                 // Membership, permission, player connection and ownership are rechecked after IO.
                 bindings.filterValues { it == home }.keys.toList().forEach { id ->
                     val player = plugin.server.getPlayer(id)
-                    if(player?.isOnline == true && player.hasPermission("quest.use") && integrations.island(id)?.id == home)
+                    if(player?.isOnline == true && player.hasPermission("quest.use") && integrations.island(id)?.id == home && personalLines(player) == null)
                         publish(currentApi, id, lines)
                 }
             } }

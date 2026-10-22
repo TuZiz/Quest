@@ -23,7 +23,7 @@ internal class ConfigMigrationPlan(private val root: Path, private val name: Str
         changes.forEach { c ->
             val file = root.resolve(c.path)
             val current = if(Files.exists(file)) Files.readString(file) else null
-            require(current == c.before || current == c.after) { "${c.path}: schema 1 -> 2 migration recovery conflict; current file and journal originals preserved in $journal" }
+            require(current == c.before || current == c.after) { "${c.path}: $name migration recovery conflict; current file and journal originals preserved in $journal" }
         }
         changes.forEach { c ->
             val file = root.resolve(c.path)
@@ -39,7 +39,7 @@ internal class ConfigMigrationPlan(private val root: Path, private val name: Str
 
     fun apply(changes: List<Change>) {
         if(changes.isEmpty()) return
-        require(!Files.exists(journal)) { "$journal: schema 1 -> 2 journal already exists; original configurations preserved" }
+        require(!Files.exists(journal)) { "$journal: $name journal already exists; original configurations preserved" }
         Files.createDirectories(journal.parent)
         val stage = Files.createTempDirectory(journal.parent,".$name-")
         val manifest = Properties().apply { setProperty("count",changes.size.toString()) }
@@ -48,7 +48,7 @@ internal class ConfigMigrationPlan(private val root: Path, private val name: Str
             c.before?.let { Files.writeString(stage.resolve("$i.before"),it) }
             c.after?.let { Files.writeString(stage.resolve("$i.after"),it) }
         }
-        Files.newOutputStream(stage.resolve("plan.properties")).use { manifest.store(it,"Quest chapter configuration migration 1 -> 2") }
+        Files.newOutputStream(stage.resolve("plan.properties")).use { manifest.store(it,"Quest configuration migration $name") }
         Files.move(stage,journal,ATOMIC_MOVE)
         resume()
     }

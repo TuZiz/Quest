@@ -9,8 +9,7 @@ import org.bukkit.configuration.file.YamlConfiguration
 object ResourceUpgrade {
     /** Before default extraction, move existing user files byte-for-byte. Never merge or replace. */
     fun relocateLayout(root: Path) {
-        val paths = mapOf("gui/章节.yml" to "gui/chapters.yml",
-            "gui/章节详情.yml" to "gui/chapter-detail.yml", "章节.yml" to "chapters/章节.yml")
+        val paths = mapOf("章节.yml" to "chapters/章节.yml")
         paths.forEach { (old,next) ->
             require(!Files.exists(root.resolve(old)) || !Files.exists(root.resolve(next))) {
                 "$old -> $next: resource layout migration (schema=1) conflict; both files preserved"
@@ -43,8 +42,7 @@ object ResourceUpgrade {
         }
     }
     fun updateProgressionText(root: Path) {
-        listOf("gui/detail.yml" to ("前置任务领取后自动解锁下一任务。" to "前置目标完成即解锁，无需立即领奖。"),
-            "quests/第一批资源.yml" to ("领取上一任务后开始计数；" to "上一任务完成即开始计数；")).forEach { (name,wording) ->
+        listOf("quests/第一批资源.yml" to ("领取上一任务后开始计数；" to "上一任务完成即开始计数；")).forEach { (name,wording) ->
             val file = root.resolve(name)
             if(Files.exists(file)) {
                 val old = Files.readString(file)
@@ -55,11 +53,35 @@ object ResourceUpgrade {
         }
     }
     fun appendLanguage(file: Path, bundled: String) {
-        val old = Files.readString(file)
+        var old = Files.readString(file)
         val existing = YamlConfiguration().apply { loadFromString(old) }
         require(existing.getInt("schema-version",-1) == 1) { "$file:schema-version=${existing.get("schema-version")} unsupported; original preserved" }
         val defaults = YamlConfiguration().apply { loadFromString(bundled) }
-        val missing = listOf("chapter-status","chapter-progress","chapter-reward-status","notices","automatic-rewards","command-help","tab").filter { !existing.contains(it) }
+        val oldGuide = "入岛后，为生成器添加燃料即可继续任务。"
+        if(existing.getStringList("introduction.dialogue").any { it.contains(oldGuide) }) {
+            old = old.replace(oldGuide,"入岛领取生成器，放置后获得燃料，再为它添加燃料。")
+            replace(file,old)
+        }
+        // Replace only the previous bundled wording, never a customized no-island message.
+        val oldNoIsland = "<#FFD700>创建或加入空岛后，即可开启任务。"
+        val oldPlayerHelp = "<#DDB66D>Quest 帮助<newline><#EEF3F5>/quest help <#A6B2C0>查看帮助；任务自动推进，完成后发送聊天消息，奖励自动发放。"
+        if(existing.getString("command-help.player") == oldPlayerHelp) {
+            old=old.replace(oldPlayerHelp,checkNotNull(defaults.getString("command-help.player")))
+            replace(file,old)
+        }
+        if(existing.getString("tab.no-island") == oldNoIsland) {
+            old = old.replace(oldNoIsland,checkNotNull(defaults.getString("tab.no-island")))
+            replace(file,old)
+        }
+        // Add the new hint to pre-release introduction blocks without rewriting user text/comments.
+        if(existing.isConfigurationSection("introduction") && !existing.contains("introduction.actionbar")) {
+            val line = bundled.lines().single { it.startsWith("  actionbar:") }
+            val root = Regex("(?m)^introduction:[ \\t]*(?:#.*)?$")
+            require(root.containsMatchIn(old)) { "$file:introduction expected block mapping; original preserved" }
+            old = root.replace(old) { it.value + "\n" + line }
+            replace(file, old)
+        }
+        val missing = listOf("chapter-status","chapter-progress","chapter-reward-status","notices","automatic-rewards","command-help","tab","introduction","hud","journal").filter { !existing.contains(it) }
         if(missing.isEmpty()) return
         // Append complete new root blocks only. Malformed existing keys are rejected by the loader.
         val lines = bundled.lines()

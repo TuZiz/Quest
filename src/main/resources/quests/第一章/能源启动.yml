@@ -12,16 +12,17 @@ name: '<#89F7FE>✦ <#78FFD6><bold>能源启动</bold>'
 # 任务描述 (用于 GUI 悬浮展示)
 description:
   - '<#E2E8F0>右键原石生成器<newline>   打开管理面板'
-  - '<#E2E8F0>点击<#FDE68A><bold>「燃料」</bold><#E2E8F0><newline>   放入燃料即可'
+  - '<#E2E8F0>点击<#FDE68A><bold>「燃料」</bold><#E2E8F0><newline>   打开燃料仓'
+  - '<#E2E8F0>Shift点击背包燃料<newline>   或放入上方格子'
 
 icon: genlite:fuel
 
-# 任务目标 (自动套用全局语言文件中的 objective-line 格式)
+# 任务目标 (自动套用全局语言文件中的 ob jective-line 格式)
 objectives:
   - id: fuel
     type: genlite.fuel
     target: 1
-    description: '<#E2E8F0>为生成器<#FDE68A><bold>添加燃料</bold>'
+    description: '<#E2E8F0>向燃料仓<#FDE68A><bold>存入燃料</bold>'
 
 # 任务奖励
 rewards:

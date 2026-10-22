@@ -23,7 +23,7 @@ tab=plugins/'TAB'
 tab.mkdir(exist_ok=True)
 shutil.copy2(root/'integrations/tab/config.yml',tab/'config.yml')
 shutil.copy2(root/'target/Quest-1.0.0.jar',plugins/'Quest-1.0.0.jar')
-for resource in ('lang/zh_cn.yml', 'quests/能源启动.yml'):
+for resource in ('lang/zh_cn.yml', 'quests/能源启动.yml', 'tab.yml'):
     destination=plugins/'Quest'/resource
     destination.parent.mkdir(parents=True,exist_ok=True)
     shutil.copy2(root/'src/main/resources'/resource,destination)

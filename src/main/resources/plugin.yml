@@ -10,6 +10,9 @@ softdepend:
   - Genlite
   - CraftEngine
   - TAB
+  - Adyeshach
+  - Typewriter
+  - Xerr
 commands:
   quest:
     description: 任务中心

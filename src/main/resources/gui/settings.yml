@@ -1,0 +1,96 @@
+# ==========================================================
+# 悠梦星辰 · 追踪与显示设置
+# 机制：按玩家 UUID 独立保存；不影响同岛成员，也不改变任务与奖励
+# 布局：顶部说明，中部第 3、5、7 列等距排布三大核心开关，底部返回
+# ==========================================================
+schema-version: 1
+
+title: '<#89F7FE>✦ 悠梦星辰 <#64748B>· <#C2E9FB>偏好设置'
+fallback-title: '<#89F7FE>✦ 追踪与显示'
+unavailable-item: 'minecraft:structure_void'
+empty-slots: '#'
+
+# 将原本挤在一起的 '  H N S  ' 调整为等距居中的 '#D#H#N#S#' 布局：
+# 第 3 行将 H、N、S 放在第 3、5、7 列（索引 2, 4, 6），左右对称且间距舒展
+Shape:
+  - 'D###I###D'
+  - '#DDDDDDD#'
+  - '##H#N#S##'
+  - '#DDDDDDD#'
+  - '#DDDDDDD#'
+  - 'D###B###D'
+
+components:
+  '#':
+    item: 'minecraft:gray_stained_glass_pane'
+    name: ' '
+  D:
+    item: 'minecraft:black_stained_glass_pane'
+    name: ' '
+
+  I:
+    item: 'minecraft:comparator'
+    name: '<#89F7FE>⚙ 个人显示与追踪设置'
+    lore:
+      - ''
+      - '<#89F7FE>▎ 偏好说明'
+      - '  <#94A3B8>点击下方图标即可切换对应功能开关，'
+      - '  <#94A3B8>修改后即时生效，且重进游戏后依然保留。'
+      - ''
+      - '<#C2E9FB>▎ 数据独立'
+      - '  <#64748B>▪ <#94A3B8>仅绑定个人账号，不影响同岛屿其他成员'
+      - '  <#64748B>▪ <#94A3B8>仅改变视觉与听觉反馈，不影响任务与奖励'
+
+  H:
+    item: 'minecraft:spyglass'
+    action: 'toggle-hud'
+    name: '<#89F7FE>✦ 任务追踪 <#64748B>| <#E0F7FA><hud-mode>'
+    lore:
+      - ''
+      - '<#C2E9FB>▎ 功能机制'
+      - '  <#A8FF78>▪ 开启：<#94A3B8>自动追踪任务并常驻显示侧边栏 HUD'
+      - '  <#FCA5A5>▪ 关闭：<#94A3B8>停止自动追踪并隐藏 HUD (保留已选任务)'
+      - ''
+      - '<#89F7FE>▎ 补充说明'
+      - '  <#94A3B8>在任务列表中点击进行中的任务，会自动重新开启追踪。'
+      - '  <#94A3B8>完成时的弹窗提示由右侧「任务提示」开关独立控制。'
+      - ''
+      - '<#64748B>▸ <#89F7FE>点击切换追踪与 HUD 状态'
+
+  N:
+    item: 'minecraft:bell'
+    action: 'toggle-notices'
+    name: '<#FFCC80>✦ 任务提示 <#64748B>| <#E0F7FA><notifications>'
+    lore:
+      - ''
+      - '<#FFCC80>▎ 控制范围'
+      - '  <#94A3B8>控制任务进度更新时的聊天栏消息、'
+      - '  <#94A3B8>屏幕中央标题 (Title) 与 HUD 完成播报。'
+      - ''
+      - '<#89F7FE>▎ 常驻保留'
+      - '  <#94A3B8>基础操作反馈、奖励到账通知与引导对话仍会正常显示。'
+      - ''
+      - '<#64748B>▸ <#FFCC80>点击切换任务提示开关'
+
+  S:
+    item: 'minecraft:amethyst_cluster'
+    action: 'toggle-sound'
+    name: '<#C4B5FD>✦ 任务音效 <#64748B>| <#E0F7FA><sound>'
+    lore:
+      - ''
+      - '<#C4B5FD>▎ 控制范围'
+      - '  <#94A3B8>控制任务进度推进与完成时的专属提示音效。'
+      - ''
+      - '<#89F7FE>▎ 联动规则'
+      - '  <#94A3B8>当「任务提示」处于关闭状态时，不会触发任务音效。'
+      - ''
+      - '<#64748B>▸ <#C4B5FD>点击切换提示音效开关'
+
+  B:
+    item: 'minecraft:recovery_compass'
+    action: 'home'
+    name: '<#89F7FE>❖ 返回任务首页'
+    lore:
+      - '<#94A3B8>保存当前偏好，返回悠梦星辰任务日志主页。'
+      - ''
+      - '<#64748B>▸ <#89F7FE>点击返回主页'

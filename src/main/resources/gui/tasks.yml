@@ -1,0 +1,83 @@
+# ==========================================================
+# 悠梦星辰 · 章节任务列表
+# 布局：顶部居中显示章节总览，中间 4×7 矩阵陈列任务，底部导航
+# 交互：悬停查看详情，点击进行中的任务可切换追踪并开启 HUD
+# ==========================================================
+schema-version: 1
+
+title: '<#89F7FE>✦ 悠梦星辰 <#64748B>· <#C2E9FB>章节任务'
+fallback-title: '<#89F7FE>✦ 章节任务'
+unavailable-item: 'minecraft:structure_void'
+reward-format: '  <#FFCC80>▸ <#E2E8F0><reward> <#A8FF78>×<amount>'
+empty-slots: '#'
+
+# 使用 D (深色四角与内衬) 与 # (浅灰边框) 勾勒任务展示区
+# 若不想用玻璃铺满背景，可将下方 Shape 中的 '#' 和 'D' 替换为空格 ' '
+Shape:
+  - 'D###I###D'
+  - '#QQQQQQQ#'
+  - '#QQQQQQQ#'
+  - '#QQQQQQQ#'
+  - '#QQQQQQQ#'
+  - 'DP##B##ND'
+
+components:
+  '#':
+    item: 'minecraft:gray_stained_glass_pane'
+    name: ' '
+  D:
+    item: 'minecraft:black_stained_glass_pane'
+    name: ' '
+
+  I:
+    item: 'minecraft:lectern'
+    name: '<#89F7FE>❖ <chapter>'
+    lore:
+      - ''
+      - '<#89F7FE>▎ 章节总览'
+      - '  <#94A3B8>探索进度：<#E2E8F0><progress> <#64748B>/ <#94A3B8><target> <#64748B>(<#A8FF78><percent>%<#64748B>)'
+      - '  <#94A3B8>当前页码：<#E0F7FA><page> <#64748B>/ <#94A3B8><pages>'
+      - ''
+      - '<info>'
+
+  Q:
+    item: 'minecraft:writable_book'
+    action: 'journal-quest'
+    name: '<#E0F7FA>✦ <quest> <#64748B>· <status>'
+    lore:
+      - '<status> <#64748B>| <tracking>'
+      - ''
+      - '<#C2E9FB>▎ 任务纪要'
+      - '  <#94A3B8><description>'
+      - ''
+      - '<#89F7FE>▎ 达成目标'
+      - '<objectives>'
+      - ''
+      - '<#FFCC80>▎ 任务馈赠'
+      - '<rewards>'
+      - ''
+      - '<#64748B>▸ <#E0F7FA>点击切换追踪并开启 HUD'
+      - '<#64748B>  (未解锁任务仅支持阅览详情)'
+
+  P:
+    item: 'minecraft:spectral_arrow'
+    action: 'previous'
+    name: '<#C2E9FB>« 上一页'
+    lore:
+      - '<#64748B>▸ <#C2E9FB>点击翻至上一页'
+
+  B:
+    item: 'minecraft:chiseled_bookshelf'
+    action: 'back'
+    name: '<#89F7FE>❖ 返回章节目录'
+    lore:
+      - '<#94A3B8>合上当前书卷，返回全部章节总览。'
+      - ''
+      - '<#64748B>▸ <#89F7FE>点击返回上一级'
+
+  N:
+    item: 'minecraft:spectral_arrow'
+    action: 'next'
+    name: '<#C2E9FB>下一页 »'
+    lore:
+      - '<#64748B>▸ <#C2E9FB>点击翻至下一页'

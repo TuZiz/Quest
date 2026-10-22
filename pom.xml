@@ -5,6 +5,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <kotlin.version>2.3.10</kotlin.version><java.version>25</java.version>
+    <xerr.version>2.2.0</xerr.version>
     <plugins.dir>C:/Users/32633/Desktop/leaf/plugins</plugins.dir>
   </properties>
   <repositories><repository><id>papermc-repo</id><url>https://repo.papermc.io/repository/maven-public/</url></repository></repositories>
@@ -16,6 +17,8 @@
     <dependency><groupId>cn.genlite</groupId><artifactId>genlite-local</artifactId><version>1.0.0</version><scope>system</scope><systemPath>${project.basedir}/.build/dependencies/Genlite/target/Genlite-1.0.0.jar</systemPath></dependency>
     <dependency><groupId>net.momirealms</groupId><artifactId>craftengine-local</artifactId><version>26.9.2</version><scope>system</scope><systemPath>${plugins.dir}/craft-engine-paper-plugin-26.9.2.jar</systemPath></dependency>
     <dependency><groupId>me.neznamy</groupId><artifactId>tab-local</artifactId><version>6.2.1</version><scope>system</scope><systemPath>${project.basedir}/.build/dependencies/TAB/TAB-6.2.1.jar</systemPath></dependency>
+    <dependency><groupId>com.typewritermc</groupId><artifactId>typewriter-local</artifactId><version>0.9.0-beta-177</version><scope>system</scope><systemPath>${plugins.dir}/Typewriter-0.9.0-beta-177.jar</systemPath></dependency>
+    <dependency><groupId>com.hiusers</groupId><artifactId>xerr-local</artifactId><version>${xerr.version}</version><scope>system</scope><systemPath>${plugins.dir}/Xerr-${xerr.version}.jar</systemPath></dependency>
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>5.13.4</version><scope>test</scope></dependency>
   </dependencies>
   <build>

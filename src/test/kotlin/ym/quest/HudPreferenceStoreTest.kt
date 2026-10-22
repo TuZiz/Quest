@@ -30,7 +30,7 @@ class HudPreferenceStoreTest {
         db=Database(file,Logger.getAnonymousLogger());db.open().await()
         try {
             db.submit { db.transaction { c ->
-                assertEquals(3,c.number("PRAGMA user_version"))
+                assertEquals(5,c.number("PRAGMA user_version"))
                 assertEquals(100,c.number("SELECT baseline FROM objectives"));assertEquals(18,c.number("SELECT progress FROM objectives"))
                 assertEquals(1,c.number("SELECT COUNT(*) FROM claims"));assertEquals(1,c.number("SELECT COUNT(*) FROM parcels WHERE phase='DELIVERED'"))
                 assertEquals(2,c.number("SELECT COUNT(*) FROM hud_preferences"))

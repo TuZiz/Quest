@@ -1,38 +1,94 @@
-# 全部章节列表。
-schema-version: 1
-title: '<#7DD3FC>星海篇章'
-unavailable-item: 'minecraft:barrier'
+# ==========================================================
+# 悠梦星辰 · 任务日志 (章节首页)
+# 布局：中间四行的第 2、5、8 列对称放置章节，每页 12 个
+# 导航：顶部居中分类切换，四角/底边为设置与翻页控制
+# ==========================================================
+schema-version: 2
+
+title: '<#89F7FE>✦ 悠梦星辰 <#64748B>· <#C2E9FB>任务日志'
+fallback-title: '<#89F7FE>✦ 任务日志'
+unavailable-item: 'minecraft:structure_void'
+reward-format: '  <#FFCC80>▸ <#E2E8F0><reward> <#A8FF78>×<amount>'
+empty-slots: '#'
+
+# 注：已将第一行和中间四行调整为完全对称结构（第 2、5、8 列）
+# 加入了 B (深色边框玻璃) 与 # (浅色分隔玻璃) 形成视觉层次
 Shape:
-- '########R'
-- '#CCCCCCC#'
-- '#CCCCCCC#'
-- '#CCCCCCC#'
-- 'P###B###N'
+  - '####S###I'
+  - 'BC#BC#BC#'
+  - 'BC#BC#BC#'
+  - 'BC#BC#BC#'
+  - 'BC#BC#BC#'
+  - 'P###E###N'
+
 components:
   '#':
     item: 'minecraft:gray_stained_glass_pane'
     name: ''
-  C:
-    item: 'minecraft:book'
-    action: 'chapter'
-    name: '<chapter>'
-    lore:
-    - '<status>'
-    - '<#CBD5E1>已完成任务：<progress>/<target>'
-    - '<#94A3B8>点击查看章节任务和完成奖励'
-  P:
-    item: 'minecraft:arrow'
-    action: 'previous'
-    name: '<#CBD5E1>上一页'
-  N:
-    item: 'minecraft:arrow'
-    action: 'next'
-    name: '<#CBD5E1>下一页'
   B:
-    item: 'minecraft:arrow'
+    item: 'minecraft:black_stained_glass_pane'
+    name: ''
+
+  C:
+    item: 'minecraft:enchanted_book'
+    action: 'journal-chapter'
+    name: '<#89F7FE>❖ <chapter>'
+    lore:
+      - '<status>'
+      - ''
+      - '<#C2E9FB>▎ 章节纪要'
+      - '  <#94A3B8><description>'
+      - ''
+      - '<#89F7FE>▎ 探索进度'
+      - '  <#E2E8F0><progress> <#64748B>/ <#94A3B8><target> <#64748B>(<#A8FF78><percent>%<#64748B>)'
+      - ''
+      - '<#FFCC80>▎ 章节馈赠'
+      - '<rewards>'
+      - ''
+      - '<#64748B>▸ <#E0F7FA>点击展开本章星辰轨迹'
+
+  S:
+    item: 'minecraft:compass'
+    action: 'category-cycle'
+    name: '<#89F7FE>任务分类：<category>'
+    lore:
+      - '<#94A3B8>当前浏览：<#E0F7FA><category>'
+      - '<info>'
+      - ''
+      - '<#C2E9FB>主线 → 支线 → 特殊 → 主线'
+      - '<#64748B>点击切换下一分类'
+
+  I:
+    item: 'minecraft:comparator'
+    action: 'settings'
+    name: '<#C2E9FB>⚙ 界面与追踪设置'
+    lore:
+      - '<#94A3B8>调整 HUD 显示模式、自动追踪、'
+      - '<#94A3B8>任务通知弹窗与提示音效。'
+      - ''
+      - '<#64748B>▸ <#C2E9FB>点击打开设置面板'
+
+  E:
+    item: 'minecraft:barrier'
     action: 'close'
-    name: '<#CBD5E1>关闭'
-  R:
-    item: 'minecraft:clock'
-    action: 'refresh'
-    name: '<#7DD3FC>刷新 · <page>/<pages>'
+    name: '<#FCA5A5>✕ 合上日志'
+    lore:
+      - '<#94A3B8>暂时关闭任务日志界面。'
+
+  P:
+    item: 'minecraft:spectral_arrow'
+    action: 'previous'
+    name: '<#C2E9FB>« 上一页'
+    lore:
+      - '<#94A3B8>当前页码：<#E0F7FA><page> <#64748B>/ <#94A3B8><pages>'
+      - ''
+      - '<#64748B>▸ <#C2E9FB>点击翻至上一页'
+
+  N:
+    item: 'minecraft:spectral_arrow'
+    action: 'next'
+    name: '<#C2E9FB>下一页 »'
+    lore:
+      - '<#94A3B8>当前页码：<#E0F7FA><page> <#64748B>/ <#94A3B8><pages>'
+      - ''
+      - '<#64748B>▸ <#C2E9FB>点击翻至下一页'

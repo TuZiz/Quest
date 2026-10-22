@@ -1,0 +1,13 @@
+# 第一章的个人前置任务：交谈即可完成，无需先创建或加入空岛。
+# 交谈前每秒刷新 ActionBar；对话期间暂停，完成或跳过后停止。
+# 不参与空岛共享奖励结算。
+schema-version: 1
+enabled: true
+# Adyeshach 编辑器中的 NPC 编号（id），不是名称、坐标或运行时实体数字。
+# 已绑定本服现有 NPC，不修改它的名称、模型和位置。
+npc-id: '新人'
+chapter-id: 'sky_awakening'
+# 永久进度键，修改会产生一个新的个人任务。
+task-id: 'meet_guide'
+# 对话超时仅取消，不完成任务；单位秒，范围 15–600。
+timeout-seconds: 120

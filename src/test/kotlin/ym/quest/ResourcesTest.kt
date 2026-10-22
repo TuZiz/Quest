@@ -23,7 +23,7 @@ class ResourcesTest {
             val yaml=YamlConfiguration().apply { loadFromString(raw) }
             assertFalse(raw.contains('\t'),p.toString())
             assertFalse(Regex("[&§][0-9a-fk-or]",RegexOption.IGNORE_CASE).containsMatchIn(raw),p.toString())
-            if(p.fileName.toString() != "plugin.yml") assertEquals(if(p.parent.fileName.toString() in setOf("quests","chapters") || p in setOf(root.resolve("gui/main.yml"),root.resolve("提示.yml"))) 2 else 1,yaml.getInt("schema-version"),p.toString())
+            if(p.fileName.toString() != "plugin.yml") assertEquals(if(p.startsWith(root.resolve("quests")) || p.startsWith(root.resolve("chapters")) || p in setOf(root.resolve("gui/chapters.yml"),root.resolve("提示.yml"))) 2 else 1,yaml.getInt("schema-version"),p.toString())
             if(p.parent.fileName.toString() == "gui") {
                 QuestFiles.validateMenu(p.toString(),yaml)
                 assertEquals(yaml.getStringList("Shape").joinToString("").filter { it != ' ' }.map { it.toString() }.toSet(),yaml.getConfigurationSection("components")!!.getKeys(false))
@@ -43,10 +43,11 @@ class ResourcesTest {
         assertNull(text.clickEvent())
         val evidence=Path.of("target/verification/components.json"); Files.createDirectories(evidence.parent)
         val samples=JsonArray()
-        val values=listOf("quest","status","page","pages","info","amount","description","objectives","rewards","reward","progress","target","chapter","mode","notifications","heading","name","next","value","objective","completed","total","hint","step").associateWith {
+        val values=listOf("quest","status","page","pages","info","amount","description","objectives","rewards","reward","progress","target","chapter","mode","notifications","heading","name","next","value","objective","completed","total","hint","step","category","tracking","percent","hud-mode","auto","sound","index").associateWith {
             renderer.render("<#7DD3FC>实际动态参数")
         }
-        for(name in listOf("lang/zh_cn.yml","gui/main.yml","gui/chapters.yml","chapters/第一章·星海初醒.yml","quests/能源启动.yml","quests/星海启航.yml","quests/第一批资源.yml")) {
+        assertEquals(setOf("chapters.yml","tasks.yml","settings.yml"),Files.list(root.resolve("gui")).use { paths -> paths.map { it.fileName.toString() }.toList().toSet() })
+        for(name in listOf("lang/zh_cn.yml","gui/chapters.yml","gui/tasks.yml","gui/settings.yml","chapters/第一章·星海初醒.yml","quests/第一章/能源启动.yml","quests/第一章/星海启航.yml","quests/第一章/放置生成器.yml","quests/第一章/第一批资源.yml")) {
             val yaml=YamlConfiguration().apply { loadFromString(Files.readString(this@ResourcesTest.root.resolve(name))) }
             fun record(path: String, value: Any?) {
                 when(value) {
@@ -54,7 +55,7 @@ class ResourcesTest {
                     is List<*> -> value.forEachIndexed { i,v -> record("$path.$i",v) }
                     is String -> {
                         val item=name.startsWith("gui/") && (path == "reward-format" || path.split('.').any { it in setOf("name","lore") })
-                        if(name.startsWith("gui/") && !item && path != "title") return
+                        if(name.startsWith("gui/") && !item && path !in setOf("title","fallback-title")) return
                         val final=if(item) renderer.item(value,values) else renderer.render(value,values)
                         val hash=java.security.MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
                         samples.add(JsonObject().apply {

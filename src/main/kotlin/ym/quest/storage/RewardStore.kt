@@ -10,6 +10,9 @@ class RewardStore {
         if(view.status != QuestStatus.COMPLETE) return false
         if(c.update("INSERT OR IGNORE INTO claims VALUES(?,?,?,?)",home,view.definition.id,player,System.currentTimeMillis()) == 0) return false
         view.definition.rewards.filter { !it.starter || !hasGenerator }.forEach { reward ->
+            // Moving a reward between tasks never creates a second parcel, including WAITING/SENDING history.
+            if(reward.previouslyRewardedBy != null && c.number(
+                "SELECT COUNT(*) FROM parcels WHERE home=? AND quest=? AND item=?",home,reward.previouslyRewardedBy,reward.item) > 0) return@forEach
             c.update("INSERT INTO parcels VALUES(?,?,?,?,?,'WAITING',NULL)",UUID.randomUUID().toString(),home,view.definition.id,reward.item,reward.amount)
         }
         return true

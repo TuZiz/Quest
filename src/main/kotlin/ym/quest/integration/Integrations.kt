@@ -17,6 +17,7 @@ class Integrations(private val plugin: JavaPlugin, private val service: QuestSer
     private var initial = false
     private var warnedDream = false; private var warnedGen = false
     private val seen = ConcurrentHashMap<String,Long>()
+    private val placed = ConcurrentHashMap.newKeySet<UUID>()
     @Volatile private var closed = false
     fun discover() {
         if(closed) return
@@ -36,12 +37,25 @@ class Integrations(private val plugin: JavaPlugin, private val service: QuestSer
         val homes = islands?.takeIf { it.ready() } ?: return
         if(!initial) { initial=true; homes.all().forEach { syncIsland(it.id) } }
         production?.takeIf { it.ready() }?.let { acceptCounters(it.counters()) }
+        if(production?.ready() == true && service.definitions.any { q -> q.objectives.any { it.type == "genlite.placed" } }) {
+            plugin.server.onlinePlayers.mapNotNull { homes.byMember(it.uniqueId) }.distinctBy { it.id }.forEach { island ->
+                if(island.id !in placed && production!!.hasPlacedGenerator(island) && placed.add(island.id)) {
+                    // Reserve while syncing; failures retry on discovery.
+                    service.sync(island.id.toString(),facts(island.id)).whenComplete { list,error ->
+                        if(error != null) { placed.remove(island.id); failure(error) } else if(!closed) changes(list)
+                    }
+                }
+            }
+        }
     }
     fun island(player: UUID) = islands?.takeIf { it.ready() }?.byMember(player)
     fun allowed(home: UUID, player: UUID) = islands?.canClaim(home,player) == true
     fun facts(home: UUID): Map<String,Long> = buildMap {
         if(islands?.byId(home) != null) put("island.member",1)
         if(production?.ready() == true) service.definitions.flatMap { it.objectives }.filter { it.type.startsWith("genlite.") }.forEach { put(it.metric,0L) }
+        if(production?.ready() == true) islands?.byId(home)?.let { island ->
+            put("genlite.placed",if(production!!.hasPlacedGenerator(island)) 1L else 0L)
+        }
         production?.takeIf { it.ready() }?.counters()?.forEach { (key,n) -> if(key.startsWith("$home|")) put(key.substringAfter('|'),n) }
     }
     fun syncIsland(home: UUID) {
@@ -66,6 +80,6 @@ class Integrations(private val plugin: JavaPlugin, private val service: QuestSer
             }
         }
     }
-    fun refresh() { initial=false; seen.clear(); discover() }
-    override fun close() { closed=true; listeners.forEach { HandlerList.unregisterAll(it) }; listeners.clear(); islands=null; production=null; seen.clear() }
+    fun refresh() { initial=false; seen.clear(); placed.clear(); discover() }
+    override fun close() { closed=true; listeners.forEach { HandlerList.unregisterAll(it) }; listeners.clear(); islands=null; production=null; seen.clear(); placed.clear() }
 }

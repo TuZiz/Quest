@@ -10,7 +10,8 @@ import org.bukkit.event.server.PluginEnableEvent
 import org.bukkit.plugin.java.JavaPlugin
 import ym.quest.config.*
 import ym.quest.domain.*
-import ym.quest.gui.QuestMenus
+import ym.quest.gui.journal.TaskJournalMenus
+import ym.quest.preferences.PlayerDisplayPreferences
 import ym.quest.integration.*
 import ym.quest.reward.*
 import ym.quest.storage.Database
@@ -18,6 +19,9 @@ import ym.quest.text.TextRenderer
 import ym.quest.text.StoryNotices
 import ym.quest.tab.TabQuestBridge
 import ym.quest.tab.TabSettings
+import ym.quest.introduction.IntroductionRuntime
+import ym.quest.hud.HudSettings
+import ym.quest.hud.QuestHudBridge
 import java.util.UUID
 import java.util.logging.Level
 
@@ -29,35 +33,52 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     private val custom = if(plugin.server.pluginManager.isPluginEnabled("CraftEngine")) CraftEngineItemProvider() else null
     private val items = ItemFactory(listOfNotNull(custom))
     private val delivery = MailboxDelivery(service,integrations,items,text,thread,::failure)
-    private val menus = QuestMenus(plugin,service,integrations,items,text,thread,::claim,::failure,settings)
+    private var introduction: IntroductionRuntime? = null
+    private val preferences=PlayerDisplayPreferences(plugin,db,thread,::failure)
+    private val journal=TaskJournalMenus(plugin,service,integrations,items,text,thread,preferences,settings,::failure) { player,view -> introduction?.decorate(player,view) ?: view }
     private val automatic = AutomaticRewards(plugin,service,integrations,items,{ custom?.id(it) },delivery,thread,::failure,settings.rewards) { !closed && !reloading }
-    private val claiming = mutableSetOf<UUID>()
     private var reloading = false
     private var closed = false
     private var tabSettings = settings.tab
     private var tab: TabQuestBridge? = null
+    private var hudSettings=settings.hud
+    private var hud: QuestHudBridge? = null
     private val heartbeat = plugin.server.scheduler.runTaskTimer(plugin,Runnable { if(!closed) integrations.discover() },1,20)
     init {
         service.claimChanges = ::notify
         validateItems(settings)
-        plugin.server.pluginManager.registerEvents(menus,plugin)
         plugin.server.pluginManager.registerEvents(this,plugin)
+        configureIntroduction(settings)
         configureTab(settings.tab)
+        configureHud(settings.hud)
         val commands = QuestCommands(text,service,integrations,thread,delivery,{
             if(closed) text.send(it,"unavailable")
-            else if(it.hasPermission("quest.admin") || menus.settings.center.getBoolean("player-access",false)) menus.open(it)
-            else text.send(it,"automatic-rewards")
-        },::reload,::failure)
+            else journal.open(it)
+        },::reload,::failure) { player,action ->
+            if(closed || reloading) text.send(player,"busy")
+            else introduction?.command(player,action) ?: text.send(player,"unavailable")
+        }
         plugin.getCommand("quest")!!.apply { setExecutor(commands); tabCompleter=commands }
-        plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=3; task/chapter YAML schema=2; quests=${settings.quests.size}; chapters=${settings.chapters.size}; Paper ownership; Folia=false; completion=chat")
-        listOf("DreamSkyblock","Genlite","CraftEngine","TAB").forEach { id ->
+        plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=5; task/chapter YAML schema=2; quests=${settings.quests.size}; chapters=${settings.chapters.size}; introduction=${settings.introduction.enabled}; Paper ownership; Folia=false; journal=enabled")
+        listOf("DreamSkyblock","Genlite","CraftEngine","TAB","Adyeshach","Typewriter","Xerr").forEach { id ->
             plugin.logger.info("Integration $id=${plugin.server.pluginManager.getPlugin(id)?.pluginMeta?.version ?: "missing"}")
         }
+    }
+    private fun configureIntroduction(settings: Settings) {
+        introduction?.close(); introduction=null
+        if(settings.introduction.enabled) introduction=IntroductionRuntime(plugin,db,integrations,thread,text,settings.introduction,settings.chapters,settings.tab.lineWidth) { player,id,name -> hud?.personalComplete(player,id,name) }
+    }
+    private fun configureHud(settings: HudSettings) {
+        hud?.close(); hud=null; hudSettings=settings
+        if(!settings.enabled || !plugin.server.pluginManager.isPluginEnabled("Xerr")) return
+        try { hud=QuestHudBridge(plugin,service,integrations,thread,text,settings,{ preferences.get(it) }) { introduction?.hudJournal(it) } }
+        catch(e: LinkageError) { plugin.logger.log(Level.WARNING,"Xerr 2.2.0 API incompatible; quest HUD disabled",e) }
+        plugin.logger.info("Quest HUD: enabled=${hud != null}; layouts=${settings.tracker}/${settings.notice}; assets=server Xerr only")
     }
     private fun configureTab(settings: TabSettings) {
         tab?.close(); tab=null; tabSettings=settings
         if(!settings.enabled || !plugin.server.pluginManager.isPluginEnabled("TAB")) return
-        try { tab=TabQuestBridge(plugin,service,integrations,thread,text,settings) }
+        try { tab=TabQuestBridge(plugin,service,integrations,thread,text,settings) { introduction?.tabLines(it) } }
         catch(e: LinkageError) { plugin.logger.log(Level.WARNING,"TAB API incompatible; Quest task display disabled",e) }
     }
     private fun validateItems(settings: Settings) {
@@ -65,34 +86,6 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
         (settings.quests.flatMap { listOf(it.icon)+it.rewards.map { r -> r.item } } + settings.chapters.flatMap { listOf(it.icon)+it.rewards.map { r -> r.item } }).distinct().forEach { id ->
             try { items.build(id) } catch(e: Exception) { plugin.logger.warning("Quest item $id not available: ${e.message}; claim/delivery guarded") }
         }
-    }
-    private fun claim(player: Player, home: UUID, quest: String) {
-        if(closed || reloading || !claiming.add(player.uniqueId)) { text.send(player,"busy"); return }
-        fun reject(key: String) { claiming.remove(player.uniqueId); text.send(player,key) }
-        if(!player.hasPermission("quest.use") || !integrations.allowed(home,player.uniqueId) || integrations.island(player.uniqueId)?.id != home) { reject("no-permission"); return }
-        val chapter = if(quest.startsWith("chapter:")) service.chapters.firstOrNull { it.id == quest.substringAfter(':') } else null
-        val definition = if(chapter != null) QuestDefinition(quest,chapter.name,chapter.description,chapter.icon,emptyList(),emptyList(),chapter.rewards)
-            else service.definitions.firstOrNull { it.id == quest } ?: run { reject("unavailable"); return }
-        if((definition.objectives.any { it.type.startsWith("genlite.") } || definition.rewards.any { it.starter }) && integrations.production?.ready() != true) { reject("unavailable"); return }
-        try { definition.rewards.forEach { items.build(it.item,player) } }
-        catch(e: Exception) { failure(e); reject("unavailable"); return }
-        val island = integrations.island(player.uniqueId)!!
-        val starterIds = definition.rewards.filter { it.starter }.map { it.item }.toSet()
-        val inInventory = island.members.any { member -> plugin.server.getPlayer(member)?.inventory?.storageContents?.any { stack ->
-            stack != null && custom?.id(stack) in starterIds
-        } == true }
-        val hasGenerator = integrations.production?.hasGenerator(island) == true || inInventory
-        val result = if(chapter != null) service.claimChapter(home.toString(),player.uniqueId.toString(),chapter.id,integrations.facts(home),hasGenerator)
-            else service.claim(home.toString(),player.uniqueId.toString(),quest,integrations.facts(home),hasGenerator)
-        result.whenComplete { claimed,error -> thread.run {
-            claiming.remove(player.uniqueId)
-            if(closed) return@run
-            if(error != null) { failure(error); if(player.isOnline) text.send(player,"error"); return@run }
-            if(!player.isOnline || integrations.island(player.uniqueId)?.id != home || !player.hasPermission("quest.use")) return@run
-            text.send(player,if(claimed) "claimed" else "not-complete")
-            menus.refreshHome(home)
-            if(claimed) delivery.collect(player,home) { menus.refreshHome(home) }
-        } }
     }
     private fun notify(changes: List<ProgressChange>) {
         if(changes.isEmpty()) return
@@ -102,10 +95,13 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
                 val id = UUID.fromString(home)
                 integrations.islands?.byId(id)?.members?.forEach { member ->
                     plugin.server.getPlayer(member)?.takeIf { it.hasPermission("quest.use") }?.let { player ->
-                        list.forEach { notices.send(player,it,service.definitions,service.chapters) }
+                        preferences.get(player)?.takeIf { it.notifications }?.let { pref ->
+                            list.forEach { notices.send(player,it,service.definitions,service.chapters,pref.sound) }
+                        }
+                        hud?.notify(player,id,list)
                     }
                 }
-                menus.refreshHome(id)
+                journal.refreshHome(id)
             }
         }
     }
@@ -118,16 +114,19 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
             if(error != null) { reloading=false; failure(error); text.send(sender,"error"); return@run }
             try {
                 (settings.quests.flatMap { listOf(it.icon)+it.rewards.map { r -> r.item } } + settings.chapters.flatMap { listOf(it.icon)+it.rewards.map { r -> r.item } }).distinct().forEach { items.build(it) }
-                listOf(settings.center,settings.chapterMenu).forEach { y ->
-                    y.getConfigurationSection("components")!!.getKeys(false).forEach { ch -> items.build(y.getString("components.$ch.item")!!) }
+                settings.journalMenus.values.forEach { y ->
+                    y.getConfigurationSection("components")!!.getKeys(false).forEach { ch ->
+                        listOf("item","item-on","item-off").mapNotNull { y.getString("components.$ch.$it") }.forEach { items.build(it) }
+                    }
                 }
             } catch(e: Exception) { reloading=false; failure(e); text.send(sender,"error"); return@run }
             service.configure(settings.quests,settings.chapters).whenComplete { _,configureError -> thread.run {
                 if(closed) return@run
                 reloading=false
                 if(configureError != null) { failure(configureError); text.send(sender,"error"); return@run }
-                menus.close(); menus.settings=settings; text.language=settings.language; notices.profiles=settings.notices
-                automatic.reload(settings.rewards); integrations.refresh(); configureTab(settings.tab); text.send(sender,"reloaded")
+                text.language=settings.language; notices.profiles=settings.notices
+                journal.closeMenus(); journal.settings=settings
+                automatic.reload(settings.rewards); integrations.refresh(); configureIntroduction(settings); configureTab(settings.tab); configureHud(settings.hud); text.send(sender,"reloaded")
             } }
         } }
     }
@@ -135,13 +134,15 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     @EventHandler fun join(e: PlayerJoinEvent) { integrations.island(e.player.uniqueId)?.let { integrations.syncIsland(it.id) } }
     @EventHandler fun dependencyEnabled(e: PluginEnableEvent) {
         if(!closed && e.plugin.name == "TAB") configureTab(tabSettings)
+        if(!closed && e.plugin.name == "Xerr") configureHud(hudSettings)
     }
     @EventHandler fun dependencyDisabled(e: PluginDisableEvent) {
         if(e.plugin.name == "TAB") { tab?.close(); tab=null }
+        if(e.plugin.name == "Xerr") { hud?.close(); hud=null }
         if(e.plugin.name in setOf("DreamSkyblock","Genlite","CraftEngine")) { plugin.logger.warning("Dependency ${e.plugin.name} disabled; Quest paused until restart"); close() }
     }
     override fun close() {
         if(closed) return
-        closed=true; service.claimChanges = {}; heartbeat.cancel(); tab?.close(); tab=null; automatic.close(); menus.close(); delivery.close(); integrations.close(); claiming.clear()
+        closed=true; service.claimChanges = {}; heartbeat.cancel(); journal.close(); preferences.close(); hud?.close(); hud=null; tab?.close(); tab=null; introduction?.close(); introduction=null; automatic.close(); delivery.close(); integrations.close()
     }
 }

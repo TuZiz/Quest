@@ -10,7 +10,7 @@ import java.time.Duration
 
 /** Called only on the Paper ownership thread. Each channel can be disabled independently. */
 class StoryNotices(private val text: TextRenderer, var profiles: Map<String,NoticeProfile>) {
-    fun send(player: Player, change: ProgressChange, quests: List<QuestDefinition>, chapters: List<ChapterDefinition>) {
+    @JvmOverloads fun send(player: Player, change: ProgressChange, quests: List<QuestDefinition>, chapters: List<ChapterDefinition>, sound: Boolean = true) {
         val chapter = chapters.firstOrNull { it.id == change.quest && change.chapter }
         val quest = quests.firstOrNull { it.id == change.quest && !change.chapter }
         if(chapter == null && quest == null) return
@@ -30,7 +30,7 @@ class StoryNotices(private val text: TextRenderer, var profiles: Map<String,Noti
             if(p.actionBar) player.sendActionBar(text.format("notices.$event.message",values))
             if(p.title) player.showTitle(Title.title(text.format("notices.$event.title",values),
                 text.format("notices.$event.subtitle",values),Title.Times.times(Duration.ofMillis(300),Duration.ofSeconds(2),Duration.ofMillis(500))))
-            p.sound?.let { player.playSound(Sound.sound(Key.key(it),Sound.Source.MASTER,p.volume,p.pitch)) }
+            if(sound) p.sound?.let { player.playSound(Sound.sound(Key.key(it),Sound.Source.MASTER,p.volume,p.pitch)) }
         }
     }
 }
