@@ -21,13 +21,13 @@ class TutorialUpgradeTest {
         repeat(2) {TutorialUpgrade.migrate(root,::resource)}
         val raw=Files.readString(root.resolve(ChapterConfigUpgrade.defaultFile))
         val ch=ChapterFiles.parse(YamlConfiguration().apply {loadFromString(raw)})
-        assertEquals(18,ch.quests.size);assertEquals(14,ch.requiredQuests.size);assertEquals(4,ch.optionalQuests.size)
+        assertEquals(14,ch.quests.size);assertEquals(10,ch.requiredQuests.size);assertEquals(4,ch.optionalQuests.size)
         assertTrue(raw.contains("# 中文用户注释"));assertTrue(raw.contains("unknown: '保留'"))
         assertEquals(9,ch.rewards.single().amount)
         assertEquals(old,Files.readString(root.resolve("quests/第一章/第一批资源.yml")))
         assertEquals("existing database sentinel",Files.readString(root.resolve("data/quest.db")))
         assertTrue(Files.exists(root.resolve(".migrations/chapter-one-tutorial-v1/complete")))
-        assertEquals(15,QuestTaskFiles.files(root.resolve("quests")).size)
+        assertEquals(11,QuestTaskFiles.files(root.resolve("quests")).size)
         val once=Files.readString(root.resolve(ChapterConfigUpgrade.defaultFile));TutorialUpgrade.migrate(root,::resource)
         assertEquals(once,Files.readString(root.resolve(ChapterConfigUpgrade.defaultFile)))
     }

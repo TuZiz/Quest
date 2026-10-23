@@ -1,20 +1,25 @@
 # 入岛领取生成器，实际放置后才发燃料；物品在背包中不算完成。
 schema-version: 2
-id: place_generator
-scope: island
-name: '<#78FFD6>安放生成器'
+id: 'place_generator'
+scope: 'island'
+name: '<gradient:#78FFD6:#A8FF78>✦ 安放生成器</gradient>'
+icon: 'minecraft:furnace'
+
 description:
-  - '<#E0F7FA>将背包中的原石生成器放置在自己的空岛上'
-  - '<#C2E9FB>放置成功后自动获得16份燃料'
-icon: minecraft:furnace
+  - '<#94A3B8>空岛工业的起点，始于第一台核心设施的落成。'
+  - '<#94A3B8>将背包中的原石生成器安放在你的领地之上。'
+  - ''
+  - '<#64748B>▪ 引导目标（成功放置后自动发放 16 份初始燃料）'
+
 objectives:
-  - id: placed
-    type: genlite.placed
+  - id: 'placed'
+    type: 'genlite.placed'
     resource: 'cobblestone_generator'
     target: 1
-    description: '<#E0F7FA>在空岛放置一台生成器'
+    description: '<#E2E8F0>在空岛放置 <#78FFD6>原石生成器</#78FFD6>'
+
 rewards:
-  - item: genlite:fuel
+  - item: 'genlite:fuel'  # 燃料
     amount: 16
     # 旧版入岛奖励已有同种物品记录时不重复发放，包括尚待送达的记录。
-    unless-rewarded-by: sky_start
+    unless-rewarded-by: 'sky_start'

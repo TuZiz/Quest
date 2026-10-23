@@ -1,14 +1,23 @@
 # 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
-'schema-version': 2
-'id': 'first_collector'
-'scope': 'island'
-'category': 'main'
-'name': '<#78FFD6>收集的力量'
-'description':
-- '<#C2E9FB>在空岛放置奖励的普通收集器；中央仓库不参与本章。'
-'icon': 'minecraft:chest'
-'objectives':
-- 'id': 'experience'
-  'type': 'genlite.collector'
-  'target': 1
-  'description': '<#E2E8F0>在空岛放置奖励的普通收集器；中央仓库不参与本章。'
+schema-version: 2
+id: 'first_collector'
+scope: 'island'
+category: 'main'
+name: '<gradient:#78FFD6:#A8FF78>✦ 收集的力量</gradient>'
+icon: 'minecraft:chest'
+
+description:
+  - '<#94A3B8>告别繁琐的人工拾取，迈出自动化的第一步。'
+  - '<#94A3B8>部署普通收集器，让散落的物资井然归仓。'
+  - ''
+  - '<#64748B>▪ 主线目标（中央仓库系统暂不参与本章）'
+
+objectives:
+  - id: 'experience'
+    type: 'genlite.collector'
+    target: 1
+    description: '<#E2E8F0>在空岛放置 <#78FFD6>普通收集器</#78FFD6>'
+
+rewards:
+  - item: 'currency:copper_coin'  # 铜币，每枚右键兑换1金币
+    amount: 3

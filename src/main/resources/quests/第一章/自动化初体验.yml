@@ -1,14 +1,23 @@
 # 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
-'schema-version': 2
-'id': 'first_transfer'
-'scope': 'island'
-'category': 'main'
-'name': '<#78FFD6>自动化初体验'
-'description':
-- '<#C2E9FB>保持收集器模式，让生成器实际传入16个资源；手动存入不计数。'
-'icon': 'minecraft:hopper'
-'objectives':
-- 'id': 'experience'
-  'type': 'genlite.transfer'
-  'target': 16
-  'description': '<#E2E8F0>保持收集器模式，让生成器实际传入16个资源；手动存入不计数。'
+schema-version: 2
+id: 'first_transfer'
+scope: 'island'
+category: 'main'
+name: '<gradient:#78FFD6:#A8FF78>✦ 自动化初体验</gradient>'
+icon: 'minecraft:hopper'
+
+description:
+  - '<#94A3B8>链路既成，产出的物资正沿着无形的轨道流转。'
+  - '<#94A3B8>解放双手，见证全自动收集产线的稳定运行。'
+  - ''
+  - '<#64748B>▪ 主线目标（需保持收集器模式，玩家手动存入不计入）'
+
+objectives:
+  - id: 'experience'
+    type: 'genlite.transfer'
+    target: 16
+    description: '<#E2E8F0>生成器向收集器自动传输 <#78FFD6>16</#78FFD6> 个资源'
+
+rewards:
+  - item: 'currency:silver_coin'  # 银币，每枚右键兑换10金币
+    amount: 1

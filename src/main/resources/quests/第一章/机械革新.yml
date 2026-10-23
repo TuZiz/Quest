@@ -1,22 +1,28 @@
 # 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
-'schema-version': 2
-'id': 'upgrade_two'
-'scope': 'island'
-'category': 'main'
-'name': '<#78FFD6>机械革新'
-'description':
-- '<#C2E9FB>使用第一批资源奖励的2个初级升级单元，将原石生成器升至Lv.2。'
-'icon': 'minecraft:anvil'
-'objectives':
-- 'id': 'experience'
-  'type': 'genlite.level'
-  'target': 2
-  'description': '<#E2E8F0>使用第一批资源奖励的2个初级升级单元，将原石生成器升至Lv.2。'
-  'resource': 'cobblestone_generator'
-'rewards':
-- 'item': 'genlite:resource_collector'
-  'amount': 1
-- 'item': 'genlite:binding_tool'
-  'amount': 1
-- 'item': 'genlite:fuel'
-  'amount': 16
+schema-version: 2
+id: 'upgrade_two'
+scope: 'island'
+category: 'main'
+name: '<gradient:#78FFD6:#A8FF78>✦ 机械革新</gradient>'
+icon: 'minecraft:anvil'
+
+description:
+  - '<#94A3B8>初试工业改造，为运转中的机械注入新的活力。'
+  - '<#94A3B8>升级原石生成器，迈出产能跃升的第一步。'
+  - ''
+  - '<#64748B>▪ 主线目标（需消耗 2 个初级升级单元）'
+
+objectives:
+  - id: 'experience'
+    type: 'genlite.level'
+    resource: 'cobblestone_generator'
+    target: 2
+    description: '<#E2E8F0>将原石生成器升至 <#78FFD6>Lv.2</#78FFD6>'
+
+rewards:
+  - item: 'genlite:resource_collector'  # 普通收集器
+    amount: 1
+  - item: 'genlite:binding_tool'  # 绑定工具
+    amount: 1
+  - item: 'genlite:fuel'  # 燃料
+    amount: 16

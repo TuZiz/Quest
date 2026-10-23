@@ -7,7 +7,8 @@ import java.nio.file.Path
 /** Additive journaled migration: existing task amounts/rewards/unknown fields/comments remain untouched. */
 object TutorialUpgrade {
     val files=listOf("收获的喜悦","机械革新","收集的力量","机械的联系","自动化初体验","资源的归宿",
-        "产能突破","持续进化","机械巅峰","初具规模","更多的资源","自由的生产","家园的成长","初次试炼")
+        "更多的资源","自由的生产","家园的成长","初次试炼")
+    private val sideFiles=setOf("更多的资源","自由的生产","家园的成长","初次试炼")
     fun migrate(root: Path, resource: (String) -> String) {
         val plan=ConfigMigrationPlan(root,"chapter-one-tutorial-v1")
         if(plan.resume() || Files.exists(root.resolve(".migrations/chapter-one-tutorial-v1/complete"))) return
@@ -25,7 +26,8 @@ object TutorialUpgrade {
             }
         }
         files.forEach { name ->
-            val path="quests/第一章/$name.yml";val raw=resource(path)
+            val folder=if(name in sideFiles) "quests/第一章/支线" else "quests/第一章"
+            val path="$folder/$name.yml";val raw=resource(path)
             val id=YamlConfiguration().apply { loadFromString(raw) }.getString("id")!!
             if(id !in existing) {
                 require(!Files.exists(root.resolve(path))) { "$path: tutorial task path occupied; original preserved" }

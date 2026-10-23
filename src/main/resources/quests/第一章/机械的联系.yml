@@ -1,14 +1,23 @@
 # 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
-'schema-version': 2
-'id': 'first_binding'
-'scope': 'island'
-'category': 'main'
-'name': '<#78FFD6>机械的联系'
-'description':
-- '<#C2E9FB>用绑定工具依次选择生成器与收集器，在有效范围内成功连接。'
-'icon': 'genlite:binding_tool'
-'objectives':
-- 'id': 'experience'
-  'type': 'genlite.bind'
-  'target': 1
-  'description': '<#E2E8F0>用绑定工具依次选择生成器与收集器，在有效范围内成功连接。'
+schema-version: 2
+id: 'first_binding'
+scope: 'island'
+category: 'main'
+name: '<gradient:#78FFD6:#A8FF78>✦ 机械的联系</gradient>'
+icon: 'genlite:binding_tool'
+
+description:
+  - '<#94A3B8>独立的机械唯有彼此串联，方能构成真正的产线。'
+  - '<#94A3B8>在生成器与收集器之间建立稳定的传输链路。'
+  - ''
+  - '<#64748B>▪ 主线目标（需在有效距离内依次点击完成连接）'
+
+objectives:
+  - id: 'experience'
+    type: 'genlite.bind'
+    target: 1
+    description: '<#E2E8F0>使用 <#78FFD6>绑定工具</#78FFD6> 连接生成器与收集器'
+
+rewards:
+  - item: 'currency:copper_coin'  # 铜币，每枚右键兑换1金币
+    amount: 5

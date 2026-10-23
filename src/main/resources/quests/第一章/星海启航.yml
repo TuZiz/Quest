@@ -3,33 +3,25 @@
 #   仅定义任务内容；章节及前置配置于 chapters/
 # ==========================================
 schema-version: 2
-id: sky_start
-scope: island
+id: 'sky_start'
+scope: 'island'
+name: '<gradient:#78FFD6:#A8FF78>✦ 星海启航</gradient>'
+icon: 'minecraft:grass_block'
 
-# 任务名称：使用冰蓝星标搭配青绿加粗标题，与上层金色章节标题形成层次
-name: '<#89F7FE>✦ <#78FFD6><bold>星海启航</bold>'
-
-# 任务描述 (用于 GUI 悬浮展示)
 description:
-  - ' <#89F7FE>▪ <#E0F7FA>创建或加入一座空岛，开启家园共同经营'
-  - ' <#7F8C8D>❖ <#90A4AE>奖励全岛仅发放一次，已有空岛同样可直接完成'
+  - '<#94A3B8>浩瀚星海之间，属于你的浮空桃源正待开辟。'
+  - '<#94A3B8>创建或加入一座空岛，正式开启家园经营之旅。'
+  - ''
+  - '<#64748B>▪ 引导目标（奖励全岛仅限一次，已有空岛可直接完成）'
 
-icon: minecraft:grass_block
-
-# 任务目标 (自动套用全局语言文件中的 objective-line 格式)
 objectives:
-  - id: island
-    type: island.member
+  - id: 'island'
+    type: 'island.member'
     target: 1
-    description: '<#FDE68A><bold>创建或加入</bold><#E2E8F0>空岛'
+    description: '<#E2E8F0><#78FFD6>创建或加入</#78FFD6> 一座空岛'
 
-# 任务奖励
 rewards:
-  - item: minecraft:bread
-    amount: 8
-  - item: minecraft:stone_pickaxe
-    amount: 1
-  - item: genlite:cobblestone_generator
+  - item: 'genlite:cobblestone_generator'  # 原石生成器
     amount: 1
     # 已有机器历史、待发机器或在线队员持有首台机器时，不再发放。
     unless-generator-exists: true

@@ -1,0 +1,27 @@
+# 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
+schema-version: 2
+id: 'home_growth'
+scope: 'island'
+category: 'side'
+name: '<gradient:#78FFD6:#A8FF78>✦ 家园的成长</gradient>'
+icon: 'minecraft:grass_block'
+
+description:
+  - '<#94A3B8>初具规模的岛屿，值得一次全面的检视。'
+  - '<#94A3B8>掌握领地等级、设施价值与边界扩建详情。'
+  - ''
+  - '<#64748B>▪ 支线引导（可同步管理团队成员与权限）'
+
+objectives:
+  - id: 'experience'
+    type: 'island.inspect'
+    target: 1
+    description: '<#E2E8F0>打开 <#78FFD6>空岛菜单</#78FFD6> 检视家园状态'
+
+unlock-when:
+  'genlite.level:cobblestone_generator': 2
+  'island.value': 1
+
+rewards:
+  - item: 'currency:copper_coin'  # 铜币，每枚右键兑换1金币
+    amount: 5

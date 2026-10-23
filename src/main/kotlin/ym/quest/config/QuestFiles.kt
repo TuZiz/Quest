@@ -55,6 +55,11 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         TutorialUpgrade.migrate(plugin.dataFolder.toPath()) { path ->
             checkNotNull(plugin.getResource(path)) { "Missing tutorial resource $path" }.bufferedReader(Charsets.UTF_8).use { it.readText() }
         }
+        TutorialLevelTwoUpgrade.migrate(plugin.dataFolder.toPath())
+        TutorialRpgRewardsUpgrade.migrate(plugin.dataFolder.toPath())
+        TutorialCurrencyUpgrade.migrate(plugin.dataFolder.toPath()) { path ->
+            checkNotNull(plugin.getResource(path)) { "Missing tutorial resource $path" }.bufferedReader(Charsets.UTF_8).use { it.readText() }
+        }
         ResourceUpgrade.appendLanguage(plugin.dataFolder.toPath().resolve("lang/zh_cn.yml"),
             checkNotNull(plugin.getResource("lang/zh_cn.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
         SidebarTextUpgrade.migrate(plugin.dataFolder.toPath())

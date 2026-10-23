@@ -14,7 +14,7 @@ order: 1
 # 章节简述 (用于章节列表悬浮展示)
 description:
   - ' <#89F7FE>▪ <#E0F7FA>唤醒一座属于你们的空岛'
-  - ' <#89F7FE>▪ <#C2E9FB>扬帆启航、注入能源，收获第一批基础物资'
+  - ' <#89F7FE>▪ <#C2E9FB>升至Lv.2，完成生成器与收集器的自动化经营教学'
 
 # 章节背景故事 (用于详情展开或引导展示)
 story:
@@ -53,18 +53,6 @@ tasks:
   - quest: first_extract
     requires:
       - first_transfer
-  - quest: upgrade_three
-    requires:
-      - first_extract
-  - quest: upgrade_four
-    requires:
-      - upgrade_three
-  - quest: upgrade_five
-    requires:
-      - upgrade_four
-  - quest: island_scale
-    requires:
-      - upgrade_five
   - quest: more_resources
     requires:
       - first_resources
@@ -84,5 +72,7 @@ tasks:
 
 # 独立于任务奖励，每个空岛只可领取一次。
 rewards:
-  - item: minecraft:diamond
-    amount: 2
+  - item: 'genlite:mechanical_parts'  # 铁片
+    amount: 4
+  - item: 'genlite:copper_coil'  # 铜丝
+    amount: 4

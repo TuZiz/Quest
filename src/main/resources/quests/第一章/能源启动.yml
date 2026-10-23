@@ -3,30 +3,25 @@
 #   仅定义任务内容；章节及前置配置于 chapters/
 # ==========================================
 schema-version: 2
-id: first_fuel
-scope: island
+id: 'first_fuel'
+scope: 'island'
+name: '<gradient:#78FFD6:#A8FF78>✦ 能源启动</gradient>'
+icon: 'genlite:fuel'
 
-# 任务名称：使用冰蓝星标搭配青绿加粗标题，保持全任务线视觉统一
-name: '<#89F7FE>✦ <#78FFD6><bold>能源启动</bold>'
-
-# 任务描述 (用于 GUI 悬浮展示)
 description:
-  - '<#E2E8F0>右键原石生成器<newline>   打开管理面板'
-  - '<#E2E8F0>点击<#FDE68A><bold>「燃料」</bold><#E2E8F0><newline>   打开燃料仓'
-  - '<#E2E8F0>Shift点击背包燃料<newline>   或放入上方格子'
+  - '<#94A3B8>冰冷的机械核心，唯有充沛的能源方能唤醒。'
+  - '<#94A3B8>打开原石生成器面板，向燃料仓内注入初始动力。'
+  - ''
+  - '<#64748B>▪ 引导目标（进入「燃料」界面后可 Shift 快捷存入）'
 
-icon: genlite:fuel
-
-# 任务目标 (自动套用全局语言文件中的 ob jective-line 格式)
 objectives:
-  - id: fuel
-    type: genlite.fuel
+  - id: 'fuel'
+    type: 'genlite.fuel'
     target: 1
-    description: '<#E2E8F0>向燃料仓<#FDE68A><bold>存入燃料</bold>'
+    description: '<#E2E8F0>向生成器燃料仓 <#78FFD6>存入燃料</#78FFD6>'
 
-# 任务奖励
 rewards:
-  - item: genlite:mechanical_parts
+  - item: 'genlite:mechanical_parts'  # 铁片
     amount: 2
-  - item: genlite:copper_coil
+  - item: 'genlite:copper_coil'  # 铜丝
     amount: 2

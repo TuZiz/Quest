@@ -1,0 +1,26 @@
+# 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
+schema-version: 2
+id: 'free_production'
+scope: 'island'
+category: 'side'
+name: '<gradient:#78FFD6:#A8FF78>✦ 自由的生产</gradient>'
+icon: 'minecraft:comparator'
+
+description:
+  - '<#94A3B8>根据产线需求，灵活调配物资的流向。'
+  - '<#94A3B8>可在原位冒出或直传收集器之间自由切换。'
+  - ''
+  - '<#64748B>▪ 支线引导（中央仓库模式留待后续章节解锁）'
+
+objectives:
+  - id: 'experience'
+    type: 'genlite.mode'
+    target: 1
+    description: '<#E2E8F0>在生成器面板中切换一次 <#78FFD6>产出模式</#78FFD6>'
+
+unlock-when:
+  'genlite.bind': 1
+
+rewards:
+  - item: 'currency:silver_coin'  # 银币，每枚右键兑换10金币
+    amount: 1

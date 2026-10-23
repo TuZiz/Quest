@@ -1,0 +1,24 @@
+# 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
+schema-version: 2
+id: 'more_resources'
+scope: 'island'
+category: 'side'
+name: '<gradient:#78FFD6:#A8FF78>✦ 更多的资源</gradient>'
+icon: 'minecraft:oak_log'
+
+description:
+  - '<#94A3B8>单一的圆石已难以支撑岛屿的扩张。'
+  - '<#94A3B8>部署木材或铁生成器，开拓更丰富的物资管线。'
+  - ''
+  - '<#64748B>▪ 支线引导（完成拾取教学可获取木材生成器）'
+
+objectives:
+  - id: 'experience'
+    type: 'genlite.inspect'
+    resource: 'timber_generator|iron_generator'
+    target: 1
+    description: '<#E2E8F0>放置并查看 <#78FFD6>木材/铁生成器</#78FFD6> 信息面板'
+
+rewards:
+  - item: 'genlite:fuel'  # 燃料
+    amount: 8
