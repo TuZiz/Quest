@@ -38,7 +38,7 @@ class ProgressStore {
             q.objectives.forEach { o ->
                 val value = fact(c,home,o.metric)
                 // Membership is a state condition; cumulative event conditions only count after unlock.
-                val baseline = if(o.type in setOf("island.member","genlite.placed")) 0 else value
+                val baseline = if(o.state) 0 else value
                 c.update("INSERT OR IGNORE INTO objectives(home,quest,objective,baseline,progress) VALUES(?,?,?,?,0)",home,q.id,o.id,baseline)
                 val row = c.rows("SELECT baseline,progress FROM objectives WHERE home=? AND quest=? AND objective=?",home,q.id,o.id) { it.getLong(1) to it.getLong(2) }.single()
                 val next = (value - row.first).coerceIn(0,o.target).coerceAtLeast(row.second)

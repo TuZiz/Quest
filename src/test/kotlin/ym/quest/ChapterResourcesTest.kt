@@ -30,7 +30,7 @@ class ChapterResourcesTest {
     @Test fun `default chapter includes placement before fuel and notices support every channel switch`() {
         val chapter=ChapterFiles.parse(yaml("chapters/第一章·星海初醒.yml"))
         assertEquals("sky_awakening",chapter.id)
-        assertEquals(listOf("sky_start","place_generator","first_fuel","first_resources"),chapter.quests)
+        assertEquals(listOf("sky_start","place_generator","first_fuel","first_resources"),chapter.quests.take(4))
         assertTrue(chapter.story.isNotEmpty()); assertTrue(chapter.rewards.isNotEmpty())
         val profiles=NoticeFiles.parse(yaml("提示.yml"))
         for(event in listOf("task-complete","chapter-complete")) {

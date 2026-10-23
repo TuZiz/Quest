@@ -49,8 +49,8 @@ class JournalRenderer(private val items: ItemFactory,private val text: TextRende
                 "chapter" to (ch?.let { text.render(it.definition.name) } ?: text.format("journal.no-selection")),
                 "status" to (q?.let { text.format("status.${it.status}") } ?: ch?.let { text.format("chapter-status.${it.status}") } ?: text.format("journal.empty")),
                 "tracking" to text.format(if(q!=null && q.definition.id==tracked?.definition?.id) "journal.tracked" else "journal.not-tracked"),
-                "progress" to Component.text(ch?.completed ?: 0),"target" to Component.text(ch?.definition?.quests?.size ?: 0),
-                "percent" to Component.text(if(ch==null) 0 else ch.completed*100/ch.definition.quests.size.coerceAtLeast(1)),
+                "progress" to Component.text(ch?.completed ?: 0),"target" to Component.text(ch?.definition?.requiredQuests?.size ?: 0),
+                "percent" to Component.text(if(ch==null) 0 else ch.completed*100/ch.definition.requiredQuests.size.coerceAtLeast(1)),
                 "hud-mode" to text.format("journal.mode-${prefs.mode}"),
                 "auto" to enabled(prefs.autoTracking),"notifications" to enabled(prefs.notifications),"sound" to enabled(prefs.sound))
             val state=when(action) {

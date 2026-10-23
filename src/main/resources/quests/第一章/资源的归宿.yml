@@ -1,0 +1,17 @@
+# 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
+'schema-version': 2
+'id': 'first_extract'
+'scope': 'island'
+'category': 'main'
+'name': '<#78FFD6>资源的归宿'
+'description':
+- '<#C2E9FB>从收集器取出8个资源到背包或光标；失败或取消不计数。'
+'icon': 'minecraft:chest'
+'objectives':
+- 'id': 'experience'
+  'type': 'genlite.extract'
+  'target': 8
+  'description': '<#E2E8F0>从收集器取出8个资源到背包或光标；失败或取消不计数。'
+'rewards':
+- 'item': 'genlite:basic_upgrade_unit'
+  'amount': 6

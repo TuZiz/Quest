@@ -51,7 +51,7 @@ class GeneratorPlacementTest {
         assertFalse(yaml(Files.readString(root.resolve("quests/星海启航.yml"))).getMapList("rewards").any { it["item"] == "genlite:fuel" })
         val ch=yaml(Files.readString(root.resolve(ChapterConfigUpgrade.defaultFile)))
         assertEquals("保留",ch.getString("custom"))
-        assertEquals(listOf("sky_start","place_generator","first_fuel","first_resources"),ChapterFiles.parse(ch).quests)
+        assertEquals(listOf("sky_start","place_generator","first_fuel","first_resources"),ChapterFiles.parse(ch).quests.take(4))
         assertTrue(ChapterFiles.parse(ch).taskRequirements.getValue("first_fuel").contains("place_generator"))
     }
     @Test fun `placement state unlocks fuel and all old parcel phases suppress duplicate fuel after restart`() {

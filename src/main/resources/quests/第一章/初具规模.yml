@@ -1,0 +1,14 @@
+# 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
+'schema-version': 2
+'id': 'island_scale'
+'scope': 'island'
+'category': 'main'
+'name': '<#78FFD6>初具规模'
+'description':
+- '<#C2E9FB>打开空岛管理菜单，查看等级、设施价值、边界及扩建条件，完成第一章。'
+'icon': 'minecraft:ender_eye'
+'objectives':
+- 'id': 'experience'
+  'type': 'island.inspect'
+  'target': 1
+  'description': '<#E2E8F0>打开空岛管理菜单，查看等级、设施价值、边界及扩建条件，完成第一章。'

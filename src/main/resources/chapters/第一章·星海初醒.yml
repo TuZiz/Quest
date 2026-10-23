@@ -6,7 +6,7 @@ schema-version: 2
 id: sky_awakening
 
 # 章节名称：使用暖金章节标识搭配亮金加粗主标题
-name: '<#FFB75E>✦ <#FFD700><bold>第一章 · 初入星辰</bold>'
+name: '<#FFB75E>✦ <#FFD700><bold>第一章 · 星海初醒</bold>'
 
 icon: minecraft:ender_eye
 order: 1
@@ -34,6 +34,53 @@ tasks:
   - quest: first_resources
     requires:
       - first_fuel
+
+  - quest: first_harvest
+    requires:
+      - first_resources
+  - quest: upgrade_two
+    requires:
+      - first_harvest
+  - quest: first_collector
+    requires:
+      - upgrade_two
+  - quest: first_binding
+    requires:
+      - first_collector
+  - quest: first_transfer
+    requires:
+      - first_binding
+  - quest: first_extract
+    requires:
+      - first_transfer
+  - quest: upgrade_three
+    requires:
+      - first_extract
+  - quest: upgrade_four
+    requires:
+      - upgrade_three
+  - quest: upgrade_five
+    requires:
+      - upgrade_four
+  - quest: island_scale
+    requires:
+      - upgrade_five
+  - quest: more_resources
+    requires:
+      - first_resources
+    optional: true
+  - quest: free_production
+    requires:
+      - sky_start
+    optional: true
+  - quest: home_growth
+    requires:
+      - sky_start
+    optional: true
+  - quest: first_trial
+    requires:
+      - sky_start
+    optional: true
 
 # 独立于任务奖励，每个空岛只可领取一次。
 rewards:

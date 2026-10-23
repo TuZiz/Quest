@@ -14,7 +14,8 @@ data class Settings(val quests: List<QuestDefinition>, val language: YamlConfigu
                     val chapters: List<ChapterDefinition>,
                     val notices: Map<String,NoticeProfile>, val rewards: RewardSettings, val tab: TabSettings,
                     val introduction: IntroductionSettings = IntroductionSettings(), val hud: HudSettings = HudSettings(),
-                    val journalMenus: Map<String,YamlConfiguration> = emptyMap())
+                    val journalMenus: Map<String,YamlConfiguration> = emptyMap(),
+                    val tutorialWorlds: Set<String> = setOf("world"))
 
 /** IO executor only. No save of existing YAML: comments/unknown fields remain byte-for-byte intact. */
 class QuestFiles(private val plugin: JavaPlugin, private val conditions: ConditionRegistry) {
@@ -51,6 +52,9 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         TrackingHudTextUpgrade.migrate(plugin.dataFolder.toPath())
         CategoryButtonUpgrade.migrate(plugin.dataFolder.toPath(),checkNotNull(plugin.getResource("gui/chapters.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
         QuestTaskFiles.groupFirstChapter(plugin.dataFolder.toPath())
+        TutorialUpgrade.migrate(plugin.dataFolder.toPath()) { path ->
+            checkNotNull(plugin.getResource(path)) { "Missing tutorial resource $path" }.bufferedReader(Charsets.UTF_8).use { it.readText() }
+        }
         ResourceUpgrade.appendLanguage(plugin.dataFolder.toPath().resolve("lang/zh_cn.yml"),
             checkNotNull(plugin.getResource("lang/zh_cn.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
         SidebarTextUpgrade.migrate(plugin.dataFolder.toPath())
@@ -110,7 +114,9 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         listOf("loading","empty","browse","no-selection","tracked","not-tracked","track-unavailable","saved","enabled","disabled","mode-ALWAYS","mode-OFF","category-MAIN","category-SIDE","category-SPECIAL").forEach {
             require(language.isString("journal.$it")) { "lang/zh_cn.yml:journal.$it missing" }
         }
-        return Settings(ordered,language,chapters,notices,rewards,tab,introduction,hud,journalMenus)
+        val tutorial=yaml("教学.yml")
+        require(tutorial.getInt("schema-version")==1 && tutorial.getList("combat.allowed-worlds")?.all { it is String && it.isNotBlank() }==true) { "教学.yml:combat.allowed-worlds expected explicit world list; schema-version must be 1" }
+        return Settings(ordered,language,chapters,notices,rewards,tab,introduction,hud,journalMenus,tutorial.getStringList("combat.allowed-worlds").toSet())
     }
     private fun parse(file: String, y: YamlConfiguration): QuestDefinition {
         fun text(s: ConfigurationSection, key: String) = s.getString(key)?.takeIf { it.isNotBlank() }
@@ -141,7 +147,12 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         }
         val category=y.getString("category","main")!!
         require(category in setOf("main","side","special")) { "$file:category=$category expected main/side/special" }
-        return QuestDefinition(id,text(y,"name"),y.getStringList("description"),text(y,"icon"),emptyList(),objectives,rewards,QuestCategory.valueOf(category.uppercase()))
+        require(!y.contains("unlock-when") || y.isConfigurationSection("unlock-when")) { "$file:unlock-when expected metric mapping" }
+        val unlock=y.getConfigurationSection("unlock-when")?.getValues(false).orEmpty().mapValues { (metric,value) ->
+            require((value is Int || value is Long) && (value as Number).toLong()>0) { "$file:unlock-when.$metric=$value expected positive integer" }
+            (value as Number).toLong()
+        }
+        return QuestDefinition(id,text(y,"name"),y.getStringList("description"),text(y,"icon"),emptyList(),objectives,rewards,QuestCategory.valueOf(category.uppercase()),unlock)
     }
     companion object {
         val requiredMessages = listOf("no-permission","unavailable","no-island","loading","error","busy","claimed","not-complete","inventory-full","uncertain","delivered","progress","complete","reloaded","reset","usage","debug","resolved","player-only","reward-line","objective-line","status.LOCKED","status.ACTIVE","status.COMPLETE","status.CLAIMED","chapter-progress","chapter-reward-status") +

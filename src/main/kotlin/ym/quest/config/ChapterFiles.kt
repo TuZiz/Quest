@@ -20,7 +20,8 @@ object ChapterFiles {
         require(!rawTasks.isNullOrEmpty() && rawTasks.all { it is Map<*,*> }) { "$path.tasks=${s.get("tasks")} expected nonempty task list" }
         val tasks = rawTasks.mapIndexed { index, raw ->
             val task = raw as Map<*,*>
-            require(task.keys.all { it in setOf("quest","requires") }) { "$path.tasks.$index=$task: only quest/requires allowed" }
+            require(task.keys.all { it in setOf("quest","requires","optional") }) { "$path.tasks.$index=$task: only quest/requires/optional allowed" }
+            require(!task.containsKey("optional") || task["optional"] is Boolean) { "$path.tasks.$index.optional must be boolean" }
             val quest = task["quest"] as? String
             val requires = task["requires"]
             require(!quest.isNullOrBlank()) { "$path.tasks.$index.quest=$quest expected task ID" }
@@ -36,6 +37,7 @@ object ChapterFiles {
             Reward(item,amount)
         }
         return ChapterDefinition(id,text("name"),text("icon"),strings("description"),s.getInt("order"),
-            strings("prerequisites"),tasks.map { it.first },rewards,strings("story"),tasks.toMap(),file)
+            strings("prerequisites"),tasks.map { it.first },rewards,strings("story"),tasks.toMap(),file,
+            rawTasks.map { it as Map<*,*> }.filter { it["optional"] == true }.map { it["quest"] as String }.toSet())
     }
 }

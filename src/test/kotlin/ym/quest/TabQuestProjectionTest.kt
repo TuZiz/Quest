@@ -40,7 +40,7 @@ class TabQuestProjectionTest {
         })
         val lines = projection.project(JournalView(listOf(QuestView(q, QuestStatus.ACTIVE,
             listOf(ObjectiveProgress(q.objectives.single(), 0)))), listOf(ChapterView(chapter, ChapterStatus.ACTIVE, 0, false))))
-        assertEquals(listOf("第一章·初入星辰", "", "能源启动", "目标  向燃料仓存入燃料", "进度  0 / 1", "",
+        assertEquals(listOf("第一章·星海初醒", "", "能源启动", "目标  向燃料仓存入燃料", "进度  0 / 1", "",
             "1. 右键原石生成器", "   打开管理面板", "2. 点击「燃料」", "   打开燃料仓", "3. Shift点击背包燃料", "   或放入上方格子"), plain(lines.take(12)).split('\n'))
         assertTrue(lines.drop(12).all { it.isEmpty() })
         val mini = MiniMessage.miniMessage()
@@ -59,14 +59,14 @@ class TabQuestProjectionTest {
 
     @Test fun `active objective progress and long Chinese names wrap without losing text`() {
         val q = quest("resources")
-        val chapter = ChapterDefinition("chapter","<#FFD700>第一章·初入星辰","minecraft:book",emptyList(),1,emptyList(),listOf(q.id),emptyList())
+        val chapter = ChapterDefinition("chapter","<#FFD700>第一章·星海初醒","minecraft:book",emptyList(),1,emptyList(),listOf(q.id),emptyList())
         val lines = projection.project(JournalView(listOf(QuestView(q,QuestStatus.ACTIVE,listOf(ObjectiveProgress(q.objectives.single(),8)))),
             listOf(ChapterView(chapter,ChapterStatus.ACTIVE,0,false))))
         assertEquals(18,lines.size)
         val visible = plain(lines)
         assertTrue(visible.contains("8 / 32"),visible)
         assertTrue(visible.replace("\n","").contains("利用原石生成器获取32个原石"),visible)
-        assertTrue(visible.contains("第一章·初入星辰"),visible)
+        assertTrue(visible.contains("第一章·星海初醒"),visible)
         assertTrue(visible.contains("生成器实际生产原石"),visible)
         assertFalse(visible.contains("空岛成员共享任务进度"),visible)
         assertFalse(visible.contains("<#"))

@@ -1,0 +1,7 @@
+# 战斗仅计算实际玩家归因击杀；世界名称精确匹配，可按正式服修改。
+schema-version: 1
+combat:
+  allowed-worlds:
+    - 'world'
+    - 'world_nether'
+    - 'world_the_end'

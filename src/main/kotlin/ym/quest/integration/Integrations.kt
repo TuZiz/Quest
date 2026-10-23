@@ -51,8 +51,8 @@ class Integrations(private val plugin: JavaPlugin, private val service: QuestSer
     fun island(player: UUID) = islands?.takeIf { it.ready() }?.byMember(player)
     fun allowed(home: UUID, player: UUID) = islands?.canClaim(home,player) == true
     fun facts(home: UUID): Map<String,Long> = buildMap {
-        if(islands?.byId(home) != null) put("island.member",1)
-        if(production?.ready() == true) service.definitions.flatMap { it.objectives }.filter { it.type.startsWith("genlite.") }.forEach { put(it.metric,0L) }
+        islands?.byId(home)?.let { put("island.member",1);put("island.value",it.value) }
+        service.definitions.flatMap { it.objectives }.filter { it.type.startsWith("combat.") || it.type=="island.inspect" || it.type=="genlite.inspect" || production?.ready()==true && it.type.startsWith("genlite.") }.forEach { put(it.metric,0L) }
         if(production?.ready() == true) islands?.byId(home)?.let { island ->
             put("genlite.placed",if(production!!.hasPlacedGenerator(island)) 1L else 0L)
         }
@@ -72,8 +72,7 @@ class Integrations(private val plugin: JavaPlugin, private val service: QuestSer
         }
         homes.forEach { home ->
             if(islands?.byId(home) == null) return@forEach
-            val defaults = service.definitions.flatMap { it.objectives }.filter { it.type.startsWith("genlite.") }.associate { it.metric to 0L }
-            val values = defaults + ("island.member" to 1L) + counters.filterKeys { it.startsWith("$home|") }.mapKeys { it.key.substringAfter('|') }
+            val values = facts(home)
             service.sync(home.toString(),values).whenComplete { list,error ->
                 if(error != null) { values.keys.forEach { seen.remove("$home|$it") }; failure(error) }
                 else if(!closed) changes(list)

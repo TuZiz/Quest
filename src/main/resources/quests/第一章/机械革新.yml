@@ -1,0 +1,22 @@
+# 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
+'schema-version': 2
+'id': 'upgrade_two'
+'scope': 'island'
+'category': 'main'
+'name': '<#78FFD6>机械革新'
+'description':
+- '<#C2E9FB>使用第一批资源奖励的2个初级升级单元，将原石生成器升至Lv.2。'
+'icon': 'minecraft:anvil'
+'objectives':
+- 'id': 'experience'
+  'type': 'genlite.level'
+  'target': 2
+  'description': '<#E2E8F0>使用第一批资源奖励的2个初级升级单元，将原石生成器升至Lv.2。'
+  'resource': 'cobblestone_generator'
+'rewards':
+- 'item': 'genlite:resource_collector'
+  'amount': 1
+- 'item': 'genlite:binding_tool'
+  'amount': 1
+- 'item': 'genlite:fuel'
+  'amount': 16

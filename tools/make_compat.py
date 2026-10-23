@@ -83,3 +83,6 @@ class HomeMembershipCommittedEvent(val homeId: UUID, val playerId: UUID) : Event
 change('DreamSkyblock',d+'service/HomeManager.kt',[
 ('if (player.isOnline) messages.send(player, if (ok && statusError == null)', 'if (ok && statusError == null) plugin.server.pluginManager.callEvent(ym.dreamSkyblock.api.HomeMembershipCommittedEvent(home.id, player.uniqueId))\n                        if (player.isOnline) messages.send(player, if (ok && statusError == null)'),
 ('            done(error == null)\n        } }\n    }\n\n    fun toggleFlag', '            if (error == null) plugin.server.pluginManager.callEvent(ym.dreamSkyblock.api.HomeMembershipCommittedEvent(home.id, player.uniqueId))\n            done(error == null)\n        } }\n    }\n\n    fun toggleFlag')])
+
+# Additional teaching hooks are verified against the same current sources.
+exec((root / "tools/make_tutorial_compat.py").read_text(encoding="utf-8"))

@@ -35,6 +35,8 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     private val delivery = MailboxDelivery(service,integrations,items,text,thread,::failure)
     private var introduction: IntroductionRuntime? = null
     private val preferences=PlayerDisplayPreferences(plugin,db,thread,::failure)
+    private var tutorialWorlds=settings.tutorialWorlds
+    private val tutorial=ym.quest.tutorial.TutorialActions(plugin,service,integrations,::notify,::failure) { tutorialWorlds }
     private val journal=TaskJournalMenus(plugin,service,integrations,items,text,thread,preferences,settings,::failure) { player,view -> introduction?.decorate(player,view) ?: view }
     private val automatic = AutomaticRewards(plugin,service,integrations,items,{ custom?.id(it) },delivery,thread,::failure,settings.rewards) { !closed && !reloading }
     private var reloading = false
@@ -124,7 +126,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
                 if(closed) return@run
                 reloading=false
                 if(configureError != null) { failure(configureError); text.send(sender,"error"); return@run }
-                text.language=settings.language; notices.profiles=settings.notices
+                text.language=settings.language; notices.profiles=settings.notices; tutorialWorlds=settings.tutorialWorlds
                 journal.closeMenus(); journal.settings=settings
                 automatic.reload(settings.rewards); integrations.refresh(); configureIntroduction(settings); configureTab(settings.tab); configureHud(settings.hud); text.send(sender,"reloaded")
             } }
@@ -143,6 +145,6 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     }
     override fun close() {
         if(closed) return
-        closed=true; service.claimChanges = {}; heartbeat.cancel(); journal.close(); preferences.close(); hud?.close(); hud=null; tab?.close(); tab=null; introduction?.close(); introduction=null; automatic.close(); delivery.close(); integrations.close()
+        closed=true; service.claimChanges = {}; heartbeat.cancel(); tutorial.close(); journal.close(); preferences.close(); hud?.close(); hud=null; tab?.close(); tab=null; introduction?.close(); introduction=null; automatic.close(); delivery.close(); integrations.close()
     }
 }

@@ -1,0 +1,14 @@
+# 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
+'schema-version': 2
+'id': 'first_binding'
+'scope': 'island'
+'category': 'main'
+'name': '<#78FFD6>机械的联系'
+'description':
+- '<#C2E9FB>用绑定工具依次选择生成器与收集器，在有效范围内成功连接。'
+'icon': 'genlite:binding_tool'
+'objectives':
+- 'id': 'experience'
+  'type': 'genlite.bind'
+  'target': 1
+  'description': '<#E2E8F0>用绑定工具依次选择生成器与收集器，在有效范围内成功连接。'

@@ -1,0 +1,18 @@
+# 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
+'schema-version': 2
+'id': 'more_resources'
+'scope': 'island'
+'category': 'side'
+'name': '<#78FFD6>更多的资源'
+'description':
+- '<#C2E9FB>木材生成器产出橡木，铁生成器产出铁资源。完成拾取教学可获得木材生成器；放置后打开其信息面板体验一种即可。'
+'icon': 'minecraft:oak_log'
+'objectives':
+- 'id': 'experience'
+  'type': 'genlite.inspect'
+  'target': 1
+  'description': '<#E2E8F0>木材生成器产出橡木，铁生成器产出铁资源。完成拾取教学可获得木材生成器；放置后打开其信息面板体验一种即可。'
+  'resource': 'timber_generator|iron_generator'
+'rewards':
+- 'item': 'genlite:fuel'
+  'amount': 8

@@ -3,7 +3,10 @@ package ym.quest.domain
 data class ChapterDefinition(val id: String, val name: String, val icon: String,
     val description: List<String>, val order: Int, val prerequisites: List<String>,
     val quests: List<String>, val rewards: List<Reward>, val story: List<String> = emptyList(),
-    val taskRequirements: Map<String, List<String>> = emptyMap(), val sourceFile: String = "chapters/$id")
+    val taskRequirements: Map<String, List<String>> = emptyMap(), val sourceFile: String = "chapters/$id",
+    val optionalQuests: Set<String> = emptySet()) {
+    val requiredQuests get() = quests.filterNot { it in optionalQuests }
+}
 
 enum class ChapterStatus { LOCKED, ACTIVE, COMPLETE }
 data class ChapterView(val definition: ChapterDefinition, val status: ChapterStatus,

@@ -1,0 +1,14 @@
+# 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
+'schema-version': 2
+'id': 'first_collector'
+'scope': 'island'
+'category': 'main'
+'name': '<#78FFD6>收集的力量'
+'description':
+- '<#C2E9FB>在空岛放置奖励的普通收集器；中央仓库不参与本章。'
+'icon': 'minecraft:chest'
+'objectives':
+- 'id': 'experience'
+  'type': 'genlite.collector'
+  'target': 1
+  'description': '<#E2E8F0>在空岛放置奖励的普通收集器；中央仓库不参与本章。'

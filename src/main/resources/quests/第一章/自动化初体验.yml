@@ -1,0 +1,14 @@
+# 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
+'schema-version': 2
+'id': 'first_transfer'
+'scope': 'island'
+'category': 'main'
+'name': '<#78FFD6>自动化初体验'
+'description':
+- '<#C2E9FB>保持收集器模式，让生成器实际传入16个资源；手动存入不计数。'
+'icon': 'minecraft:hopper'
+'objectives':
+- 'id': 'experience'
+  'type': 'genlite.transfer'
+  'target': 16
+  'description': '<#E2E8F0>保持收集器模式，让生成器实际传入16个资源；手动存入不计数。'

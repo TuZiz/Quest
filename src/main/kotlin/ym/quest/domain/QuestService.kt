@@ -21,7 +21,8 @@ class QuestService(private val db: Database) {
         chapters = nextChapters.toList(); definitions = ordered
     }
     private fun allowed(c: java.sql.Connection, home: String, q: QuestDefinition): Boolean =
-        chapters.firstOrNull { q.id in it.quests }?.let { chapterStore.eligible(c,home,it) } ?: true
+        (q.unlockWhen.isEmpty() || q.unlockWhen.any { (metric,target) -> c.number("SELECT value FROM facts WHERE home=? AND metric=?",home,metric)>=target }) &&
+        (chapters.firstOrNull { q.id in it.quests }?.let { chapterStore.eligible(c,home,it) } ?: true)
     private fun advance(c: java.sql.Connection, home: String, facts: Map<String,Long>): List<ProgressChange> {
         progress.facts(c,home,facts)
         val changes = mutableListOf<ProgressChange>()
@@ -37,6 +38,16 @@ class QuestService(private val db: Database) {
     }
     fun sync(home: String, facts: Map<String,Long>): CompletableFuture<List<ProgressChange>> = db.submit {
         db.transaction { c -> advance(c,home,facts) }
+    }
+    /** Durable local successful actions. Initialize unlock baselines before incrementing the event. */
+    fun record(home: String, metric: String, amount: Long, snapshot: Map<String,Long>) = db.submit {
+        require(amount > 0)
+        db.transaction { c ->
+            val local = c.rows("SELECT metric,value FROM facts WHERE home=?",home) { it.getString(1) to it.getLong(2) }.toMap()
+            val before = snapshot + local.filterKeys { it.startsWith("combat.") || it.startsWith("island.inspect") || it.startsWith("genlite.inspect") }
+            val changes = advance(c,home,before + (metric to (local[metric] ?: 0L)))
+            changes + advance(c,home,before + (metric to Math.addExact(local[metric] ?: 0L,amount)))
+        }
     }
     fun views(home: String): CompletableFuture<List<QuestView>> = db.submit {
         db.transaction { c -> progress.views(c,home,definitions) { allowed(c,home,it) } }

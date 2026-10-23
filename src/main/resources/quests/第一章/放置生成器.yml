@@ -10,6 +10,7 @@ icon: minecraft:furnace
 objectives:
   - id: placed
     type: genlite.placed
+    resource: 'cobblestone_generator'
     target: 1
     description: '<#E0F7FA>在空岛放置一台生成器'
 rewards:

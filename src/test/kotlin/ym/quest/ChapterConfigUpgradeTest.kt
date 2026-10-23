@@ -16,6 +16,7 @@ class ChapterConfigUpgradeTest {
     private val bundled get() = Files.readString(Path.of("src/main/resources/${ChapterConfigUpgrade.defaultFile}"))
         .replace("  - quest: place_generator\n    requires:\n      - sky_start\n", "")
         .replace("      - place_generator", "      - sky_start")
+        .substringBefore("  - quest: first_harvest") + "rewards:\n  - item: minecraft:diamond\n    amount: 2\n"
     private fun put(path: String, text: String) { val f=root.resolve(path); Files.createDirectories(f.parent); Files.writeString(f,text) }
     private fun read(path: String) = Files.readString(root.resolve(path))
     private fun yaml(text: String) = YamlConfiguration().apply { loadFromString(text) }

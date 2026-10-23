@@ -1,0 +1,18 @@
+# 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
+'schema-version': 2
+'id': 'first_harvest'
+'scope': 'island'
+'category': 'main'
+'name': '<#78FFD6>收获的喜悦'
+'description':
+- '<#C2E9FB>拾取生成器真实掉落的16个圆石；普通挖掘和玩家丢出的圆石无效。'
+'icon': 'minecraft:hopper'
+'objectives':
+- 'id': 'experience'
+  'type': 'genlite.pickup'
+  'target': 16
+  'description': '<#E2E8F0>拾取生成器真实掉落的16个圆石；普通挖掘和玩家丢出的圆石无效。'
+  'resource': 'minecraft:cobblestone'
+'rewards':
+- 'item': 'genlite:timber_generator'
+  'amount': 1

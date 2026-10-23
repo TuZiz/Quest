@@ -48,8 +48,12 @@ public final class GenlitePlugin extends JavaPlugin {
         engine=new MachineEngine(new AtomicStateFile(files.storage()),files.rules(),getLogger());
         var actions=new MachineActions(files.rules(),dream::member);
         var messages=new Messages(files.language());
-        var text=new MachineText(files.rules(),files.displays(),messages);
-        items=new CraftItems(this,text,engine::snapshot,files.itemNames());
+        var text=new MachineText(files.rules(),files.displays(),messages, id -> {
+            var definition=net.momirealms.craftengine.bukkit.api.CraftEngineItems.byId(id);
+            if(definition==null) throw new IllegalStateException("CraftEngine missing item "+id);
+            return definition.buildBukkitItem().effectiveName();
+        });
+        items=new CraftItems(this,files.itemNames());
         transfers=new InventoryTransfers(this,tasks,engine,items,messages,dream::member);
         warehouse=new ContainerMenus(files.menus(),engine,dream,items,messages,transfers,tasks,text);
         menus=new MachineMenus(files.menus(),engine,actions,dream,items,messages,transfers,text,warehouse,tasks);
@@ -68,13 +72,27 @@ public final class GenlitePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(collectorParticles,this);
         getServer().getPluginManager().registerEvents(warehouse,this);
         getServer().getPluginManager().registerEvents(new AutomaticDeliveryListener(tasks,transfers),this);
-        getServer().getPluginManager().registerEvents(new MachineItemDisplayListener(items),this);
         homeHolograms=new HomeHologramControl(this,tasks,engine,dream,presence,messages);
         var command=new GenliteCommand(items,messages,transfers,engine,warehouse,homeHolograms);
         getCommand("genlite").setExecutor(command);getCommand("genlite").setTabCompleter(command);
         getServer().getServicesManager().register(cn.genlite.api.GenliteQuestApi.class,new cn.genlite.api.GenliteQuestApi() {
             public boolean ready() {return engine.ready();}
             public java.util.Map<String,Long> counters() {return engine.snapshot().questCounters();}
+            public cn.genlite.api.GenliteQuestApi.TeachingMachine teachingMachine(java.util.UUID id) {
+                var m=engine.snapshot().machines().get(id);
+                return m==null || m.removed()?null:new cn.genlite.api.GenliteQuestApi.TeachingMachine(m.home(),m.type(),m.level());
+            }
+            public java.util.Map<String,Long> teachingSnapshot() {
+                var result=new java.util.HashMap<String,Long>(engine.snapshot().questCounters());
+                for(var machine:engine.snapshot().machines().values()) {
+                    if(machine.removed()) continue;
+                    String prefix=machine.home()+"|";
+                    result.merge(prefix+"genlite.level:"+machine.type(),(long)machine.level(),Math::max);
+                    result.put(prefix+"genlite.placed:"+machine.type(),1L);
+                    if(machine.collectorType()) result.put(prefix+"genlite.collector",1L);
+                }
+                return java.util.Map.copyOf(result);
+            }
             public boolean hasGenerator(java.util.UUID home,java.util.Set<java.util.UUID> members) {
                 var s=engine.snapshot();
                 return s.machines().values().stream().anyMatch(m -> m.home().equals(home) && !m.collectorType())
@@ -82,6 +100,7 @@ public final class GenlitePlugin extends JavaPlugin {
             }
         },this,org.bukkit.plugin.ServicePriority.Normal);
         engine.questListener(counters -> getServer().getPluginManager().callEvent(new cn.genlite.api.GenliteCountersCommittedEvent(counters)));
+        getServer().getPluginManager().registerEvents(new cn.genlite.platform.ProductionPickup(this,engine,dream::member),this);
         engine.start().whenComplete((v,error) -> {
             if(error!=null) {getLogger().log(Level.SEVERE,"Genlite state load failed; refusing to overwrite saved data",error);tasks.global(() -> getServer().getPluginManager().disablePlugin(this));return;}
             tasks.global(() -> tasks.repeat(() -> {dream.refresh(engine);presence.refresh();drops.refresh();warehouse.refresh();menus.fuel().refresh();collectorParticles.refresh();}));
