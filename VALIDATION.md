@@ -336,3 +336,35 @@ GUI 配置文件改为 `gui/chapters.yml` 和 `gui/chapter-detail.yml`，章节�
 - 按用户要求移除独立 board 模块、配置、布局素材、指令与接线，恢复原 TAB Layout；保留任务日志、设置卡片、个人引导和原 Xerr 侧栏。
 - Maven package 通过：82 tests，0 failures/errors；JAR 不含 board 类或资源。回退版暂存正式 plugins/update，未热替换或重启。
 - 一份新增 TTF 被运行中的 Xerr 锁定，需正常停服后执行 backups/board-rollback-20261022-180642/cleanup-locked-font.ps1；其他本次正式配置已恢复备份，未改数据库。
+
+## 2026-10-23 翻页交互与渐变标题
+
+翻页使用会话缓存，无数据库请求；仅重建重复内容、导航及含page/pages的格子，固定格子不写入。版本校验丢弃旧页排队点击，同步限制页码边界。三菜单title/fallback使用RGB渐变，设置字体图标保持白色。JournalPagingTest、JournalTest、MenuVisualStatesTest共8项通过，Java25/Paper26.3构建成功；标题调整后重新打包资源，YAML及JAR审计通过。新JAR暂存plugins/update，旧JAR/GUI备份Quest/backups/paging-20261023-211237，数据库未改。实际客户端鼠标、网络和快速点击观感待完整重启验收。
+
+## 2026-10-24 逐任务自动奖励
+
+只读正式账本发现12:56:01三个任务同时完成并在约4秒后领取，其中升级与收集器为已满足状态；没有重复claims。旧定时扫描每5秒领取所有已完成任务、按每条物品提示。现在完成事件请求立即触发领取，每次最多一个任务；自动交付仅处理最早任务的完整奖励组，最后一条成功持久化后提示一次任务名，并遵循notifications。周期重试保留；不删除历史claims/parcels，SENDING仍不盲重试。13项AutomaticRewardBatchTest/ChapterServiceTest/JournalTest/ResourcesTest通过，Java25/Paper26.3打包及JAR审计通过。正式lang新增reward-delivered，新JAR放plugins/update，根JAR可能被占用，详见target/verification/reward-per-task-deployment.json。SQLite在线备份完整性通过，未写正式数据库。默认通知true/HUD OFF已有实现且测试通过，保留已有玩家手选。未进行真人背包/断线流程及完整运行时探针，须重启验收。
+
+## 2026-10-24 TAB主支线独立区域
+
+TAB只从MAIN挑选上方当前任务，固定下方标题支线任务并列出ACTIVE支线名称和进度；CLAIMED/COMPLETE/LOCKED支线排除，只有支线进行时也不进入主线区域。18占位符及TAB布局保持，主线保留10行，支线区域从第12行开始；不改Xerr追踪HUD。新语言根tab-groups幂等补齐，保留旧文本和未知字段。11项TabQuestProjectionTest/TabTextWrapTest/ResourcesTest通过；首轮暴露旧燃料文案快照已过期，改为校验当前资源内容/分区边界及样式后通过。Java25/Paper26.3构建，最终JAR审计及部署SHA通过；lang已同步，plugins/update JAR完整重启生效。备份tab-task-groups-20261024-131630。无玩家数据/奖励写入，真人TAB观感待验收。
+
+## 2026-10-24 主支线紧凑共存HUD与TAB目标
+
+HUD运行投影改用projectGrouped：上半区MAIN，下半区选中SIDE或首个ACTIVE SIDE，共用旧156×194底板；只显示名称、两行目标及进度，不显示长篇剧情。side前缀在Xerr渲染入口映射原任务/目标/进度模板，空值不显示标签，保持TabooLib Components。TAB固定8行主线，下方每支线名称进度+一行目标；正式TAB补齐2..19槽位的18条占位符，保留列头/底边和玩家槽位。lang新增缺失child的迁移保留自定义标题，重复执行不变。20项相关测试与Maven构建通过；补充既有tab-groups子键迁移测试后8项TAB测试重跑通过。隔离Xerr2.2.0加载及CE generate/validate/zip通过，测宽common与两TTF保持，未直接发布隔离ZIP。JAR审计/SHA通过，服务器update暂存；正式布局/语言/TAB源已同步。完整重启后xerr reload、xerr pack async等待完成、ce reload pack、客户端接受新包。玩家进度与奖励未改；真实客户端缩放/定位待验收。备份compact-dual-hud-20261024-142025。
+
+### 2026-10-24 Genlite 教学接口缺失修复
+- 服务端与 Genlite 主仓库构建产物均缺少 GenliteQuestApi；Quest 原兼容构建包含该接口。
+- 将任务 API、成功操作持久化计数、生产拾取来源标记与成功领取计数合并到 D:/codex/Genlite 当前源码，保留现有燃料菜单、CraftEngine 展示及物品修改。
+- Java25、Paper26.3：Genlite 离线 Maven package 成功，135 tests passed；Quest TutorialActions / GenliteBridge 直接反射加载通过；JAR 内容检查通过，无服务端 API、测试或源码打包。
+- 新 Genlite JAR 已校验 SHA256 并放入服务端 plugins/update，旧 JAR 与源码有备份，见 target/verification/genlite-api-backup.txt。
+- 未改玩家数据库、任务配置和奖励记录。完整重启后的监听器注册与游戏操作仍待实测。
+
+### 2026-10-24 最新构建与 Leaf 发布
+- Quest Java25 / Paper26.3 离线 Maven package：97 tests passed；Genlite：135 tests passed。
+- 完整测试最初发现 7 项旧文案断言失效：更新 TAB/HUD 装饰与间距预期，并让燃料迁移测试显式使用真实旧版说明，未改变当前显示文案；最终全套通过。
+- 原生接口构建准备执行成功；DreamSkyblock/Genlite 均采用 native-quest-api；Quest/Genlite 二进制教学监听器加载检查通过。
+- JAR 内容检查通过：无服务端 API/测试/源码；Quest 无 PNG/TTF/HUD 资源；仅包含章节、任务、设置三个 GUI。
+- Leaf 正式目录直接部署并校验 SHA256：Quest `3068592d0271dd7e567df5c80c131e6705c805f5eac934270742ff62217b1860`；Genlite `e7eb1ec1494f8776f93fa3ad0bc74c582a69e3244ee5cf579e608122426d51d1`。
+- 备份：`C:/Users/32633/Desktop/leaf/plugins/Quest/backups/release-20261024-193216`；发布记录：`target/verification/latest-release-deployment.json`。
+- 未启动服务端，启动后监听器注册、真实任务交互与客户端观感待实测；没有修改玩家数据与奖励记录。Shade 提示重复 manifest/module-info 为依赖已有提示，最终包检查通过。

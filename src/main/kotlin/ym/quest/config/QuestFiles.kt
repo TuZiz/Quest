@@ -153,14 +153,16 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         val category=y.getString("category","main")!!
         require(category in setOf("main","side","special")) { "$file:category=$category expected main/side/special" }
         require(!y.contains("unlock-when") || y.isConfigurationSection("unlock-when")) { "$file:unlock-when expected metric mapping" }
-        val unlock=y.getConfigurationSection("unlock-when")?.getValues(false).orEmpty().mapValues { (metric,value) ->
+        // Bukkit expands dotted metric keys into sections; recover the complete leaf paths.
+        val unlock=y.getConfigurationSection("unlock-when")?.getValues(true).orEmpty()
+            .filterValues { it !is ConfigurationSection }.mapValues { (metric,value) ->
             require((value is Int || value is Long) && (value as Number).toLong()>0) { "$file:unlock-when.$metric=$value expected positive integer" }
             (value as Number).toLong()
         }
         return QuestDefinition(id,text(y,"name"),y.getStringList("description"),text(y,"icon"),emptyList(),objectives,rewards,QuestCategory.valueOf(category.uppercase()),unlock)
     }
     companion object {
-        val requiredMessages = listOf("no-permission","unavailable","no-island","loading","error","busy","claimed","not-complete","inventory-full","uncertain","delivered","progress","complete","reloaded","reset","usage","debug","resolved","player-only","reward-line","objective-line","status.LOCKED","status.ACTIVE","status.COMPLETE","status.CLAIMED","chapter-progress","chapter-reward-status") +
+        val requiredMessages = listOf("reward-delivered","no-permission","unavailable","no-island","loading","error","busy","claimed","not-complete","inventory-full","uncertain","delivered","progress","complete","reloaded","reset","usage","debug","resolved","player-only","reward-line","objective-line","status.LOCKED","status.ACTIVE","status.COMPLETE","status.CLAIMED","chapter-progress","chapter-reward-status") +
             listOf("command-help.player","command-help.admin")
         fun validateGraph(quests: List<QuestDefinition>) {
             val byId = quests.associateBy { it.id }

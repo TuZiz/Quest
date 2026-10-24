@@ -5,8 +5,8 @@
 # ==========================================================
 schema-version: 2
 
-title: '<#89F7FE>✦ 悠梦星辰 <#64748B>· <#C2E9FB>任务日志'
-fallback-title: '<#89F7FE>✦ 任务日志'
+title: '<gradient:#89F7FE:#C4B5FD>✦ 悠梦星辰 · 任务日志</gradient>'
+fallback-title: '<gradient:#89F7FE:#C4B5FD>✦ 任务日志</gradient>'
 unavailable-item: 'minecraft:structure_void'
 reward-format: '  <#FFCC80>▸ <#E2E8F0><reward> <#A8FF78>×<amount>'
 empty-slots: '#'

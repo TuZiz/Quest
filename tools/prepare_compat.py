@@ -4,13 +4,14 @@ import shutil
 import hashlib
 import json
 import sys
-import subprocess
+import runpy
 
 root = Path(__file__).resolve().parents[1]
 base = Path(sys.argv[1]) if len(sys.argv) > 1 else root.parent
 # Regenerate narrow overlays against the CURRENT sources; fail on source drift instead of
 # silently replacing newer integration behavior with an earlier full-file overlay.
-subprocess.run([sys.executable, str(root / 'tools/make_compat.py'), str(base)], check=True)
+# Reuse native-hook detection and generate any required legacy overlays once.
+native_projects = runpy.run_path(str(root / 'tools/make_compat.py'))['native_projects']
 manifest = {}
 for name in ('Genlite', 'DreamSkyblock'):
     source = base / name
@@ -26,6 +27,9 @@ for name in ('Genlite', 'DreamSkyblock'):
             shutil.copytree(source / folder, staged)
     shutil.copy2(source / 'pom.xml', target / 'pom.xml')
     manifest[name] = {}
+    if name in native_projects:
+        manifest[name]['mode'] = 'native-quest-api'
+        continue
     for overlay in (root / 'compat' / name).rglob('*'):
         if overlay.is_file():
             relative = overlay.relative_to(root / 'compat' / name)

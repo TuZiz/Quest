@@ -2,13 +2,31 @@ from pathlib import Path
 import sys
 root = Path(__file__).resolve().parents[1]
 base = Path(sys.argv[1]) if len(sys.argv) > 1 else root.parent
+
+# Current dependency repositories can include the compatibility hooks natively.
+# In that case build their current files without replaying older overlays.
+native_projects = set()
+genlite_api = base / 'Genlite/src/main/java/cn/genlite/api/GenliteQuestApi.java'
+genlite_engine = base / 'Genlite/src/main/java/cn/genlite/domain/MachineEngine.java'
+if (genlite_api.exists() and 'TeachingMachine' in genlite_api.read_text(encoding='utf-8-sig')
+        and 'questListener' in genlite_engine.read_text(encoding='utf-8-sig')):
+    native_projects.add('Genlite')
+dream_service = base / 'DreamSkyblock/src/main/kotlin/ym/dreamSkyblock/service/HomeManager.kt'
+dream_gui = base / 'DreamSkyblock/src/main/kotlin/ym/dreamSkyblock/gui/HomeGuiManager.kt'
+if ('HomeMembershipCommittedEvent' in dream_service.read_text(encoding='utf-8-sig')
+        and 'HomeMenuOpenedEvent' in dream_gui.read_text(encoding='utf-8-sig')):
+    native_projects.add('DreamSkyblock')
 def read(project, path):
     return (base / project / path).read_text(encoding='utf-8-sig')
 def write(project, path, text):
+    if project in native_projects:
+        return
     p = root / 'compat' / project / path
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(text, encoding='utf-8')
 def change(project, path, replacements):
+    if project in native_projects:
+        return
     text = read(project, path)
     for a,b in replacements:
         assert a in text, (path,a)

@@ -1,3 +1,13 @@
+# 2026-10-24 HUD漂移修复
+
+恢复服务端Xerr/core/regex/common.yml基础测宽，合并Quest两字体特殊符号正则；之前清理误删规则导致Xerr将普通文字宽度算作0。布局和素材未改。执行xerr reload即可，不需更换Quest/Xerr JAR或重生成资源包。当前JAR原生测宽探针复现旧故障并验证修复；真实客户端仍待验收。备份hud-width-fix-20261024-130854。保留默认物品栏等HUD关闭。
+
+# 2026-10-23 配套整体更新
+
+服务端旧版本仅4份任务，Genlite缺教学API。14份任务（10共享主线+4支线）、章节、教学、缺失语言和迁移记录已同步，保留原GUI/HUD/全局配置。个人NPC引导额外1项。Quest修正带点unlock-when条件被Bukkit展开的问题；Java25/Paper26.3构建及15项相关测试通过，真实解析器/任务图和重复迁移通过。
+
+三配套JAR均放入服务端plugins/update；Quest和Genlite根JAR被运行进程占用，须完整重启触发替换；DreamSkyblock根已为当前兼容版本。备份与在线SQLite一致快照在Quest/backups/full-update-20261023-211919。更新脚本未改玩家DB。章节/任务奖励沿用既有claims防重，不重发历史奖励。具体任务奖励说明已复制Quest/docs。完整玩家流程、资源拾取/绑定/多人奖励及客户端翻页仍待实测。
+
 # 章节任务系统升级说明
 
 ## 2026-10-22 客户端底板字体图集修复
@@ -174,3 +184,11 @@ SQLite 与玩家存档仍没有跨存储原子提交；崩溃窗口的 SENDING �
 新增可选菜单字段 `item-on` / `item-off`，仅用于已有追踪、提示、声音开关且必须成对配置；`pack-only` 必须为布尔值。加载资源包后根据个人状态选择图标，未加载时使用原 `item`，透明热区不显示。配置重载验证状态物品 ID，仍使用完整 ItemStack 比较仅更新变化槽位。
 
 本服第一版卡片通过 imagegen 生图，以单张透明图集和六个 UV 模型提供 ON/OFF，配合原生尺寸深蓝底板及独立字体。实际素材、菜单部署候选、原生验证和制作脚本只在服务端 CraftEngine `resources/quest-settings-cards` / `design/quest-settings-cards`，不纳入源码/JAR。新 Quest JAR 暂存 `plugins/update`，旧菜单及 JAR 已备份；完整重启后执行 `/ce reload pack` 并让客户端接受资源包。
+
+## 2026-10-24 最新版本发布
+
+- Quest 与 Genlite 配套更新：主支线 HUD 并存、TAB 支线目标、菜单局部分页、逐任务自动领取与 Genlite 教学接口。
+- Genlite 主仓库已内置 `GenliteQuestApi`（含 `TeachingMachine`）、成功操作计数与提交事件；不得替换为缺少该接口的旧构建。
+- 构建准备工具会识别依赖仓库中的原生教学接口并使用当前源码，避免重放旧覆盖文件。
+- Leaf 停服期间已备份并直接替换 `plugins/Quest-1.0.0.jar`、`plugins/Genlite-1.0.0.jar`，清除这两个插件已处理的更新目录副本。DreamSkyblock 当前已是配套接口版本。
+- 启动 Leaf 后加载新 JAR；不使用热重载。保留现有任务配置、Xerr/CraftEngine 资源、玩家数据库与奖励记录。

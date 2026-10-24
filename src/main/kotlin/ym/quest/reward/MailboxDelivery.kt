@@ -12,7 +12,8 @@ import java.util.UUID
 /** Main-thread inventory work + durable asynchronous state transitions. Never drop overflow on the ground. */
 class MailboxDelivery(private val service: QuestService, private val integrations: Integrations,
                       private val items: ItemFactory, private val text: TextRenderer, private val thread: GameThread,
-                      private val failure: (Throwable) -> Unit) : AutoCloseable {
+                      private val failure: (Throwable) -> Unit,
+                      private val noticesEnabled: (Player) -> Boolean = { true }) : AutoCloseable {
     private val busy = mutableSetOf<UUID>()
     private val sending = mutableSetOf<String>()
     fun isSending(id: String) = id in sending
@@ -23,7 +24,8 @@ class MailboxDelivery(private val service: QuestService, private val integration
             if(error != null) { busy.remove(player.uniqueId); failure(error); if(!quiet) text.send(player,"error"); done(); return@run }
             if(!valid(player,home)) { busy.remove(player.uniqueId); done(); return@run }
             if(!quiet && parcels.any { it.phase == "SENDING" }) text.send(player,"uncertain")
-            next(player,home,parcels.filter { it.phase == "WAITING" },quiet,done)
+            val waiting=parcels.filter { it.phase == "WAITING" }
+            next(player,home,if(quiet) RewardDeliveryBatch.firstTask(waiting) else waiting,quiet,done)
         } }
     }
     private fun valid(p: Player,home: UUID) = !closed && p.isOnline && p.hasPermission("quest.use") &&
@@ -62,7 +64,11 @@ class MailboxDelivery(private val service: QuestService, private val integration
                     busy.remove(player.uniqueId); if(saveError != null) failure(saveError)
                     if(!quiet) text.send(player,"uncertain"); done()
                 } else {
-                    if(player.isOnline) text.send(player,"delivered")
+                    if(player.isOnline && noticesEnabled(player) && parcels.drop(1).none { it.quest==parcel.quest }) {
+                        val name=service.definitions.firstOrNull { it.id==parcel.quest }?.name
+                            ?: service.chapters.firstOrNull { "chapter:${it.id}"==parcel.quest }?.name
+                        text.send(player,"reward-delivered",mapOf("quest" to (name?.let(text::render) ?: net.kyori.adventure.text.Component.text(parcel.quest))))
+                    }
                     next(player,home,parcels.drop(1),quiet,done)
                 }
             } }

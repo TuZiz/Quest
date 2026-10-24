@@ -32,7 +32,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     private val notices = StoryNotices(text,settings.notices)
     private val custom = if(plugin.server.pluginManager.isPluginEnabled("CraftEngine")) CraftEngineItemProvider() else null
     private val items = ItemFactory(listOfNotNull(custom))
-    private val delivery = MailboxDelivery(service,integrations,items,text,thread,::failure)
+    private val delivery = MailboxDelivery(service,integrations,items,text,thread,::failure) { preferences.get(it)?.notifications != false }
     private var introduction: IntroductionRuntime? = null
     private val preferences=PlayerDisplayPreferences(plugin,db,thread,::failure)
     private var tutorialWorlds=settings.tutorialWorlds
@@ -95,6 +95,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
             if(closed) return@run
             changes.groupBy { it.home }.forEach { (home,list) ->
                 val id = UUID.fromString(home)
+                if(list.any { it.completed }) automatic.completed(id)
                 integrations.islands?.byId(id)?.members?.forEach { member ->
                     plugin.server.getPlayer(member)?.takeIf { it.hasPermission("quest.use") }?.let { player ->
                         preferences.get(player)?.takeIf { it.notifications }?.let { pref ->

@@ -1,5 +1,7 @@
 """Executed by make_compat.py, with its checked read/change/write helpers in scope."""
 def extend(project, path, replacements):
+    if project in native_projects:
+        return
     target = root / 'compat' / project / path
     base_overlay = path in {g+'domain/MachineActions.java',g+'domain/Production.java',g+'api/GenliteQuestApi.java',g+'GenlitePlugin.java'} and path != g+'domain/Production.java'
     text = target.read_text(encoding='utf-8') if base_overlay else read(project, path)

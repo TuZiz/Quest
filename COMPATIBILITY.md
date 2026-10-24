@@ -2,7 +2,7 @@
 
 2026-10-22 当前主题版本使用正式服实际安装的 Xerr **2.2.0**（原2.1.0 JAR已不存在），已核对依赖签名并在 Leaf26.3 / Java25 / CraftEngine26.9.2 隔离服完成原生 Components、真实字体、菜单与资源包合并验证。下文2.1.0为历史基线；本次不声称2.1.0运行兼容。Folia继续不支持，真实客户端最终观感待确认。
 
-原始 `D:/codex/DreamSkyblock`、`D:/codex/Genlite` 不改写；服务端部署均先备份。`compat/` 是源文件覆盖包，应用于本次已核查的本地源码副本；不是跨版本通用补丁。更新上游后需要重新核对差异，不能盲目覆盖。
+Genlite、DreamSkyblock 当前源码已包含 Quest 教学接口。构建准备工具识别原生接口后使用当前源码，不再覆盖旧兼容副本；旧版源码仍通过 `compat/` 的窄范围补丁构建。服务端部署先备份，更新上游后需要重新核对差异，不能盲目覆盖。
 
 ## DreamSkyblock
 
@@ -27,7 +27,7 @@
 
 ## 显示集成
 
-Quest已移除Xerr运行/构建依赖、HUD适配及其补丁工具。任务和章节完成默认通过聊天消息提示，不需要Quest资源包。
+Quest 当前使用 Xerr 2.2.0，保留任务侧栏与完成通知；材质、字体和布局只放在服务端 Xerr/CraftEngine，Quest 源码和 JAR 不携带材质。TAB 主线与支线独立显示。
 ## Genlite 联动接口缺失（2026-10-22）
 
 正式服日志出现 `Genlite compatibility patch missing: ... cn/genlite/api/GenliteQuestApi` 时，原版 Genlite 不向 Quest 提供机器快照和燃料/产出计数，安放生成器会停在 0/1，后续燃料与产出任务也无法正常同步。需要使用交付包中与 Quest 配套的 Genlite JAR，而非仅替换 Quest。

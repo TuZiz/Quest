@@ -5,8 +5,8 @@
 # ==========================================================
 schema-version: 1
 
-title: '<#89F7FE>✦ 悠梦星辰 <#64748B>· <#C2E9FB>偏好设置'
-fallback-title: '<#89F7FE>✦ 追踪与显示'
+title: '<gradient:#89F7FE:#C4B5FD>✦ 悠梦星辰 · 偏好设置</gradient>'
+fallback-title: '<gradient:#89F7FE:#C4B5FD>✦ 追踪与显示</gradient>'
 unavailable-item: 'minecraft:structure_void'
 empty-slots: '#'
 

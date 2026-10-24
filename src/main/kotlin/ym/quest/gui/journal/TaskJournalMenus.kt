@@ -89,7 +89,11 @@ class TaskJournalMenus(private val plugin: JavaPlugin,private val service: Quest
             action=="back" -> open(player,category=s.category)
             action=="close" -> player.closeInventory()
             action.startsWith("chapter:") -> open(player,JournalPage.TASKS,s.category,action.substringAfter(':'))
-            action=="previous" || action=="next" -> { s.page+=if(action=="next") 1 else -1;s.dirty=true;refresh(player,s) }
+            action=="previous" || action=="next" -> {
+                val current=preferences.get(player) ?: return
+                if(s.turnPage(if(action=="next") 1 else -1))
+                    renderer.render(player,s,s.view!!,current,settings,pageOnly=true)
+            }
             action=="refresh" -> { s.dirty=true;refresh(player,s) }
             action.startsWith("track:") -> track(player,s,action.substringAfter(':'))
             action.startsWith("toggle-") -> preferences.update(player,{ value -> when(action) {
@@ -117,7 +121,11 @@ class TaskJournalMenus(private val plugin: JavaPlugin,private val service: Quest
         val player=e.whoClicked as? Player ?: return
         if(!valid(player,s) || e.rawSlot !in 0 until s.menu.size) return
         val selectedAction=s.actions[e.rawSlot] ?: return
-        thread.run { action(player,s,selectedAction) }
+        val slot=e.rawSlot
+        val revision=s.revision
+        thread.run {
+            if(s.revision==revision && s.actions[slot]==selectedAction) action(player,s,selectedAction)
+        }
     }
     @EventHandler fun drag(e: InventoryDragEvent) { if(e.view.topInventory.holder is JournalSession) e.isCancelled=true }
     @EventHandler fun close(e: InventoryCloseEvent) { val s=e.inventory.holder as? JournalSession ?: return;sessions.remove(e.player.uniqueId,s) }

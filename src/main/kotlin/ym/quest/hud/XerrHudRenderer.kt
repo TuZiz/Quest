@@ -17,14 +17,16 @@ class XerrHudRenderer(private val settings: HudSettings) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String,String>?)=size>256
     }
     fun styled(key: String, value: String): String {
-        val native=HudTextLines.nativeKey(key)
+        if(value.isBlank()) return ""
+        val field=key.removePrefix("side-")
+        val native=HudTextLines.nativeKey(field)
         val alias=when {
-            key.startsWith("hint-") -> "hint"
-            key=="objective-1" -> "objective"
-            key=="objective-2" -> "objective-continuation"
-            else -> key
+            field.startsWith("hint-") -> "hint"
+            field=="objective-1" -> "objective"
+            field=="objective-2" -> "objective-continuation"
+            else -> field
         }
-        val template=settings.templates[alias] ?: "{value}"
+        val template=settings.templates[key] ?: settings.templates[alias] ?: "{value}"
         // Xerr's font wrapper escapes Components brackets. Parse natively BEFORE Xerr measures text.
         // Legacy is an internal RGB transport here, never the author-facing configuration syntax.
         val escaped=if(native) nativeColors.replace(value) {

@@ -20,21 +20,26 @@ class AutomaticRewards(private val plugin: JavaPlugin, private val service: Ques
     private var generation = 0
     private var elapsed = 0
     private val pending = mutableSetOf<UUID>()
+    private val requested = mutableSetOf<UUID>()
+    fun completed(home: UUID) { if(!closed && settings.automatic) requested += home }
     private val unavailable = mutableSetOf<String>()
-    private val timer = plugin.server.scheduler.runTaskTimer(plugin,Runnable { tick() },20,20)
+    private val timer = plugin.server.scheduler.runTaskTimer(plugin,Runnable { tick() },1,1)
     private fun valid(player: Player, home: UUID) = !closed && active() && settings.automatic && player.isOnline &&
         player.hasPermission("quest.use") && integrations.island(player.uniqueId)?.id == home && integrations.allowed(home,player.uniqueId)
     private fun tick() {
         if(closed || !active() || !settings.automatic) return
-        elapsed += 20
-        if(elapsed < settings.retryTicks) return
-        elapsed = 0
+        elapsed++
+        val recovery=elapsed >= settings.retryTicks
+        if(recovery) elapsed=0
+        if(!recovery && requested.isEmpty()) return
         if(integrations.production?.ready() != true) return
         plugin.server.onlinePlayers.sortedBy { it.uniqueId.toString() }.mapNotNull { player ->
             integrations.island(player.uniqueId)?.let { it.id to player }
         }.groupBy({ it.first },{ it.second }).forEach { (home,players) ->
             val player = players.firstOrNull { valid(it,home) } ?: return@forEach
+            if(!recovery && home !in requested) return@forEach
             if(!pending.add(home)) return@forEach
+            requested.remove(home)
             val epoch = generation
             try {
                 val candidates = service.definitions.map { it.id to it.rewards } + service.chapters.map { "chapter:${it.id}" to it.rewards }
@@ -47,7 +52,7 @@ class AutomaticRewards(private val plugin: JavaPlugin, private val service: Ques
                 val hasGenerator = integrations.production?.hasGenerator(island) == true || island.members.any { id ->
                     plugin.server.getPlayer(id)?.inventory?.storageContents?.any { it != null && customId(it) in starters } == true
                 }
-                service.claimCompleted(home.toString(),player.uniqueId.toString(),integrations.facts(home),hasGenerator,eligible)
+                service.claimCompleted(home.toString(),player.uniqueId.toString(),integrations.facts(home),hasGenerator,eligible,limit=1)
                     .whenComplete { _,error -> thread.run {
                         if(closed || epoch != generation) return@run
                         if(error != null) { pending.remove(home); failure(error); return@run }
@@ -57,6 +62,6 @@ class AutomaticRewards(private val plugin: JavaPlugin, private val service: Ques
             } catch(e: Exception) { pending.remove(home); failure(e) }
         }
     }
-    fun reload(next: RewardSettings) { generation++; pending.clear(); unavailable.clear(); elapsed=0; settings=next }
-    override fun close() { closed=true; generation++; timer.cancel(); pending.clear(); unavailable.clear() }
+    fun reload(next: RewardSettings) { generation++; pending.clear(); requested.clear(); unavailable.clear(); elapsed=0; settings=next }
+    override fun close() { closed=true; generation++; timer.cancel(); pending.clear(); requested.clear(); unavailable.clear() }
 }

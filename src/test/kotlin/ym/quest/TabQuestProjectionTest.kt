@@ -29,7 +29,7 @@ class TabQuestProjectionTest {
         "<#78FFD6>利用原石生成器获取32个原石",listOf("<#E0F7FA>让生成器成功生产32份原石"),"minecraft:cobblestone",requires,
         listOf(Objective("produce","genlite.produce",target,"minecraft:cobblestone","<#E0F7FA>生成器实际生产原石")),emptyList())
 
-    @Test fun `fuel task renders hierarchy numbered steps and deliberate line breaks`() {
+    @Test fun `fuel task retains compact objective above the independent side section`() {
         val fuel = YamlConfiguration().apply { loadFromString(Files.readString(Path.of("src/main/resources/quests/第一章/能源启动.yml"))) }
         val objective = fuel.getMapList("objectives").single()
         val q = QuestDefinition(fuel.getString("id")!!, fuel.getString("name")!!, fuel.getStringList("description"),
@@ -40,9 +40,14 @@ class TabQuestProjectionTest {
         })
         val lines = projection.project(JournalView(listOf(QuestView(q, QuestStatus.ACTIVE,
             listOf(ObjectiveProgress(q.objectives.single(), 0)))), listOf(ChapterView(chapter, ChapterStatus.ACTIVE, 0, false))))
-        assertEquals(listOf("第一章·星海初醒", "", "能源启动", "目标  向燃料仓存入燃料", "进度  0 / 1", "",
-            "1. 右键原石生成器", "   打开管理面板", "2. 点击「燃料」", "   打开燃料仓", "3. Shift点击背包燃料", "   或放入上方格子"), plain(lines.take(12)).split('\n'))
-        assertTrue(lines.drop(12).all { it.isEmpty() })
+        assertEquals(listOf("✦ 主线任务","▪ 第一章·星海初醒","✦ 能源启动"),plain(lines.take(3)).split('\n'))
+        val main=plain(lines.take(8))
+        assertTrue(main.contains("进度  0 / 1"))
+        assertTrue(main.replace("\n","").contains(PlainTextComponentSerializer.plainText().serialize(MiniMessage.miniMessage().deserialize(objective["description"].toString()))))
+        assertEquals("",lines[8])
+        assertEquals("✦ 支线任务",plain(listOf(lines[9])))
+        assertEquals("▪ 暂无进行中的支线任务。",plain(listOf(lines[10])))
+        assertTrue(lines.drop(11).all { it.isEmpty() })
         val mini = MiniMessage.miniMessage()
         val title = mini.deserialize(lines[2])
         val gson = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson()
@@ -51,10 +56,8 @@ class TabQuestProjectionTest {
         Files.createDirectories(output)
         Files.writeString(output.resolve("tab-compact-preview.txt"), plain(lines.take(12)))
         Files.writeString(output.resolve("tab-emphasis-components.json"), json.joinToString(",", "[", "]"))
-        assertTrue(gson.serialize(title).contains("#FBBF24", ignoreCase=true))
+        assertTrue(gson.serialize(title).contains("#FFD700", ignoreCase=true))
         assertTrue(gson.serialize(title).contains("\"bold\":true"))
-        assertTrue(json[3].contains("#FDE68A", ignoreCase=true))
-        assertTrue(json[8].contains("#FDE68A", ignoreCase=true))
     }
 
     @Test fun `active objective progress and long Chinese names wrap without losing text`() {
@@ -79,19 +82,39 @@ class TabQuestProjectionTest {
             listOf(ObjectiveProgress(second.objectives[0],1),ObjectiveProgress(second.objectives[1],0)))),emptyList()))
         val visible=plain(lines)
         assertTrue(visible.contains("下一任务") && visible.contains("第二个目标"),visible)
-        assertTrue(visible.contains("0 / 2") && visible.contains("已达成目标  1 / 2"),visible)
+        assertTrue(visible.contains("0 / 2") && visible.contains("已达成  1 / 2"),visible)
         assertFalse(visible.contains("利用原石生成器"))
     }
 
     @Test fun `done locked no island and unavailable states contain no placeholder leaks`() {
         val q=quest("one")
-        assertTrue(plain(projection.project(JournalView(listOf(QuestView(q,QuestStatus.CLAIMED,emptyList())),emptyList()))).contains("全部达成"))
+        assertTrue(plain(projection.project(JournalView(listOf(QuestView(q,QuestStatus.CLAIMED,emptyList())),emptyList()))).contains("当前主线章节已全部完成"))
         assertTrue(plain(projection.project(JournalView(listOf(QuestView(q,QuestStatus.LOCKED,emptyList())),emptyList()))).contains("等待"))
         for(state in listOf("loading","no-island","no-permission","unavailable","error")) {
             val lines=projection.state(state)
             assertEquals(18,lines.size)
             assertFalse(plain(lines).contains("<value>"))
         }
+    }
+
+    @Test fun `side tasks never replace main area and all active branches have their own lower section`() {
+        fun entry(id: String,category: QuestCategory,status: QuestStatus)=quest(id,3).copy(name=id,category=category).let {
+            QuestView(it,status,listOf(ObjectiveProgress(it.objectives.single(),1)))
+        }
+        val side=(1..4).map { entry("支线$it",QuestCategory.SIDE,QuestStatus.ACTIVE) }
+        val main=entry("主线目标",QuestCategory.MAIN,QuestStatus.ACTIVE)
+        val view=JournalView(side+main+entry("未解锁支线",QuestCategory.SIDE,QuestStatus.LOCKED),emptyList())
+        val lines=projection.project(view)
+        assertEquals(18,lines.size)
+        assertTrue(plain(lines.take(8)).contains("主线目标"))
+        assertFalse(plain(lines.take(8)).contains("支线"))
+        assertTrue(plain(lines.drop(9)).contains("支线任务"))
+        side.forEach { assertTrue(plain(lines.drop(9)).contains(it.definition.name+" 1/3")) }
+        assertTrue(plain(lines.drop(9)).contains("目标："))
+        assertFalse(plain(lines).contains("未解锁支线"))
+        val onlySide=projection.project(JournalView(side+main.copy(status=QuestStatus.CLAIMED),emptyList()))
+        assertTrue(plain(onlySide.take(8)).contains("当前主线章节已全部完成"))
+        assertFalse(plain(onlySide.take(8)).contains("支线1"))
     }
 
     @Test fun `team journal read projection neither completes nor claims rewards`() {
@@ -115,14 +138,18 @@ class TabQuestProjectionTest {
 
     @Test fun `language append is idempotent and preserves comments and unknown keys`() {
         val file=directory.resolve("zh_cn.yml")
-        val original="schema-version: 1\n# 用户注释\ncustom: '保留'\n"
+        val original="schema-version: 1\n# 用户注释\ncustom: '保留'\ntab-groups:\n  main-heading: '自定义主线'\n"
         Files.writeString(file,original)
         val bundled=Files.readString(Path.of("src/main/resources/lang/zh_cn.yml"))
         ResourceUpgrade.appendLanguage(file,bundled)
         val once=Files.readString(file)
         ResourceUpgrade.appendLanguage(file,bundled)
         assertEquals(once,Files.readString(file))
-        assertTrue(once.startsWith(original))
+        assertTrue(once.contains("# 用户注释"))
+        assertTrue(once.contains("custom: '保留'"))
+        val upgraded=YamlConfiguration().apply { loadFromString(once) }
+        assertEquals("自定义主线",upgraded.getString("tab-groups.main-heading"))
+        assertTrue(upgraded.isString("tab-groups.side-objective"))
         assertTrue(YamlConfiguration().apply { loadFromString(once) }.isString("tab.shared-line"))
     }
 

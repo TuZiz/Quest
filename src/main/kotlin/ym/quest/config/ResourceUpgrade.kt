@@ -81,7 +81,12 @@ object ResourceUpgrade {
             old = root.replace(old) { it.value + "\n" + line }
             replace(file, old)
         }
-        val missing = listOf("chapter-status","chapter-progress","chapter-reward-status","notices","automatic-rewards","command-help","tab","introduction","hud","journal").filter { !existing.contains(it) }
+        if(existing.isConfigurationSection("tab-groups") && !existing.contains("tab-groups.side-objective")) {
+            val line=bundled.lines().single { it.startsWith("  side-objective:") }
+            old=Regex("(?m)^tab-groups:[ \t]*(?:#.*)?$").replace(old) { it.value+"\n"+line }
+            replace(file,old)
+        }
+        val missing = listOf("tab-groups","reward-delivered","chapter-status","chapter-progress","chapter-reward-status","notices","automatic-rewards","command-help","tab","introduction","hud","journal").filter { !existing.contains(it) }
         if(missing.isEmpty()) return
         // Append complete new root blocks only. Malformed existing keys are rejected by the loader.
         val lines = bundled.lines()

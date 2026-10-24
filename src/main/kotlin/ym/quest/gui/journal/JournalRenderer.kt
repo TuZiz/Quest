@@ -13,7 +13,7 @@ import ym.quest.text.TextRenderer
 /** Configured chest screens, Paper-owned. No IO, progress mutation or reward actions. */
 class JournalRenderer(private val items: ItemFactory,private val text: TextRenderer) {
     private val lore=JournalLore(items,text)
-    fun render(player: Player,s: JournalSession,view: JournalView,prefs: DisplayPreferences,settings: Settings) {
+    fun render(player: Player,s: JournalSession,view: JournalView,prefs: DisplayPreferences,settings: Settings,pageOnly: Boolean=false) {
         val y=settings.journalMenus.getValue(s.screen.file)
         val shape=y.getStringList("Shape").joinToString("")
         val tracked=TrackingSelection.select(view,prefs)
@@ -25,14 +25,19 @@ class JournalRenderer(private val items: ItemFactory,private val text: TextRende
         val capacity=shape.count { y.getString("components.$it.action")==repeating }
         val count=if(chapterList) chapters.size else tasks.size
         val pages=if(capacity==0) 1 else ((count+capacity-1)/capacity).coerceAtLeast(1)
+        s.pages=pages
         s.page=s.page.coerceIn(0,pages-1)
         val chapterIterator=chapters.drop(s.page*capacity).iterator()
         val taskIterator=tasks.drop(s.page*capacity).iterator()
-        val contents=arrayOfNulls<ItemStack>(s.menu.size)
-        val actions=mutableMapOf<Int,String>()
+        val contents=if(pageOnly) s.menu.contents.copyOf() else arrayOfNulls<ItemStack>(s.menu.size)
+        val actions=if(pageOnly) s.actions.toMutableMap() else mutableMapOf<Int,String>()
+        val changedSlots=mutableSetOf<Int>()
         shape.forEachIndexed { slot,symbol ->
             if(symbol==' ') return@forEachIndexed
             val component=y.getConfigurationSection("components.$symbol")!!
+            if(pageOnly && !JournalPageSlots.dependsOnPage(component)) return@forEachIndexed
+            changedSlots+=slot
+            contents[slot]=null;actions.remove(slot)
             if(component.getBoolean("pack-only") && !player.hasResourcePack()) return@forEachIndexed
             var action=component.getString("action","")!!
             val q=when(action) {
@@ -85,16 +90,16 @@ class JournalRenderer(private val items: ItemFactory,private val text: TextRende
                 meta.displayName(text.item(y.getString("components.$filler.name","")!!))
                 meta.lore(y.getStringList("components.$filler.lore").map { text.item(it) })
             }
-            for(slot in contents.indices) if(contents[slot]==null) contents[slot]=item
+            for(slot in contents.indices) if(contents[slot]==null && (!pageOnly || slot in changedSlots)) contents[slot]=item
         }
         // Keep the open inventory and send only slots whose complete item/metadata changed.
-        for(slot in contents.indices) if(s.menu.getItem(slot)!=contents[slot]) s.menu.setItem(slot,contents[slot])
-        s.actions.clear();s.actions.putAll(actions)
+        for(slot in contents.indices) if((!pageOnly || slot in changedSlots) && s.menu.getItem(slot)!=contents[slot]) s.menu.setItem(slot,contents[slot])
+        s.actions.clear();s.actions.putAll(actions);s.revision++
     }
     private fun enabled(value: Boolean)=text.format(if(value) "journal.enabled" else "journal.disabled")
     fun loading(s: JournalSession,settings: Settings,key: String="journal.loading") {
         val y=settings.journalMenus.getValue(s.screen.file)
-        s.menu.clear();s.actions.clear()
+        s.menu.clear();s.actions.clear();s.revision++
         val item=items.build(y.getString("unavailable-item")!!)
         item.editMeta { it.displayName(TextRenderer.noItalic(text.format(key))) }
         s.menu.setItem(s.menu.size/2,item)

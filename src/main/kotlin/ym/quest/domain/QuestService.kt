@@ -78,7 +78,8 @@ class QuestService(private val db: Database) {
     }
     fun mailbox(home: String) = db.submit { db.transaction { rewards.parcels(it,home) } }
     /** Automatic grant uses the same unique claims and immutable delivery records as manual grants. */
-    fun claimCompleted(home: String, player: String, facts: Map<String,Long>, hasGenerator: Boolean, eligible: Set<String>) = db.submit {
+    fun claimCompleted(home: String, player: String, facts: Map<String,Long>, hasGenerator: Boolean, eligible: Set<String>, limit: Int = Int.MAX_VALUE) = db.submit {
+        require(limit > 0)
         var changes = emptyList<ProgressChange>()
         val claimed = db.transaction { c ->
             changes = advance(c,home,facts)
@@ -86,7 +87,7 @@ class QuestService(private val db: Database) {
             val completedChapters = chapterStore.views(c,home,chapters,progress).filter { it.status == ChapterStatus.COMPLETE && !it.claimed }
                 .map { view -> QuestView(QuestDefinition("chapter:${view.definition.id}",view.definition.name,emptyList(),
                     view.definition.icon,emptyList(),emptyList(),view.definition.rewards),QuestStatus.COMPLETE,emptyList()) }
-            (tasks + completedChapters).filter { it.definition.id in eligible }
+            (tasks + completedChapters).filter { it.definition.id in eligible && it.status == QuestStatus.COMPLETE }.take(limit)
                 .filter { rewards.claim(c,home,player,it,hasGenerator) }.map { it.definition.id }
         }
         claimChanges(changes); claimed

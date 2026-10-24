@@ -16,6 +16,24 @@ class QuestHudTest {
     private val objective=Objective("stone","genlite.produce",32,"minecraft:cobblestone","<#D2E7F2>让生成器生产原石")
     private val quest=QuestDefinition("stone","<#FFFFFF>第一批资源",emptyList(),"minecraft:stone",emptyList(),listOf(objective),emptyList())
     private val chapter=ChapterDefinition("first","第一章 · 星海初醒","minecraft:book",emptyList(),1,emptyList(),listOf("stone"),emptyList())
+    @Test fun `compact HUD keeps main and selected side together without narrative hints`() {
+        val main=QuestView(quest.copy(description=listOf("很长的剧情不应占用面板")),QuestStatus.ACTIVE,listOf(ObjectiveProgress(objective,8)))
+        val side=QuestView(quest.copy(id="trial",name="初次试炼",category=QuestCategory.SIDE),QuestStatus.ACTIVE,listOf(ObjectiveProgress(objective,2)))
+        val view=JournalView(listOf(side,main),listOf(ChapterView(chapter,ChapterStatus.ACTIVE,0,false)))
+        val result=projection().projectGrouped(view,"trial",false)!!
+        assertEquals("主线任务",result["category"])
+        assertEquals("第一批资源",result["task"])
+        assertEquals("8 / 32",result["progress-text"])
+        assertEquals("支线任务",result["side-category"])
+        assertEquals("初次试炼",result["side-task"])
+        assertEquals("2 / 32",result["side-progress-text"])
+        assertTrue(result.getValue("side-objective-1").contains("让生成器生产原石"))
+        assertFalse(result.keys.any { it.startsWith("hint-") })
+        val finished=projection().projectGrouped(view.copy(quests=listOf(side,main.copy(status=QuestStatus.CLAIMED))))!!
+        assertTrue(finished.getValue("task").contains("当前主线章节已全部完成"))
+        assertEquals("初次试炼",finished["side-task"])
+        assertEquals("",finished["objective-1"])
+    }
     @Test fun `explicit tracking can select shared task while personal introduction is active`() {
         val shared=JournalView(listOf(QuestView(quest,QuestStatus.ACTIVE,listOf(ObjectiveProgress(objective,0)))),listOf(ChapterView(chapter,ChapterStatus.ACTIVE,0,false)))
         val personalQuest=quest.copy(id="intro",name="个人交谈")
@@ -53,7 +71,7 @@ class QuestHudTest {
         assertEquals(1,merged.size);assertTrue(merged.single().chapter)
         val next=quest.copy(id="next",name="下个目标")
         val notices=p.completion(listOf(ProgressChange("home","stone",true),ProgressChange("home","next",false,started=true)),listOf(quest,next),listOf(chapter))
-        assertEquals("下一任务：下个目标",notices.single().values["detail"])
+        assertEquals("下一目标：下个目标",notices.single().values["detail"])
         assertFalse(notices.single().values.values.any { it.contains("到账") })
     }
     @Test fun `queue bounds pending notifications deduplicates fades expires and cleans up`() {
