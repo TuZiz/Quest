@@ -20,17 +20,22 @@ class MailboxDelivery(private val service: QuestService, private val integration
     private var closed = false
     fun collect(player: Player, home: UUID, quiet: Boolean = false, done: () -> Unit = {}) {
         if(closed || !busy.add(player.uniqueId)) { if(!quiet) text.send(player,"busy"); done(); return }
+        val receipts = RewardReceipts(text)
+        val finish = {
+            receipts.tasks().forEach { notify(player,it,receipts) }
+            done()
+        }
         service.mailbox(home.toString()).whenComplete { parcels,error -> thread.run {
-            if(error != null) { busy.remove(player.uniqueId); failure(error); if(!quiet) text.send(player,"error"); done(); return@run }
-            if(!valid(player,home)) { busy.remove(player.uniqueId); done(); return@run }
+            if(error != null) { busy.remove(player.uniqueId); failure(error); if(!quiet) text.send(player,"error"); finish(); return@run }
+            if(!valid(player,home)) { busy.remove(player.uniqueId); finish(); return@run }
             if(!quiet && parcels.any { it.phase == "SENDING" }) text.send(player,"uncertain")
             val waiting=parcels.filter { it.phase == "WAITING" }
-            next(player,home,if(quiet) RewardDeliveryBatch.firstTask(waiting) else waiting,quiet,done)
+            next(player,home,if(quiet) RewardDeliveryBatch.firstTask(waiting) else waiting,quiet,receipts,finish)
         } }
     }
     private fun valid(p: Player,home: UUID) = !closed && p.isOnline && p.hasPermission("quest.use") &&
         integrations.island(p.uniqueId)?.id == home && integrations.allowed(home,p.uniqueId)
-    private fun next(player: Player,home: UUID,parcels: List<Parcel>,quiet: Boolean,done: () -> Unit) {
+    private fun next(player: Player,home: UUID,parcels: List<Parcel>,quiet: Boolean,receipts: RewardReceipts,done: () -> Unit) {
         val parcel = parcels.firstOrNull()
         if(parcel == null || !valid(player,home)) { busy.remove(player.uniqueId); done(); return }
         val stacks = try { split(items.build(parcel.item,player),parcel.amount) }
@@ -64,15 +69,25 @@ class MailboxDelivery(private val service: QuestService, private val integration
                     busy.remove(player.uniqueId); if(saveError != null) failure(saveError)
                     if(!quiet) text.send(player,"uncertain"); done()
                 } else {
-                    if(player.isOnline && noticesEnabled(player) && parcels.drop(1).none { it.quest==parcel.quest }) {
-                        val name=service.definitions.firstOrNull { it.id==parcel.quest }?.name
-                            ?: service.chapters.firstOrNull { "chapter:${it.id}"==parcel.quest }?.name
-                        text.send(player,"reward-delivered",mapOf("quest" to (name?.let(text::render) ?: net.kyori.adventure.text.Component.text(parcel.quest))))
-                    }
-                    next(player,home,parcels.drop(1),quiet,done)
+                    receipts.record(parcel,stacks.first().effectiveName())
+                    if(parcels.drop(1).none { it.quest==parcel.quest }) notify(player,parcel.quest,receipts)
+                    next(player,home,parcels.drop(1),quiet,receipts,done)
                 }
             } }
         } }
+    }
+    private fun notify(player: Player,quest: String,receipts: RewardReceipts) {
+        val rewards = receipts.take(quest) ?: return
+        if(closed || !player.isOnline || !noticesEnabled(player)) return
+        val name=service.definitions.firstOrNull { it.id==quest }?.name
+            ?: service.chapters.firstOrNull { "chapter:${it.id}"==quest }?.name
+        var message=text.format("reward-delivered",mapOf(
+            "quest" to (name?.let(text::render) ?: net.kyori.adventure.text.Component.text(quest)),
+            "rewards" to rewards))
+        // Preserve existing custom wording while adding the actual delivered item details.
+        if(!text.language.getString("reward-delivered")!!.contains("<rewards>"))
+            message=message.append(net.kyori.adventure.text.Component.newline()).append(rewards)
+        player.sendMessage(message)
     }
     override fun close() { closed=true; busy.clear(); sending.clear() }
     companion object {

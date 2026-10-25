@@ -7,7 +7,7 @@ Neuron task_id: task_aa99ce45797343f88e6f。
 Genlite 26.3；DreamSkyblock 上游26.2，本轮依赖构建显式覆盖paper.version=26.3.build.28-alpha。
 JAVA_HOME=C:/Program Files/Zulu/zulu-25。
 
-当前配置：10份新增任务资源（6主线+4支线），连同旧4个共享任务与个人NPC引导共11主线4支线；optional支线不参与章节奖励；真实机器等级状态补读；成功绑定/切换/传输/领取计数；真实生成器实体来源标记拾取；DreamSkyblock成功打开菜单事件；本地战斗与浏览操作持久化；幂等配置迁移留存原文备份；SQLite表结构仍5，不清空旧数据。
+当前配置：9份新增任务资源（6主线+3支线），连同旧4个共享任务与个人NPC引导共11主线3支线；optional支线不参与章节奖励；真实机器等级状态补读；成功绑定/切换/传输/领取计数；真实生成器实体来源标记拾取；本地战斗与浏览操作持久化；幂等配置迁移留存原文备份；SQLite表结构仍5，不清空旧数据。“家园的成长”支线已归档。
 已增加TutorialProgressTest和TutorialUpgradeTest，完整构建日志 .build/tutorial-build.log。
 兼容扩展由tools/make_tutorial_compat.py在make_compat末尾生成。不要直接手改自动生成覆盖文件。
 

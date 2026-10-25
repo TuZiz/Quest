@@ -33,27 +33,35 @@ class TabQuestProjection(private val text: TextRenderer, private val width: Int)
         } else {
             val chapter=journal.chapters.firstOrNull { quest.definition.id in it.definition.quests }
             if(chapter!=null) wrap(label(chapter.definition.name).replace(Regex("\\s*·\\s*"),"·")).take(1).forEach { lines+=line("chapter-line","chapter" to it) }
-            wrap(label(quest.definition.name)).take(2).forEach { lines+=line("quest-line","quest" to it) }
             val objective=quest.progress.firstOrNull { it.progress<it.objective.target } ?: quest.progress.firstOrNull()
+            lines+=styledLines("quest-line",TextRenderer.values("quest" to label(quest.definition.name),
+                "progress" to (objective?.let { it.progress.coerceAtMost(it.objective.target) } ?: 0),
+                "target" to (objective?.objective?.target ?: 0))).take(2)
             if(objective!=null) {
                 lines+=styledLines("objective-line",mapOf("objective" to text.render(objective.objective.description))).take(3)
-                lines+=line("progress-line","progress" to objective.progress.coerceAtMost(objective.objective.target),"target" to objective.objective.target)
+                // Customized legacy names can omit inline counts; retain their separate progress row.
+                if(text.language.getString("tab.quest-line")?.let { "<progress>" in it && "<target>" in it } != true)
+                    lines+=line("progress-line","progress" to objective.progress.coerceAtMost(objective.objective.target),"target" to objective.objective.target)
                 if(quest.progress.size>1) lines+=line("objectives-line","completed" to quest.progress.count { it.progress>=it.objective.target },"total" to quest.progress.size)
             }
 
         }
-        val result=MutableList(MAIN_LINES) { lines.getOrElse(it) { "" } }
-        result+=""
-        result+=mini.serialize(text.format("tab-groups.side-heading"))
+        val sideLines=mutableListOf<String>()
         val side=journal.quests.filter { it.definition.category==QuestCategory.SIDE && it.status==QuestStatus.ACTIVE }
-        if(side.isEmpty()) result+=mini.serialize(text.format("tab-groups.side-empty"))
+        if(side.isEmpty()) sideLines+=mini.serialize(text.format("tab-groups.side-empty"))
         else side.forEach { q ->
             val objective=q.progress.firstOrNull { it.progress<it.objective.target } ?: q.progress.firstOrNull()
             val values=TextRenderer.values("quest" to label(q.definition.name),"progress" to (objective?.progress ?: 0),"target" to (objective?.objective?.target ?: 0))
-            result+=mini.serialize(text.format("tab-groups.side-entry",values))
-            if(objective!=null) result+=styledWrap.lines(text.format("tab-groups.side-objective",mapOf("objective" to text.render(objective.objective.description)))).take(1).map(mini::serialize)
-            else result+=""
+            sideLines+=styledWrap.lines(text.format("tab-groups.side-entry",values),2).map(mini::serialize)
+            if(objective!=null) sideLines+=styledWrap.lines(text.format("tab-groups.side-objective",mapOf("objective" to text.render(objective.objective.description))),2).map(mini::serialize)
+            else sideLines+=""
         }
+        // Reclaim empty main rows before taking space from actual task text.
+        val mainRows=maxOf(lines.size,minOf(MAIN_LINES,LINE_COUNT-2-sideLines.size))
+        val result=MutableList(mainRows) { lines.getOrElse(it) { "" } }
+        result+=""
+        result+=mini.serialize(text.format("tab-groups.side-heading"))
+        result+=sideLines
         return pad(result.take(LINE_COUNT))
     }
 
@@ -61,7 +69,7 @@ class TabQuestProjection(private val text: TextRenderer, private val width: Int)
     private fun label(value: String) = raw(value).trimStart('✦', '▪', ' ')
     private fun line(key: String, vararg values: Pair<String, Any>) = mini.serialize(text.format("tab.$key", TextRenderer.values(*values)))
     private fun styledLines(key: String, values: Map<String, Component>) =
-        styledWrap.lines(text.format("tab.$key", values)).map(mini::serialize)
+        styledWrap.lines(text.format("tab.$key", values), continuationIndent = 2).map(mini::serialize)
     private fun pad(lines: List<String>) = List(LINE_COUNT) { lines.getOrElse(it) { "" } }
 
     private fun wrap(value: String): List<String> {

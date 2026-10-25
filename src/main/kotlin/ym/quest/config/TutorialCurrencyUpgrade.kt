@@ -13,7 +13,7 @@ object TutorialCurrencyUpgrade {
         val chapterFiles=ChapterConfigUpgrade.files(root.resolve("chapters"))
         val chapter=chapterFiles.singleOrNull {yaml(Files.readString(it)).getString("id")=="sky_awakening"} ?: return
         val bundled=yaml(resource(ChapterConfigUpgrade.defaultFile))
-        val side=setOf("更多的资源","自由的生产","家园的成长","初次试炼")
+        val side=setOf("更多的资源","自由的生产","初次试炼")
         val names=TutorialUpgrade.files+listOf("星海启航","放置生成器","能源启动","第一批资源")
         val defaults=names.associate { name ->
             val path="quests/第一章/"+(if(name in side) "支线/" else "")+"$name.yml"

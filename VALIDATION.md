@@ -368,3 +368,27 @@ HUD运行投影改用projectGrouped：上半区MAIN，下半区选中SIDE或首�
 - Leaf 正式目录直接部署并校验 SHA256：Quest `3068592d0271dd7e567df5c80c131e6705c805f5eac934270742ff62217b1860`；Genlite `e7eb1ec1494f8776f93fa3ad0bc74c582a69e3244ee5cf579e608122426d51d1`。
 - 备份：`C:/Users/32633/Desktop/leaf/plugins/Quest/backups/release-20261024-193216`；发布记录：`target/verification/latest-release-deployment.json`。
 - 未启动服务端，启动后监听器注册、真实任务交互与客户端观感待实测；没有修改玩家数据与奖励记录。Shade 提示重复 manifest/module-info 为依赖已有提示，最终包检查通过。
+
+### 2026-10-24 奖励到账明细
+- `MailboxDelivery` 在背包写入且 DELIVERED 状态保存成功后，按任务汇总本次实际交付的物品名称与数量，名称来自发放 ItemStack.effectiveName（沿用 CraftEngine）。同 ID 汇总、同包裹去重，部分交付中断只通知已确认部分。
+- 已有自定义到账文案保留；未含 rewards 占位符时附加明细。新增 item/separator 语言键幂等追加，保留未知字段与注释；新默认文案使用 RGB。
+- Java25/Paper26.3 Maven package 成功，7 项相关测试通过（3 项明细汇总/部分明细非斜体/语言迁移，2 项自动奖励防重，2 项资源检查）。本次未重跑未受影响的完整测试。
+- Leaf 语言文件已备份并仅更新已知旧默认通知、补齐两键。新 JAR 校验后暂存 plugins/update/Quest-1.0.0.jar，SHA256 b1d218e4a29e098717a1b5490692376d605db5dbbe2d285c616db205286c165c。
+- 备份 plugins/Quest/backups/reward-details-20261024-194634。未修改玩家数据或奖励交付记录；实际玩家收取与断线重连通知待完整重启后实测。
+
+## 2026-10-24 TAB 主支线排版统一
+- 移除 TAB 左侧固定“星轨任务”列头，只保留 Quest 输出的“✦ 主线任务”。
+- 主线使用“▪ 任务名 进度/目标”，章节与目标缩进两个空格，目标换行继续缩进；下方支线区域不变。
+- TabTextUpgrade 仅替换已知旧默认，保留自定义文案、注释、未知字段和 CRLF；迁移带原文备份且幂等。自定义任务行未配置数量时保留单独进度行。
+- Maven 离线 package 成功：TabQuestProjectionTest 9、TabTextWrapTest 2、TabTextUpgradeTest 1、ResourcesTest 2、RewardReceiptsTest 3，共 17 项通过。报告：target/verification/tab-style-build.log。
+- JAR 已审核：无 Paper/Bukkit API、测试或贴图字体打包。Quest 和 TAB 服务端配置已备份后增量同步；新 JAR 位于 Leaf/plugins/update/Quest-1.0.0.jar，SHA256=26ad0a2d3d7fa67554094a8143c29142ee0df61101bdfb143422224885297389。
+- 备份：C:/Users/32633/Desktop/leaf/plugins/Quest/backups/tab-main-style-20261024-204622。未修改玩家数据库和奖励记录。
+- 完整重启后生效；未执行真人客户端观感验收，不宣称已实服显示通过。
+
+## 2026-10-25 移除家园的成长与支线目标截断修复
+- 第一章保留3条支线；移除 home_growth 默认资源、章节可选入口和首次导出列表，任务奖励文档同步为全章铜币8枚、银币2枚（可兑换28金币）。
+- retire-home-growth-v1 迁移按任务ID归档旧定义与章节引用，完整原文保存在 .migrations/retire-home-growth-v1；不修改SQLite历史进度和领奖记录。默认资源与有自定义文件名的旧定义均已验证。
+- TAB支线目标不再只保留第一行；名称/目标按宽度换行，续行保留两空格与颜色，必要时回收主线空白行。真实默认3条支线同时显示时，逐一搭配第一章所有主线验证目标完整保留。
+- 22项相关测试及Maven package通过：ResourcesTest 2、RetiredHomeGrowthUpgradeTest 1、TabQuestProjectionTest 10、TabTextWrapTest 2、TutorialLevelTwoUpgradeTest 2、TutorialProgressTest 3、TutorialUpgradeTest 2。
+- 已用编译后的真实迁移器归档Leaf配置；JAR审核确认无已退役任务资源、服务端API、测试及贴图字体。新包暂存Leaf/plugins/update/Quest-1.0.0.jar，SHA256=31614c45e3854e332f94fd6c23945d68f25c15fc71cd9c928760f74b27a0a8bb。
+- 前版待更新JAR备份至Leaf/plugins/Quest/backups/retire-home-tab-20261025-140340。需完整重启；未执行真人客户端视觉验收。

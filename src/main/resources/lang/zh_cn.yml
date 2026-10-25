@@ -50,9 +50,9 @@ tab:
   done: '<#A8FF78>✦ <bold>当前阶段任务已全部达成</bold><#E0F7FA>，继续建设你的空岛吧！'
   waiting: '<#C2E9FB>⏳ 正在等待下一项任务解锁…'
   state-line: '<#C2E9FB><value>'
-  chapter-line: '<#94A3B8>▪ <chapter>'
-  quest-line: '<#FFD700>✦ <bold><quest></bold>'
-  objective-line: '<#94A3B8>目标  <#E2E8F0><objective>'
+  chapter-line: '<#94A3B8>  <chapter>'
+  quest-line: '<#C2E9FB>▪ <quest> <#67E8F9><progress><#7F8C8D>/<#89F7FE><target>'
+  objective-line: '<#94A3B8>  目标：<#E2E8F0><objective>'
   progress-line: '<#94A3B8>进度  <#67E8F9><bold><progress></bold> <#7F8C8D>/ <#89F7FE><target>'
   objectives-line: '<#94A3B8>已达成  <#67E8F9><bold><completed></bold> <#7F8C8D>/ <#89F7FE><total>'
   hint-line: '<#67E8F9><bold><step>.</bold> <#E2E8F0><hint>'
@@ -69,7 +69,9 @@ tab-groups:
 
 # ── 全局自动化与奖励交付提示 ──────────────────────────────────────────────
 automatic-rewards: '<#89F7FE>💡 任务进度自动追踪，<#A8FF78>达成后奖励自动派发<#89F7FE>，无需手动打开菜单领取。'
-reward-delivered: '<#A8FF78>✔ <#78FFD6><quest> <#E0F7FA>的完成奖励已发放至你的背包。'
+reward-delivered: '<#A8FF78>✔ <#78FFD6><quest> <#E0F7FA>奖励已到账：<rewards>'
+reward-delivered-item: '<item> <#FDE68A>×<amount>'
+reward-delivered-separator: '<#94A3B8>、'
 
 # ── 错误与限制提示 (柔和珊瑚红 #FF6B6B + 冰晶白 #E0F7FA) ─────────────────
 no-permission: '<#FF6B6B>✖ <#E0F7FA>抱歉，你没有使用此功能的权限。'

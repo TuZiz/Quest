@@ -7,8 +7,8 @@ import java.nio.file.Path
 /** Additive journaled migration: existing task amounts/rewards/unknown fields/comments remain untouched. */
 object TutorialUpgrade {
     val files=listOf("收获的喜悦","机械革新","收集的力量","机械的联系","自动化初体验","资源的归宿",
-        "更多的资源","自由的生产","家园的成长","初次试炼")
-    private val sideFiles=setOf("更多的资源","自由的生产","家园的成长","初次试炼")
+        "更多的资源","自由的生产","初次试炼")
+    private val sideFiles=setOf("更多的资源","自由的生产","初次试炼")
     fun migrate(root: Path, resource: (String) -> String) {
         val plan=ConfigMigrationPlan(root,"chapter-one-tutorial-v1")
         if(plan.resume() || Files.exists(root.resolve(".migrations/chapter-one-tutorial-v1/complete"))) return

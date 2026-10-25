@@ -60,7 +60,10 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         TutorialCurrencyUpgrade.migrate(plugin.dataFolder.toPath()) { path ->
             checkNotNull(plugin.getResource(path)) { "Missing tutorial resource $path" }.bufferedReader(Charsets.UTF_8).use { it.readText() }
         }
+        RetiredHomeGrowthUpgrade.migrate(plugin.dataFolder.toPath())
         ResourceUpgrade.appendLanguage(plugin.dataFolder.toPath().resolve("lang/zh_cn.yml"),
+            checkNotNull(plugin.getResource("lang/zh_cn.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
+        TabTextUpgrade.migrate(plugin.dataFolder.toPath(),
             checkNotNull(plugin.getResource("lang/zh_cn.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
         SidebarTextUpgrade.migrate(plugin.dataFolder.toPath())
         fun yaml(name: String): YamlConfiguration {
@@ -162,7 +165,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         return QuestDefinition(id,text(y,"name"),y.getStringList("description"),text(y,"icon"),emptyList(),objectives,rewards,QuestCategory.valueOf(category.uppercase()),unlock)
     }
     companion object {
-        val requiredMessages = listOf("reward-delivered","no-permission","unavailable","no-island","loading","error","busy","claimed","not-complete","inventory-full","uncertain","delivered","progress","complete","reloaded","reset","usage","debug","resolved","player-only","reward-line","objective-line","status.LOCKED","status.ACTIVE","status.COMPLETE","status.CLAIMED","chapter-progress","chapter-reward-status") +
+        val requiredMessages = listOf("reward-delivered","reward-delivered-item","reward-delivered-separator","no-permission","unavailable","no-island","loading","error","busy","claimed","not-complete","inventory-full","uncertain","delivered","progress","complete","reloaded","reset","usage","debug","resolved","player-only","reward-line","objective-line","status.LOCKED","status.ACTIVE","status.COMPLETE","status.CLAIMED","chapter-progress","chapter-reward-status") +
             listOf("command-help.player","command-help.admin")
         fun validateGraph(quests: List<QuestDefinition>) {
             val byId = quests.associateBy { it.id }

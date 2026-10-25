@@ -12,7 +12,7 @@ class TutorialUpgradeTest {
     @TempDir lateinit var root: Path
     private fun resource(path: String)=Files.readString(Path.of("src/main/resources/$path"))
     private fun put(path: String,raw: String) {val p=root.resolve(path);Files.createDirectories(p.parent);Files.writeString(p,raw)}
-    @Test fun `adds fourteen tasks with independent branches while preserving old customized rewards comments and database bytes`() {
+    @Test fun `adds thirteen tasks with independent branches while preserving old customized rewards comments and database bytes`() {
         val legacy=resource(ChapterConfigUpgrade.defaultFile).substringBefore("  - quest: first_harvest")+"rewards:\n  - item: minecraft:emerald\n    amount: 9\n# 中文用户注释\nunknown: '保留'\n"
         put(ChapterConfigUpgrade.defaultFile,legacy)
         val old=resource("quests/第一章/第一批资源.yml").replace("amount: 2","amount: 7")
@@ -21,13 +21,13 @@ class TutorialUpgradeTest {
         repeat(2) {TutorialUpgrade.migrate(root,::resource)}
         val raw=Files.readString(root.resolve(ChapterConfigUpgrade.defaultFile))
         val ch=ChapterFiles.parse(YamlConfiguration().apply {loadFromString(raw)})
-        assertEquals(14,ch.quests.size);assertEquals(10,ch.requiredQuests.size);assertEquals(4,ch.optionalQuests.size)
+        assertEquals(13,ch.quests.size);assertEquals(10,ch.requiredQuests.size);assertEquals(3,ch.optionalQuests.size)
         assertTrue(raw.contains("# 中文用户注释"));assertTrue(raw.contains("unknown: '保留'"))
         assertEquals(9,ch.rewards.single().amount)
         assertEquals(old,Files.readString(root.resolve("quests/第一章/第一批资源.yml")))
         assertEquals("existing database sentinel",Files.readString(root.resolve("data/quest.db")))
         assertTrue(Files.exists(root.resolve(".migrations/chapter-one-tutorial-v1/complete")))
-        assertEquals(11,QuestTaskFiles.files(root.resolve("quests")).size)
+        assertEquals(10,QuestTaskFiles.files(root.resolve("quests")).size)
         val once=Files.readString(root.resolve(ChapterConfigUpgrade.defaultFile));TutorialUpgrade.migrate(root,::resource)
         assertEquals(once,Files.readString(root.resolve(ChapterConfigUpgrade.defaultFile)))
     }

@@ -40,7 +40,8 @@ layout:
     quest-and-players:
       slot-count: 60
       fixed-slots:
-        - '1|<#89F7FE>✦ 当前任务'
+        # 分类标题由 Quest 占位符提供，不再重复显示总标题。
+        - '1| '
         - '2|%quest_line_1%'
         - '3|%quest_line_2%'
         - '4|%quest_line_3%'

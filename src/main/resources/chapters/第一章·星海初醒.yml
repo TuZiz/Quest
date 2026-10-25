@@ -61,10 +61,6 @@ tasks:
     requires:
       - sky_start
     optional: true
-  - quest: home_growth
-    requires:
-      - sky_start
-    optional: true
   - quest: first_trial
     requires:
       - sky_start

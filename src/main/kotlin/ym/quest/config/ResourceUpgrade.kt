@@ -86,7 +86,7 @@ object ResourceUpgrade {
             old=Regex("(?m)^tab-groups:[ \t]*(?:#.*)?$").replace(old) { it.value+"\n"+line }
             replace(file,old)
         }
-        val missing = listOf("tab-groups","reward-delivered","chapter-status","chapter-progress","chapter-reward-status","notices","automatic-rewards","command-help","tab","introduction","hud","journal").filter { !existing.contains(it) }
+        val missing = listOf("tab-groups","reward-delivered","reward-delivered-item","reward-delivered-separator","chapter-status","chapter-progress","chapter-reward-status","notices","automatic-rewards","command-help","tab","introduction","hud","journal").filter { !existing.contains(it) }
         if(missing.isEmpty()) return
         // Append complete new root blocks only. Malformed existing keys are rejected by the loader.
         val lines = bundled.lines()

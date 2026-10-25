@@ -40,10 +40,12 @@ class TabQuestProjectionTest {
         })
         val lines = projection.project(JournalView(listOf(QuestView(q, QuestStatus.ACTIVE,
             listOf(ObjectiveProgress(q.objectives.single(), 0)))), listOf(ChapterView(chapter, ChapterStatus.ACTIVE, 0, false))))
-        assertEquals(listOf("✦ 主线任务","▪ 第一章·星海初醒","✦ 能源启动"),plain(lines.take(3)).split('\n'))
+        assertEquals(listOf("✦ 主线任务","  第一章·星海初醒","▪ 能源启动 0/1"),plain(lines.take(3)).split('\n'))
         val main=plain(lines.take(8))
-        assertTrue(main.contains("进度  0 / 1"))
-        assertTrue(main.replace("\n","").contains(PlainTextComponentSerializer.plainText().serialize(MiniMessage.miniMessage().deserialize(objective["description"].toString()))))
+        assertTrue(main.contains("0/1"))
+        assertTrue(main.replace("\n","").replace(" ","").contains(PlainTextComponentSerializer.plainText().serialize(MiniMessage.miniMessage().deserialize(objective["description"].toString())).replace(" ","")))
+        assertTrue(plain(listOf(lines[3])).startsWith("  目标："))
+        assertTrue(plain(listOf(lines[4])).startsWith("  "))
         assertEquals("",lines[8])
         assertEquals("✦ 支线任务",plain(listOf(lines[9])))
         assertEquals("▪ 暂无进行中的支线任务。",plain(listOf(lines[10])))
@@ -56,8 +58,7 @@ class TabQuestProjectionTest {
         Files.createDirectories(output)
         Files.writeString(output.resolve("tab-compact-preview.txt"), plain(lines.take(12)))
         Files.writeString(output.resolve("tab-emphasis-components.json"), json.joinToString(",", "[", "]"))
-        assertTrue(gson.serialize(title).contains("#FFD700", ignoreCase=true))
-        assertTrue(gson.serialize(title).contains("\"bold\":true"))
+        assertTrue(gson.serialize(title).contains("#C2E9FB", ignoreCase=true))
     }
 
     @Test fun `active objective progress and long Chinese names wrap without losing text`() {
@@ -67,8 +68,8 @@ class TabQuestProjectionTest {
             listOf(ChapterView(chapter,ChapterStatus.ACTIVE,0,false))))
         assertEquals(18,lines.size)
         val visible = plain(lines)
-        assertTrue(visible.contains("8 / 32"),visible)
-        assertTrue(visible.replace("\n","").contains("利用原石生成器获取32个原石"),visible)
+        assertTrue(visible.contains("8/32"),visible)
+        assertTrue(visible.replace("\n","").replace(" ","").contains("利用原石生成器获取32个原石"),visible)
         assertTrue(visible.contains("第一章·星海初醒"),visible)
         assertTrue(visible.contains("生成器实际生产原石"),visible)
         assertFalse(visible.contains("空岛成员共享任务进度"),visible)
@@ -82,8 +83,20 @@ class TabQuestProjectionTest {
             listOf(ObjectiveProgress(second.objectives[0],1),ObjectiveProgress(second.objectives[1],0)))),emptyList()))
         val visible=plain(lines)
         assertTrue(visible.contains("下一任务") && visible.contains("第二个目标"),visible)
-        assertTrue(visible.contains("0 / 2") && visible.contains("已达成  1 / 2"),visible)
+        assertTrue(visible.contains("0/2") && visible.contains("已达成  1 / 2"),visible)
         assertFalse(visible.contains("利用原石生成器"))
+    }
+
+    @Test fun `custom task name without counts retains separate progress`() {
+        val custom=YamlConfiguration().apply {
+            loadFromString(Files.readString(Path.of("src/main/resources/lang/zh_cn.yml")))
+            set("tab.quest-line", "<#C2E9FB>▪ <quest>")
+        }
+        val q=quest("custom").copy(name="自定义任务")
+        val lines=TabQuestProjection(TextRenderer(custom),28).project(JournalView(
+            listOf(QuestView(q,QuestStatus.ACTIVE,listOf(ObjectiveProgress(q.objectives.single(),8)))),emptyList()))
+        assertTrue(plain(lines).contains("▪ 自定义任务"))
+        assertTrue(plain(lines).contains("进度  8 / 32"))
     }
 
     @Test fun `done locked no island and unavailable states contain no placeholder leaks`() {
@@ -107,14 +120,46 @@ class TabQuestProjectionTest {
         val lines=projection.project(view)
         assertEquals(18,lines.size)
         assertTrue(plain(lines.take(8)).contains("主线目标"))
-        assertFalse(plain(lines.take(8)).contains("支线"))
-        assertTrue(plain(lines.drop(9)).contains("支线任务"))
-        side.forEach { assertTrue(plain(lines.drop(9)).contains(it.definition.name+" 1/3")) }
-        assertTrue(plain(lines.drop(9)).contains("目标："))
+        val heading=lines.indexOfFirst { plain(listOf(it))=="✦ 支线任务" }
+        assertTrue(heading>0)
+        assertFalse(plain(lines.take(heading)).contains("支线"))
+        side.forEach { assertTrue(plain(lines.drop(heading)).contains(it.definition.name+" 1/3")) }
+        assertTrue(plain(lines.drop(heading)).contains("目标："))
         assertFalse(plain(lines).contains("未解锁支线"))
         val onlySide=projection.project(JournalView(side+main.copy(status=QuestStatus.CLAIMED),emptyList()))
         assertTrue(plain(onlySide.take(8)).contains("当前主线章节已全部完成"))
-        assertFalse(plain(onlySide.take(8)).contains("支线1"))
+        val onlySideHeading=onlySide.indexOfFirst { plain(listOf(it))=="✦ 支线任务" }
+        assertFalse(plain(onlySide.take(onlySideHeading)).contains("支线1"))
+    }
+
+    @Test fun `all bundled branch goals remain complete alongside every first chapter main task`() {
+        val chapter=ChapterFiles.parse(YamlConfiguration().apply {
+            loadFromString(Files.readString(Path.of("src/main/resources/chapters/第一章·星海初醒.yml")))
+        })
+        val tasks=ym.quest.config.QuestTaskFiles.files(Path.of("src/main/resources/quests/第一章")).map { file ->
+            val y=YamlConfiguration().apply { loadFromString(Files.readString(file)) }
+            val o=y.getMapList("objectives").first()
+            val q=QuestDefinition(y.getString("id")!!,y.getString("name")!!,emptyList(),y.getString("icon")!!,emptyList(),
+                listOf(Objective(o["id"].toString(),o["type"].toString(),(o["target"] as Number).toLong(),null,o["description"].toString())),emptyList(),
+                category=if(y.getString("category")=="side") QuestCategory.SIDE else QuestCategory.MAIN)
+            QuestView(q,QuestStatus.ACTIVE,listOf(ObjectiveProgress(q.objectives.single(),0)))
+        }
+        val branches=tasks.filter { it.definition.category==QuestCategory.SIDE }
+        assertEquals(3,branches.size)
+        fun compact(value: String)=value.filterNot(Char::isWhitespace)
+        tasks.filter { it.definition.category==QuestCategory.MAIN }.forEach { main ->
+            val lines=projection.project(JournalView(listOf(main)+branches,listOf(ChapterView(chapter,ChapterStatus.ACTIVE,0,false))))
+            val visible=compact(plain(lines))
+            (listOf(main)+branches).forEach { q ->
+                val description=compact(plain(listOf(q.definition.objectives.single().description)))
+                assertTrue(visible.contains(description),"${main.definition.id}: missing ${q.definition.id}: $visible")
+            }
+            val heading=lines.indexOfFirst { plain(listOf(it))=="✦ 支线任务" }
+            assertTrue(heading>0)
+            lines.drop(heading+1).map { plain(listOf(it)) }.filter { it.isNotBlank() && !it.startsWith("▪") }.forEach {
+                assertTrue(it.startsWith("  "),it)
+            }
+        }
     }
 
     @Test fun `team journal read projection neither completes nor claims rewards`() {
@@ -130,7 +175,7 @@ class TabQuestProjectionTest {
             val memberA=projection.project(before)
             val memberB=projection.project(service.journal("island").await())
             assertEquals(memberA,memberB)
-            assertTrue(plain(memberA).contains("8 / 32"))
+            assertTrue(plain(memberA).contains("8/32"))
             assertEquals(before,service.journal("island").await())
             assertTrue(service.mailbox("island").await().isEmpty())
         } finally { db.closeAsync().await() }
@@ -167,5 +212,6 @@ class TabQuestProjectionTest {
         assertFalse(layout.getBoolean("scoreboard.enabled"))
         assertFalse(layout.getBoolean("bossbar.enabled"))
         assertTrue(layout.getBoolean("components.minimessage-support"))
+        assertEquals("1| ",layout.getStringList("layout.layouts.quest-and-players.fixed-slots").first())
     }
 }

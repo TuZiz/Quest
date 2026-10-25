@@ -29,7 +29,7 @@ class TutorialLevelTwoUpgradeTest {
     }
     @Test fun `bundled first chapter has copper silver rewards but no gold items or level above two`() {
         val paths=QuestTaskFiles.files(Path.of("src/main/resources/quests/第一章"))
-        assertEquals(14,paths.size)
+        assertEquals(13,paths.size)
         paths.forEach { path ->
             val y=YamlConfiguration().apply {loadFromString(Files.readString(path))}
             val rewards=y.getMapList("rewards")
