@@ -16,7 +16,7 @@ objectives:
   - id: 'experience'
     type: 'genlite.extract'
     target: 8
-    description: '<#E2E8F0>从收集器中成功取出 <#78FFD6>8</#78FFD6> 个资源'
+    description: '<#E2E8F0>从收集器中成功取出<newline><#78FFD6>8</#78FFD6> 个资源'
 
 rewards:
   - item: 'genlite:fuel'  # 燃料

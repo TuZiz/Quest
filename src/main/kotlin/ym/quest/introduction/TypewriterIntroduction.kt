@@ -1,97 +1,90 @@
 package ym.quest.introduction
 
-import com.typewritermc.core.entries.Ref
 import com.typewritermc.core.interaction.InteractionContext
-import com.typewritermc.engine.paper.entry.Criteria
-import com.typewritermc.engine.paper.entry.Modifier
 import com.typewritermc.engine.paper.entry.TriggerableEntry
-import com.typewritermc.engine.paper.entry.dialogue.DialogueMessenger
-import com.typewritermc.engine.paper.entry.dialogue.MessengerState
-import com.typewritermc.engine.paper.entry.dialogue.TickContext
 import com.typewritermc.engine.paper.entry.dialogue.currentDialogue
 import com.typewritermc.engine.paper.entry.dialogue.isInDialogue
 import com.typewritermc.engine.paper.entry.entries.DialogueEntry
-import com.typewritermc.engine.paper.entry.entries.SpeakerEntry
 import com.typewritermc.engine.paper.entry.entries.EntryTrigger
 import com.typewritermc.engine.paper.entry.triggerFor
-import com.typewritermc.engine.paper.interaction.Confirmation
-import com.typewritermc.engine.paper.interaction.interruptInteraction
 import com.typewritermc.engine.paper.entry.temporal.isPlayingTemporal
 import com.typewritermc.engine.paper.content.isInContentInteraction
-import com.typewritermc.engine.paper.interaction.chatHistory
-import net.kyori.adventure.text.Component
+import com.typewritermc.engine.paper.events.AsyncDialogueEndEvent
+import com.typewritermc.engine.paper.interaction.interruptInteraction
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.HandlerList
+import org.bukkit.event.Listener
+import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.scheduler.BukkitTask
 import ym.quest.platform.GameThread
-import ym.quest.text.TextRenderer
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
 
-/** Thin DialogueEntry adapter; Typewriter owns sessions, input and dialogue teardown. No separate story engine. */
-class TypewriterIntroduction(private val thread: GameThread, private val text: TextRenderer) : IntroductionDialogue {
-    private val entries = ConcurrentHashMap<UUID, IntroductionEntry>()
-    @Volatile private var closed = false
-    override fun start(player: Player, lines: List<String>, finished: (Boolean) -> Unit): Boolean {
-        if(closed || player.isInDialogue || player.isPlayingTemporal() || player.isInContentInteraction || entries.containsKey(player.uniqueId)) return false
-        val entry = IntroductionEntry(player.uniqueId,lines,thread,text) { success ->
-            thread.run { if(!closed) { entries.remove(player.uniqueId); finished(success) } }
-        }
-        entries[player.uniqueId] = entry
-        try { EntryTrigger(entry).triggerFor(player,InteractionContext(emptyMap())) }
-        catch(e: Exception) { entries.remove(player.uniqueId,entry); entry.active.set(false); throw e }
-        catch(e: LinkageError) { entries.remove(player.uniqueId,entry); entry.active.set(false); throw e }
+/** Main-thread bridge to published Typewriter entries; no text, messenger or confirmation implementation. */
+class TypewriterIntroduction(private val plugin: JavaPlugin, private val thread: GameThread,
+    private val entryId: String) : IntroductionDialogue, Listener {
+    private class Session(val player: Player,val completion: DialogueCompletion,val entries: Set<String>) {
+        var endTask: BukkitTask?=null
+    }
+    private val sessions=ConcurrentHashMap<UUID,Session>()
+    private var closed=false
+    init { plugin.server.pluginManager.registerEvents(this,plugin) }
+
+    override fun start(player: Player,finished: (Boolean) -> Unit): Boolean {
+        if(closed || player.isInDialogue || player.isPlayingTemporal() || player.isInContentInteraction || sessions.containsKey(player.uniqueId)) return false
+        val entry=TypewriterKotlinBoundary.entry(entryId) as? DialogueEntry
+            ?: error("Typewriter dialogue entry '$entryId' missing; check Typewriter/pages and matching BasicExtension")
+        val owned=reachable(entry)
+        val completion=DialogueCompletion(finished)
+        val s=Session(player,completion,owned)
+        sessions[player.uniqueId]=s
+        // Official context-string variable supplies the terminal console action's per-session command.
+        val context=TypewriterKotlinBoundary.completionContext(
+            "quest:quest _typewriter-complete ${player.uniqueId} ${completion.token}")
+        try { EntryTrigger(entry).triggerFor(player,context) }
+        catch(e: Exception) { sessions.remove(player.uniqueId,s); completion.cancel(); throw e }
+        catch(e: LinkageError) { sessions.remove(player.uniqueId,s); completion.cancel(); throw e }
         return true
     }
+    private fun reachable(first: TriggerableEntry): Set<String> {
+        val found=linkedSetOf<String>()
+        val pending=ArrayDeque<TriggerableEntry>().apply { add(first) }
+        while(pending.isNotEmpty()) {
+            val entry=pending.removeFirst()
+            if(!found.add(entry.id)) continue
+            require(found.size<=256) { "Typewriter guide '$entryId' exceeds 256 reachable entries" }
+            entry.triggers.mapNotNull { it.get() }.forEach(pending::addLast)
+        }
+        return found
+    }
+    override fun complete(playerId: UUID,token: UUID): Boolean {
+        val s=sessions[playerId] ?: return false
+        if(!s.player.isOnline || s.completion.token!=token) return false
+        sessions.remove(playerId,s);s.endTask?.cancel()
+        return s.completion.complete(token)
+    }
+    @EventHandler fun ended(event: AsyncDialogueEndEvent) {
+        val s=sessions[event.player.uniqueId] ?: return
+        thread.run {
+            if(closed || sessions[s.player.uniqueId]!==s) return@run
+            s.endTask?.cancel()
+            // Native final actions are queued on Paper's sync dispatcher. Let their nonce callback win.
+            s.endTask=plugin.server.scheduler.runTaskLater(plugin,Runnable {
+                if(s.player.currentDialogue?.id !in s.entries && sessions.remove(s.player.uniqueId,s)) s.completion.interrupt()
+            },2)
+        }
+    }
     override fun cancel(player: Player) {
-        val entry = entries.remove(player.uniqueId) ?: return
-        entry.active.set(false)
-        // Never interrupt another plugin's subsequent conversation.
-        if(player.currentDialogue === entry) player.interruptInteraction(InteractionContext(emptyMap()))
+        val s=sessions.remove(player.uniqueId) ?: return
+        s.endTask?.cancel();s.completion.cancel()
+        if(plugin.server.pluginManager.isPluginEnabled("Typewriter") && player.currentDialogue?.id in s.entries)
+            player.interruptInteraction(InteractionContext(emptyMap()))
     }
     override fun close() {
         closed=true
-        entries.values.toList().forEach { entry ->
-            org.bukkit.Bukkit.getPlayer(entry.playerId)?.let(::cancel)
-            entry.active.set(false)
-        }
-        entries.clear()
-    }
-
-    private class IntroductionEntry(val playerId: UUID, val lines: List<String>, val thread: GameThread,
-        val text: TextRenderer, val finished: (Boolean) -> Unit) : DialogueEntry {
-        val active = AtomicBoolean(true)
-        override val id = "quest_introduction_$playerId"
-        override val name = id
-        override val criteria = emptyList<Criteria>()
-        override val modifiers = emptyList<Modifier>()
-        override val triggers = emptyList<Ref<TriggerableEntry>>()
-        override val speaker = TypewriterKotlinBoundary.emptySpeaker()
-        override fun messenger(player: Player, context: InteractionContext) = object : DialogueMessenger<IntroductionEntry>(player,context,this) {
-            private var confirmation: Confirmation? = null
-            private var reported = false
-            override fun init() {
-                if(!active.get()) { state=MessengerState.CANCELLED; return }
-                super.init()
-                confirmation = TypewriterKotlinBoundary.confirm(player) { if(active.get()) completeOrFinish() }
-                thread.run {
-                    if(active.get() && player.isOnline) {
-                        val content=lines.fold(Component.empty()) { result,line -> result.append(text.render(line)).append(Component.newline()) }
-                            .append(text.format("introduction.confirm"))
-                        // Use Typewriter's permitted dialogue message, otherwise its chat blocker hides the prompt.
-                        player.sendMessage(player.chatHistory.composeDarkMessage(content))
-                    }
-                }
-            }
-            override fun tick(context: TickContext) {
-                if(!active.get()) state=MessengerState.CANCELLED
-            }
-            override fun end() {
-                // end() in beta-177 changes CANCELLED/RUNNING to FINISHED itself. Read BEFORE super.end().
-                val completed = state == MessengerState.FINISHED
-                super.end()
-                if(!reported) { reported=true; if(active.getAndSet(false)) finished(completed) }
-            }
-            override fun dispose() { confirmation?.dispose(); confirmation=null; super.dispose() }
-        }
+        HandlerList.unregisterAll(this)
+        sessions.values.toList().forEach { cancel(it.player) }
+        sessions.clear()
     }
 }

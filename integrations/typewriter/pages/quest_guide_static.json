@@ -1,0 +1,26 @@
+{
+  "id": "quest_guide_static",
+  "name": "Quest · 引航员角色",
+  "type": "static",
+  "priority": 0,
+  "entries": [
+    {
+      "id": "quest_guide_speaker",
+      "name": "quest_guide_speaker",
+      "type": "simple_speaker",
+      "displayName": "<gradient:#89F7FE:#C4B5FD>星辰引航员</gradient>"
+    },
+    {
+      "id": "quest_guide_context_command",
+      "name": "quest_guide_context_command",
+      "type": "interaction_context_string_variable"
+    },
+    {
+      "id": "quest_guide_callback_argument",
+      "name": "quest_guide_callback_argument",
+      "type": "string_argument",
+      "children": [],
+      "triggers": []
+    }
+  ]
+}

@@ -74,7 +74,11 @@ class QuestHudBridge(private val plugin: JavaPlugin, private val service: QuestS
             val personalView=personal(player)
             if(personalView!=null && personalView.quests.isEmpty()) { s.tracker=null;return@forEach }
             if(home == null || integrations.islands?.ready() != true) {
-                s.tracker=personalView?.let { projection.projectGrouped(it,prefs.trackedQuest,prefs.autoTracking) };return@forEach
+                s.tracker=personalView?.let { projection.projectGrouped(it,prefs.trackedQuest,prefs.autoTracking) }
+                    ?: if(home==null && integrations.islands?.ready()==true)
+                        projection.beforeIsland(service.definitions,service.chapters,prefs.trackedQuest,prefs.autoTracking)
+                    else null
+                return@forEach
             }
             groups.getOrPut(home) { mutableListOf() }.add(s)
         }

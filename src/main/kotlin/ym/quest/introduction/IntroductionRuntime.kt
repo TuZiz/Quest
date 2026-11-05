@@ -27,7 +27,7 @@ class IntroductionRuntime(private val plugin: JavaPlugin, db: Database, private 
     private class State(val player: Player) {
         var loaded=false; var failed=false; var done=false; var saving=false
         var legacyCandidate=player.hasPlayedBefore()
-        var session: Any? = null; var fallback=false; var replay=false; var deadline=0L; var cooldown=0L
+        var cooldown=0L
     }
     private val store = IntroductionStore(db)
     private val states = mutableMapOf<UUID,State>()
@@ -35,16 +35,12 @@ class IntroductionRuntime(private val plugin: JavaPlugin, db: Database, private 
     private val projection = TabQuestProjection(text,width)
     private val actionBar = IntroductionActionBar(text)
     private var ady: AdyeshachInteraction? = null
-    private var dialogue: IntroductionDialogue? = null
     private var closed = false
     private val timer = plugin.server.scheduler.runTaskTimer(plugin,Runnable {
         if(!closed) states.values.toList().forEach {
             resolveLegacy(it)
-            if(it.session != null && System.currentTimeMillis() > it.deadline) {
-                cancel(it); if(it.player.isOnline) text.send(it.player,"introduction.interrupted")
-            }
             actionBar.refresh(it.player, valid(it) && it.player.hasPermission("quest.use") &&
-                it.loaded && !it.failed && !it.done && !it.saving && it.session == null)
+                it.loaded && !it.failed && !it.done && !it.saving)
         }
     },20,20)
     init {
@@ -57,9 +53,7 @@ class IntroductionRuntime(private val plugin: JavaPlugin, db: Database, private 
         if(ady == null && plugin.server.pluginManager.isPluginEnabled("Adyeshach")) try {
             ady=AdyeshachInteraction(plugin,thread,settings.npcId,::interact)
         } catch(e: Exception) { plugin.logger.log(Level.SEVERE,"Introduction NPC binding failed; 引导.yml:npc-id=${settings.npcId}",e) }
-        if(dialogue == null && plugin.server.pluginManager.isPluginEnabled("Typewriter")) try {
-            dialogue=TypewriterIntroduction(thread,text)
-        } catch(e: LinkageError) { plugin.logger.log(Level.WARNING,"Typewriter beta-177 API unavailable; introduction uses chat confirmation",e) }
+
     }
     private fun valid(s: State) = !closed && s.player.isOnline && states[s.player.uniqueId] === s
     private fun load(player: Player) {
@@ -76,7 +70,7 @@ class IntroductionRuntime(private val plugin: JavaPlugin, db: Database, private 
     private fun resolveLegacy(s: State) {
         if(!s.loaded || s.failed || s.saving || s.done || !s.legacyCandidate || integrations.islands?.ready() != true) return
         s.legacyCandidate=false
-        if(integrations.island(s.player.uniqueId) != null) { cancel(s); save(s,IntroductionOutcome.LEGACY) }
+        if(integrations.island(s.player.uniqueId) != null) { save(s,IntroductionOutcome.LEGACY) }
     }
     fun decorate(player: Player, view: JournalView): JournalView {
         val s=states[player.uniqueId] ?: return view
@@ -115,33 +109,11 @@ class IntroductionRuntime(private val plugin: JavaPlugin, db: Database, private 
         if(s.failed) { text.send(player,"error"); return }
         resolveLegacy(s)
         if(!s.loaded || s.saving || (s.legacyCandidate && integrations.islands?.ready() != true)) { text.send(player,"busy"); return }
-        if(s.session != null || System.currentTimeMillis() < s.cooldown) return
+        if(System.currentTimeMillis() < s.cooldown) return
         s.cooldown=System.currentTimeMillis()+750
-        if(s.done) { openIsland(player); return }
-        start(s,false)
-    }
-    private fun start(s: State, replay: Boolean) {
-        if(!valid(s) || s.session != null || s.saving) return
-        val ticket=Any(); s.session=ticket; s.replay=replay; s.fallback=false
-        actionBar.clear(s.player)
-        s.deadline=System.currentTimeMillis()+settings.timeoutSeconds*1000L
-        val lines=text.language.getStringList("introduction.dialogue")
-        if(dialogue != null) try {
-            if(dialogue!!.start(s.player,lines) { complete ->
-                if(valid(s) && s.session === ticket) {
-                    if(complete) finish(s) else { cancel(s); text.send(s.player,"introduction.interrupted") }
-                }
-            }) return
-            cancel(s); text.send(s.player,"busy"); return
-        } catch(e: Exception) { log(s,"start-dialogue; falling back to chat",e) }
-          catch(e: LinkageError) { log(s,"Typewriter API; falling back to chat",e) }
-        s.fallback=true
-        lines.forEach { s.player.sendMessage(text.render(it)) }
-        text.send(s.player,"introduction.fallback-confirm")
-    }
-    private fun finish(s: State) {
-        val replay=s.replay; cancel(s)
-        if(replay) text.send(s.player,"introduction.complete") else save(s,IntroductionOutcome.DONE)
+        // The first successful NPC interaction opens the existing island GUI immediately.
+        // Only the personal meet_guide marker is saved; island.member remains a real membership check.
+        if(openIsland(player) && !s.done) save(s,IntroductionOutcome.DONE)
     }
     private fun save(s: State, outcome: IntroductionOutcome) {
         if(s.saving) return
@@ -164,37 +136,35 @@ class IntroductionRuntime(private val plugin: JavaPlugin, db: Database, private 
         resolveLegacy(s)
         if(!s.loaded || s.saving || (s.legacyCandidate && integrations.islands?.ready() != true)) { text.send(player,"busy"); return }
         when(action) {
-            "finish" -> if(s.session != null && s.fallback) finish(s) else text.send(player,"introduction.no-dialogue")
             "skip" -> {
-                cancel(s)
-                if(!s.done) save(s,IntroductionOutcome.SKIPPED) else text.send(player,"introduction.complete")
+                if(openIsland(player) && !s.done) save(s,IntroductionOutcome.SKIPPED)
             }
-            "replay" -> if(s.done) start(s,true) else text.send(player,"introduction.npc-unavailable")
+            "replay" -> interact(player)
             else -> text.send(player,"introduction.help")
         }
     }
-    private fun openIsland(player: Player) {
-        if(integrations.islands?.ready() != true) { text.send(player,"unavailable"); return }
-        // Exact namespaced public player command, verified against the local DreamSkyblock HomeCommand.
-        // DreamSkyblock owns permission checks and chooses create/join versus island management GUI.
-        if(!plugin.server.dispatchCommand(player,"dreamskyblock:home gui")) text.send(player,"unavailable")
+    private fun openIsland(player: Player): Boolean {
+        if(integrations.islands?.ready() != true) { text.send(player,"unavailable"); return false }
+        if(!player.hasPermission("dreamskyblock.use")) { text.send(player,"no-permission"); return false }
+        // DreamSkyblock chooses its create/join GUI for newcomers and management GUI for members.
+        val dispatched=player.performCommand("dreamskyblock:home gui")
+        if(!dispatched) text.send(player,"unavailable")
+        return dispatched
     }
-    private fun cancel(s: State) {
-        s.session=null; s.fallback=false; s.replay=false
-        dialogue?.cancel(s.player)
-    }
+    /** Retired Typewriter pages may still invoke this endpoint; they cannot advance any progress. */
+    @Suppress("UNUSED_PARAMETER")
+    fun dialogueComplete(playerId: UUID,token: UUID) = Unit
     private fun log(s: State, operation: String, error: Throwable) = plugin.logger.log(Level.SEVERE,
         "Introduction $operation; player=${s.player.uniqueId}; task=${settings.taskId}; NPC=${settings.npcId}; progress retained",error)
     @EventHandler fun join(e: PlayerJoinEvent) = load(e.player)
-    @EventHandler fun quit(e: PlayerQuitEvent) { actionBar.clear(e.player); states.remove(e.player.uniqueId)?.let(::cancel) }
-    @EventHandler fun enabled(e: PluginEnableEvent) { if(e.plugin.name in setOf("Adyeshach","Typewriter")) connect() }
+    @EventHandler fun quit(e: PlayerQuitEvent) { actionBar.clear(e.player); states.remove(e.player.uniqueId) }
+    @EventHandler fun enabled(e: PluginEnableEvent) { if(e.plugin.name == "Adyeshach") connect() }
     @EventHandler fun disabled(e: PluginDisableEvent) {
         if(e.plugin.name == "Adyeshach") { ady?.close(); ady=null }
-        if(e.plugin.name == "Typewriter") { states.values.forEach(::cancel); dialogue?.close(); dialogue=null }
     }
     override fun close() {
         if(closed) return
         closed=true; timer.cancel(); actionBar.close(); ady?.close(); ady=null
-        states.values.forEach(::cancel); dialogue?.close(); dialogue=null; states.clear(); HandlerList.unregisterAll(this)
+        states.clear(); HandlerList.unregisterAll(this)
     }
 }

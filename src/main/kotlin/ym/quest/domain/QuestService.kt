@@ -15,6 +15,7 @@ class QuestService(private val db: Database) {
         val ordered = ChapterGraph.prepare(next,nextChapters)
         // Reconcile completed legacy islands without starting counters from cached facts.
         db.transaction { c ->
+            TrialCombatProgressUpgrade.migrate(c,ordered)
             val homes = c.rows("SELECT home FROM facts UNION SELECT home FROM objectives UNION SELECT home FROM completions UNION SELECT home FROM claims") { it.getString(1) }
             homes.forEach { home -> repeat(nextChapters.size+1) { chapterStore.refresh(c,home,nextChapters,progress) } }
         }

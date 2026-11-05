@@ -1,5 +1,5 @@
-# 第一章的个人前置任务：交谈即可完成，无需先创建或加入空岛。
-# 交谈前每秒刷新 ActionBar；对话期间暂停，完成或跳过后停止。
+# 第一章的个人前置任务：首次交互打开空岛界面即可完成，无需先创建或加入空岛。
+# 首次交互前每秒刷新 ActionBar；打开界面并保存完成后停止。
 # 不参与空岛共享奖励结算。
 schema-version: 1
 enabled: true
@@ -9,5 +9,7 @@ npc-id: '新人'
 chapter-id: 'sky_awakening'
 # 永久进度键，修改会产生一个新的个人任务。
 task-id: 'meet_guide'
-# 对话超时仅取消，不完成任务；单位秒，范围 15–600。
+# 兼容旧配置保留；首次交互已取消对话，此字段不再触发 Typewriter。
+typewriter-entry-id: 'quest_guide_01'
+# 兼容旧配置保留，当前不启动对话；单位秒，范围 15–600。
 timeout-seconds: 120

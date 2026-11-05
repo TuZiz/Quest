@@ -47,7 +47,7 @@ class ResourcesTest {
             renderer.render("<#7DD3FC>实际动态参数")
         }
         assertEquals(setOf("chapters.yml","tasks.yml","settings.yml"),Files.list(root.resolve("gui")).use { paths -> paths.map { it.fileName.toString() }.toList().toSet() })
-        for(name in listOf("lang/zh_cn.yml","gui/chapters.yml","gui/tasks.yml","gui/settings.yml","chapters/第一章·星海初醒.yml","quests/第一章/能源启动.yml","quests/第一章/星海启航.yml","quests/第一章/放置生成器.yml","quests/第一章/第一批资源.yml")) {
+        for(name in listOf("lang/zh_cn.yml","gui/chapters.yml","gui/tasks.yml","gui/settings.yml","chapters/第一章·星海初醒.yml","quests/第一章/能源启动.yml","quests/第一章/星海启航.yml","quests/第一章/放置生成器.yml","quests/第一章/第一批资源.yml","quests/第一章/支线/初次试炼.yml")) {
             val yaml=YamlConfiguration().apply { loadFromString(Files.readString(this@ResourcesTest.root.resolve(name))) }
             fun record(path: String, value: Any?) {
                 when(value) {

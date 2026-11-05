@@ -23,7 +23,7 @@ class XerrHudRenderer(private val settings: HudSettings) {
         val alias=when {
             field.startsWith("hint-") -> "hint"
             field=="objective-1" -> "objective"
-            field=="objective-2" -> "objective-continuation"
+            field in setOf("objective-2","objective-3") -> "objective-continuation"
             else -> field
         }
         val template=settings.templates[key] ?: settings.templates[alias] ?: "{value}"

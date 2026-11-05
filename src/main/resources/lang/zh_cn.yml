@@ -156,26 +156,14 @@ command-help:
 
 # ── 新手初见引航员引导 (独立个人任务，不影响团队结算) ────────────────────
 introduction:
-  actionbar: '<#FFD700>✦ 当前目标：<#E0F7FA>右键大厅中的「引航员」交谈 <#7F8C8D>｜ <#C2E9FB>留意右侧任务栏提示'
+  actionbar: '<#FFD700>✦ 当前目标：<#E0F7FA>右键大厅中的「引航员」打开空岛界面 <#7F8C8D>｜ <#C2E9FB>留意右侧任务栏提示'
   task-name: '<#FFD700>初见引航员'
-  objective: '<#E0F7FA>与大厅引航员交谈'
+  objective: '<#E0F7FA>与大厅引航员交互，打开空岛界面'
   hints:
-    - '<#C2E9FB>右键点击大厅中的 NPC「引航员」'
-    - '<#C2E9FB>查看屏幕右侧任务栏了解操作步骤'
-  dialogue:
-    - '<#FFD700>✦ <bold>引航员</bold> <#7F8C8D>» <#E0F7FA>欢迎来到<#89F7FE><bold>星辰</bold><#E0F7FA>，这里是你空岛旅程的起点。'
-    - '<#FFD700>✦ <bold>引航员</bold> <#7F8C8D>» <#E0F7FA>屏幕右侧的<#C2E9FB>任务栏<#E0F7FA>会实时显示当前目标、进度与操作指引。'
-    - '<#FFD700>✦ <bold>引航员</bold> <#7F8C8D>» <#C2E9FB>（基岩版玩家可直接阅读此聊天引导，按下<#A8FF78>潜行/蹲下键<#C2E9FB>即可确认交谈）'
-    - '<#FFD700>✦ <bold>引航员</bold> <#7F8C8D>» <#E0F7FA>在这里，你可以开辟专属的个人空岛，或受邀加入好友的空岛共同建设。'
-    - '<#FFD700>✦ <bold>引航员</bold> <#7F8C8D>» <#E0F7FA>准备就绪后，请再次<#FFD700>右键我<#E0F7FA>打开空岛面板。登岛后记得领取并放置<#89F7FE>生成器<#E0F7FA>，为其注入燃料吧！'
-  confirm: '<#A8FF78>💡 按下 [蹲下键] 确认交谈 <#7F8C8D>｜ <click:run_command:''/quest guide skip''><hover:show_text:''<#FFB75E>点击直接跳过新手对话引导''><#FFD700><bold>[跳过引导]</bold></hover></click>'
-  fallback-confirm: '<click:run_command:''/quest guide finish''><hover:show_text:''<#A8FF78>点击确认完成交谈''><#A8FF78><bold>[✔ 点击完成交谈]</bold></hover></click> <#94A3B8>或输入 <#E0F7FA>/quest guide finish <#7F8C8D>｜ <click:run_command:''/quest guide skip''><hover:show_text:''<#FFB75E>点击跳过引导''><#FFB75E>[跳过]</hover></click>'
-  complete: '<#A8FF78>✔ 引导交谈已完成！<#E0F7FA>请留意右侧任务栏，再次右键<#FFD700>引航员<#E0F7FA>即可打开空岛面板。'
-  interrupted: '<#FFB75E>ℹ <#94A3B8>交谈已中断，当前进度已保留。再次右键引航员即可继续对话。'
-  no-dialogue: '<#94A3B8>▪ 当前没有待确认的聊天引导，请先前往大厅右键引航员。'
-  npc-unavailable: '<#C2E9FB>💡 请右键大厅中的引航员开始交谈；若 NPC 暂不可用，可点击 <click:run_command:''/quest guide skip''><hover:show_text:''<#FFD700>点击跳过引导''><#FFD700><underlined>/quest guide skip</underlined></hover></click> <#C2E9FB>直接跳过。'
-  help: |-
-    <#FFD700>✦ <gradient:#FFD700:#FDE68A><bold>新手引导指令帮助</bold></gradient>
-    <click:run_command:'/quest guide skip'><hover:show_text:'<#FFB75E>点击跳过引导'> <#FFD700>▪ <#E0F7FA>/quest guide skip <#94A3B8>- 跳过个人新手指引</hover></click>
-    <click:run_command:'/quest guide replay'><hover:show_text:'<#89F7FE>点击重温引航员对话'> <#FFD700>▪ <#E0F7FA>/quest guide replay <#94A3B8>- 重新播放引航员对话内容</hover></click>
-    <click:run_command:'/quest guide finish'><hover:show_text:'<#A8FF78>点击完成引导'> <#FFD700>▪ <#E0F7FA>/quest guide finish <#94A3B8>- 手动确认完成聊天引导</hover></click>
+    - '<#C2E9FB>右键点击大厅中的 NPC「引航员」，直接打开创建或加入空岛界面'
+    - '<#C2E9FB>创建或加入空岛后，继续右侧任务栏中的经营教学'
+  complete: '<#A8FF78>✔ 已认识引航员！<#E0F7FA>请在空岛界面创建或加入空岛，继续星海启航任务。'
+  interrupted: '<#FFB75E>ℹ <#94A3B8>进度已保留，再次右键引航员即可打开空岛界面。'
+  no-dialogue: '<#94A3B8>▪ 引航员现在直接打开空岛界面，无需对话确认。'
+  npc-unavailable: '<#C2E9FB>💡 请右键大厅中的引航员打开空岛界面，也可使用 <#FFD700>/quest guide replay<#C2E9FB>。'
+  help: '<#FFD700>✦ 新手引导<newline><#E0F7FA>/quest guide replay <#94A3B8>- 打开空岛界面<newline><#E0F7FA>/quest guide skip <#94A3B8>- 跳过个人指引并打开空岛界面'

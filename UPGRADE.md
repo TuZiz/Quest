@@ -88,7 +88,7 @@
 
 ## 2026-10-21 个人交谈前置任务
 
-- `引导.yml` 配置 Adyeshach NPC 编号，默认 `新人`；不修改已有 NPC 的名称、模型或坐标。Typewriter `0.9.0-beta-177` 为可选对话依赖，无须额外扩展；缺失时降级聊天确认。
+- `引导.yml` 配置 Adyeshach NPC 编号，默认 `新人`；不修改已有 NPC 的名称、模型或坐标。当前引导使用 Typewriter `0.9.0-beta-177` 正式页面及同版本 BasicExtension；不再降级为 Quest 聊天确认，详见 `docs/Typewriter引导对话.md`。
 - 无空岛的新玩家先在 Tab 看到「初见引航员」，ActionBar 每秒提示交谈；对话时暂停，完成或跳过后停止。随后才回到原共享任务显示，再次右键 NPC 打开 DreamSkyblock GUI。
 - SQLite 从 3 升至 4，只新增 `personal_introduction` 表；按 UUID 和个人任务 ID 幂等保存，不改共享任务或奖励账本。已有空岛的老玩家免做引导。
 - 语言升级只补缺失的个人引导文案及 `introduction.actionbar`，保留已有文案、自定义字段和注释；重复启动和重载不会重复追加。
@@ -192,3 +192,14 @@ SQLite 与玩家存档仍没有跨存储原子提交；崩溃窗口的 SENDING �
 - 构建准备工具会识别依赖仓库中的原生教学接口并使用当前源码，避免重放旧覆盖文件。
 - Leaf 停服期间已备份并直接替换 `plugins/Quest-1.0.0.jar`、`plugins/Genlite-1.0.0.jar`，清除这两个插件已处理的更新目录副本。DreamSkyblock 当前已是配套接口版本。
 - 启动 Leaf 后加载新 JAR；不使用热重载。保留现有任务配置、Xerr/CraftEngine 资源、玩家数据库与奖励记录。
+
+## 2026-10-25 引航员首次交互直接开空岛 GUI
+
+- 取消首次 Typewriter 对话；右键 `新人` NPC 即调用 DreamSkyblock 原有创建／加入空岛界面。
+- 保留 `meet_guide` 个人永久键、旧记录、数据库及所有团队奖励记录；实际入岛仍是 `sky_start` 的完成条件。
+- 旧 `replay` 改为打开界面；旧对话回调失效。Typewriter 页面、NPC 模型不删除。
+- 默认语言窄迁移并备份；自定义文案保留，详见 `docs/Typewriter引导对话.md`。
+
+## 2026-10-25 恢复任务完成音效
+
+当前服 `提示.yml` 的 `task-complete.sound-enabled`、`chapter-complete.sound-enabled` 均已开启，默认配置同步开启；使用 `minecraft:entity.player.levelup`，音量0.6、音调1.0。更新前配置已备份；执行 `/quest reload` 即可加载当前服配置。玩家主动保存的静音或通知关闭偏好保持原值。此次不改变数据库、奖励或HUD布局。

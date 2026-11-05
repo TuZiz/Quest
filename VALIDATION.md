@@ -392,3 +392,73 @@ HUD运行投影改用projectGrouped：上半区MAIN，下半区选中SIDE或首�
 - 22项相关测试及Maven package通过：ResourcesTest 2、RetiredHomeGrowthUpgradeTest 1、TabQuestProjectionTest 10、TabTextWrapTest 2、TutorialLevelTwoUpgradeTest 2、TutorialProgressTest 3、TutorialUpgradeTest 2。
 - 已用编译后的真实迁移器归档Leaf配置；JAR审核确认无已退役任务资源、服务端API、测试及贴图字体。新包暂存Leaf/plugins/update/Quest-1.0.0.jar，SHA256=31614c45e3854e332f94fd6c23945d68f25c15fc71cd9c928760f74b27a0a8bb。
 - 前版待更新JAR备份至Leaf/plugins/Quest/backups/retire-home-tab-20261025-140340。需完整重启；未执行真人客户端视觉验收。
+
+## 2026-10-25 NPC交谈完成至入岛前HUD连续显示
+- 根因：IntroductionRuntime在个人引导完成后返回null，此时尚无空岛，QuestHudBridge也没有共享Journal，主动开启的HUD因此被移除；玩家mode未被改写。
+- 无空岛且DreamSkyblock已就绪时，HUD以实际配置中主线island.member目标生成只读0进度展示，继续显示星海启航；加入空岛后切回实际共享Journal。保留未完成NPC引导优先、加载中抑制显示、权限与资源包检查，以及玩家主动关闭HUD和手动追踪偏好。
+- 19项相关测试通过：QuestHudTest 11、IntroductionTest 5、HudPreferenceStoreTest 1、ResourcesTest 2；Maven package成功。报告target/verification/pre-island-hud-build.log。验证真实任务配置、旧交谈任务追踪过渡、入岛后切换、自定义membership任务/数量、无membership不显示、手动选择与重复投影不改定义。
+- 无数据库、任务奖励、玩家偏好或资源包修改。最终JAR审核通过，已备份运行包和已有待更新包，新包位于Leaf/plugins/update/Quest-1.0.0.jar，SHA256=4b65494a9d0adb11095afa074c836ec6e470b4b007654852d57536cf86665f8d。
+- 备份位于Leaf/plugins/Quest/backups/pre-island-hud-20261025-160607。运行中的服务端未重启，真人客户端交谈→入岛前→入岛流程待验收；无需重新制作或下发资源包。
+
+## 2026-10-25 数量与物品名整段换至第二行
+- 第一批资源、收获的喜悦、自动化初体验、资源的归宿的目标文案增加显式<newline>，数量和物品名整体位于第二行，TAB与HUD共用。自动化目标首行动作简化为“向收集器自动传输”，确保两行完整展示。
+- objective-quantity-lines-v1仅迁移已知默认动作前缀；原数量、奖励、未知字段和中文注释保留，自定义描述不覆盖，原配置归档并验证幂等。任务与奖励数据不变。
+- 25项测试及package成功：ObjectiveLineBreakTest 2、QuestHudTest 11、ResourcesTest 2、TabQuestProjectionTest 10；实际任务描述经TAB/HUD投影验证数量和物品位于第二行。第一次测试误将RGB码中的8识别为内容数字，修正测试以排除颜色元数据后通过，产品代码无需因此调整。
+- 已用真实迁移器同步Leaf四份配置，原文位于Quest/.migrations/objective-quantity-lines-v1。配置可通过/quest reload加载，无需更新资源包；代码迁移器随暂存JAR下次完整启动加载。
+- 新JAR位于Leaf/plugins/update/Quest-1.0.0.jar，SHA256=46e1da3510bbea9131007e4224343aa5c3d73a54321e21a47e857e9df9fcede3；前版待更新包备份于Quest/backups/quantity-lines-20261025-161803。未修改数据库或资源包，游戏内重载与视觉验收未执行。
+
+## 2026-10-25 引航员首次交互直接打开空岛界面
+
+- Maven 离线 package 成功，113 项测试全部通过；新增默认文案迁移覆盖 CRLF、注释、自定义文案、同名其他区块、备份和幂等性。
+- `tools/run_introduction_menu_smoke.py` 在隔离 Leaf 26.3 / Java 25 实际加载当前 Quest，验证运行时的玩家命令调用、首次立即调用、重复点击、权限拒绝、SQLite 连接缓存清除后补读、旧对话回调失效和 replay 兼容入口。玩家命令接口由代理捕获；未模拟真实客户端开窗。
+- 探针第一次因代理 Player 不能经 CraftServer 转换为原生命令源而失败；改为等价的 Player.performCommand 入口后最终探针通过。该限制属于测试代理，不是线上玩家报错。
+- `meet_guide`、SQLite schema 5 和团队任务／奖励表未修改；仅真实入岛才完成 sky_start。
+- JAR 扫描无 Paper/Bukkit、测试探针、网页预览或材质资源。新包 SHA256 与正式 Leaf plugins/update 内一致，更新前 JAR 与引导语言配置已备份；正式服未重启。
+- 仍需真人客户端确认 NPC 右键至 DreamSkyblock 创建／加入界面的实际显示。
+- 构建仍有既有 systemPath 和 shade 的 MANIFEST/module-info 重复警告；无新增编译或测试错误。
+
+## 2026-10-25 星海启航增加入口提示
+
+- 目标下方增加两行：右键领航员 NPC／或打开服务器菜单；灰蓝说明、青色 NPC、暖金菜单。
+- 主线目标支持三行，支线保持两行；Xerr原生Components接入第三行，不把格式标记当作可见文本。仅调整服务端文字位置，底板和字体不变；10px字体的末行位于Y128，结束于分割线Y140前。
+- Maven package与115项测试通过，覆盖实际26宽度提示无省略、主支线分区、旧配置幂等迁移、自定义字段与奖励保留。
+- 正式配置及Xerr布局变更前已备份；新JAR已校验并预置plugins/update。无数据库、计数、奖励或NPC交互逻辑变更。
+- 尚未重启正式服，真人客户端实际显示和Xerr最终组件视觉仍待确认。
+
+## 2026-10-25 完成任务音效
+
+根因：正式服和内置提示.yml的task-complete/chapter-complete音效开关均为false；现有StoryNotices的音效播放路径存在。现已开启两项，保留其他开始／解锁事件静音，音量0.6、音调1.0。默认升级音效为minecraft:entity.player.levelup。
+
+Maven package与115项测试通过；代理Player验证两种完成事件调用Adventure playSound，Sound键、音量、音调正确，sound=false时仅发送聊天，关闭通道测试通过。玩家偏好和数据库未修改。正式配置、旧排队JAR已备份，新JAR已校验预置plugins/update；现有运行实例需要/quest reload读取配置。本次未进行真实客户端听音测试。
+
+## 2026-10-25 HUD目标词组完整换行
+
+- 修复目标逐字换行拆开Lv.2及木材/铁生成器的问题：可容纳整行的同色词组整体换行，ASCII长词保留，超长文本仍按字符兜底。
+- 仅首行预留目标标签的6个半角单位，续行使用完整26单位；剧情提示保持原有换行。保留显式数量第二行、主线三行与支线两行。
+- Maven离线package成功，117项测试通过。新增真实任务26宽度回归测试确认：Lv.2完整位于第二行；木材/铁生成器 信息面板完整位于支线第二行，无省略号且RGB保留。另验证Unicode、显式换行、长词和首行省略预算。
+- 新JAR已校验预置Leaf/plugins/update/Quest-1.0.0.jar，SHA256=ABBBC4E3E70944DACAC5798A5FE8C8E3F30AD656081459DD04669A29AB681FE7。旧排队JAR备份：C:/Users/32633/Desktop/leaf/plugins/Quest/backups/hud-word-wrap-20261025-224405。
+- 未重启正式服，本次为代码修改，须完整重启加载；/quest reload无法替换类。未做真人客户端视觉验收；无任务配置、进度、奖励、数据库或资源包变更。
+
+## 2026-10-27 三组教学文案校正
+
+- 自由的生产改为“打开生成器面板”／“切换一次产出模式”两行。按用户明确纠正，Quest章节及任务显示名称统一“圆石／圆石生成器”；星海启航统一为个人引导已有的“引航员”。任务与奖励文档同步。
+- tutorial-wording-v1仅迁移已知默认文本，支持数量自定义；保留其他内容、中文注释、任务ID、目标、奖励及数据库。使用现有原子配置迁移日志，备份和幂等测试通过。旧数量换行迁移兼容“原石”和“圆石”两个历史名称。
+- Maven package成功，119项测试全部通过；首次构建因编辑工具转换为CRLF导致旧测试夹具替换不匹配，以及新增测试误把保留的历史注释视为显示文案而失败，纠正换行和断言范围后全部通过。无现存业务故障。
+- 已直接运行真实迁移器同步Leaf配置，7份原配置保存于Quest/.migrations/tutorial-wording-v1；未修改玩家数据库。文本可通过/quest reload读取，新增迁移代码须下次完整重启加载。
+- 新JAR已备份并校验暂存plugins/update/Quest-1.0.0.jar，SHA256=956eeada5fde6e8f2c92b7c36d849f49e05b592425bcbc53ddcb2a11a4034ac9。旧排队包位于Quest/backups/tutorial-wording-20261027-142151。正式服未重启，未实际发送重载指令或做客户端视觉验收。
+
+## 2026-10-27 机械革新服务端显式换行
+
+- 用户截图来自TAB展开区；正式JAR哈希已是上一轮版本，服务端圆石文案也已更新，但TAB逐字换行仍拆开Lv.2。修正升级目标为“将圆石生成器升至<newline>Lv.2”，源码和正式配置同步，不再依赖HUD专属换行规则。
+- tutorial-wording-v2允许已经完成v1的服务器补迁移已知默认升级文案；自定义整数等级保留。正式机械革新文件经真实迁移器两次执行，逐字节验证仅替换目标文本；原配置保存在.migrations/tutorial-wording-v2。
+- Maven package及120项测试全部通过；新增TAB28宽度与HUD26宽度同时确认第二行为完整Lv.2，并验证旧v1完成标记下升级、幂等、奖励不变。
+- 新JAR已校验放入Leaf/plugins/update/Quest-1.0.0.jar，SHA256=3df7e8c4077b4f09600dc1147b6967caecf7f7805123d3d3f3169d7389273696；现有运行包备份于Quest/backups/level-line-20261027-193226。
+- 配置可由现有代码通过/quest reload读取，无须等待新JAR即可应用显式换行。本次未发送重载、重启或进行真人客户端视觉验收；无进度、奖励或数据库变化。
+
+## 2026-11-01 Purpur26.2兼容
+
+- Quest构建API改为26.2.build.126-stable，plugin.yml声明26.2；不是只改JAR描述。配套Genlite从当前已适配26.2的源码重新构建，并替换Quest的本地依赖JAR；DreamSkyblock编译依赖同步当前服务端版本。
+- Quest120项、Genlite135项测试通过，两个package均成功。当前环境缺失Maven且Kotlin2.3.10缓存不全，使用项目隔离Maven3.9.12与在线补全依赖后通过，未更改全局Java/Maven安装。
+- 在隔离Purpur26.2-2633/Java25.0.5中加载CraftEngine26.9.2、MM5.13.0、Dungeon、DreamSkyblock、Genlite和Quest；NPC立即开空岛命令、重复点击保护、权限、SQLite重登、旧回调失效探针通过；同时圣坛6怪生成、7种CE物品ID/数量及环境来源无掉落探针通过。日志target/verification/purpur262-console.log，无本次插件Unsupported API version、NoSuchMethod或事件注册缺类错误。
+- 新Quest/Genlite/Dungeon均放入正式plugins/update并校验SHA256；运行JAR及已有排队JAR备份于leaf/backups/compat262-20261101-185659。正式服未重启，任务配置/玩家数据库/存档未修改。Dungeon包完成上轮交付暂存，地图及MM配置保持原有已准备版本。
+- 正式日志中的第三方WorldGuard和StarMarket仍有26.3声明问题，未修改这些插件；不宣称整服全部插件已兼容。真人客户端战斗、GUI/HUD观感待验。

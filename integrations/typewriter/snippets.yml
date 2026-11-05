@@ -1,0 +1,14 @@
+# Typewriter BasicExtension 原生 spoken 对话样式，需合并到 Typewriter/snippets.yml。
+# 不改变其他对话类型；每次潜行由Typewriter推进下一句。
+dialogue:
+  spoken:
+    format: '<#475569>━━━━━━━━━━━━━━━━━━━━━━━━━━━━<newline><#89F7FE><speaker><newline><newline><message><newline><newline><next_color>按 <#E0F7FA><confirmation_key> <next_color><finish_text><newline><#94A3B8>跳过引导：<#C2E9FB>/quest guide skip<newline><#475569>━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+    instruction:
+      next: '继续交谈'
+      finish: '结束交谈'
+      color:
+        base: '<#94A3B8>'
+        highlight: '<#78FFD6>'
+    padding: '  '
+    minLines: 3
+    maxLineLength: 28

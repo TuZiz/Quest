@@ -19,7 +19,7 @@ objectives:
     type: 'genlite.produce'
     resource: 'minecraft:cobblestone'
     target: 32
-    description: '<#E2E8F0>原石生成器累计生产 <#78FFD6>32</#78FFD6> 个原石'
+    description: '<#E2E8F0>圆石生成器累计生产<newline><#78FFD6>32</#78FFD6> 个圆石'
 
 rewards:
   - item: 'genlite:basic_upgrade_unit'  # 初级升级单元

@@ -56,7 +56,9 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
         val commands = QuestCommands(text,service,integrations,thread,delivery,{
             if(closed) text.send(it,"unavailable")
             else journal.open(it)
-        },::reload,::failure) { player,action ->
+        },::reload,::failure,dialogueComplete={ id,token ->
+            if(!closed && !reloading) introduction?.dialogueComplete(id,token)
+        }) { player,action ->
             if(closed || reloading) text.send(player,"busy")
             else introduction?.command(player,action) ?: text.send(player,"unavailable")
         }

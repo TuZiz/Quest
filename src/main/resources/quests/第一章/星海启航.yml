@@ -18,10 +18,10 @@ objectives:
   - id: 'island'
     type: 'island.member'
     target: 1
-    description: '<#E2E8F0><#78FFD6>创建或加入</#78FFD6> 一座空岛'
+    description: '<#E2E8F0><#78FFD6>创建或加入</#78FFD6> 一座空岛<newline><#94A3B8>右键 <#67E8F9>引航员 NPC<newline><#94A3B8>或打开 <#FDE68A>服务器菜单'
 
 rewards:
-  - item: 'genlite:cobblestone_generator'  # 原石生成器
+  - item: 'genlite:cobblestone_generator'  # 圆石生成器
     amount: 1
     # 已有机器历史、待发机器或在线队员持有首台机器时，不再发放。
     unless-generator-exists: true

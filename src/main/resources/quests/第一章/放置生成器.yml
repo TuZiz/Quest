@@ -7,7 +7,7 @@ icon: 'minecraft:furnace'
 
 description:
   - '<#94A3B8>空岛工业的起点，始于第一台核心设施的落成。'
-  - '<#94A3B8>将背包中的原石生成器安放在你的领地之上。'
+  - '<#94A3B8>将背包中的圆石生成器安放在你的领地之上。'
   - ''
   - '<#64748B>▪ 引导目标（成功放置后自动发放 16 份初始燃料）'
 
@@ -16,7 +16,7 @@ objectives:
     type: 'genlite.placed'
     resource: 'cobblestone_generator'
     target: 1
-    description: '<#E2E8F0>在空岛放置 <#78FFD6>原石生成器</#78FFD6>'
+    description: '<#E2E8F0>在空岛放置 <#78FFD6>圆石生成器</#78FFD6>'
 
 rewards:
   - item: 'genlite:fuel'  # 燃料

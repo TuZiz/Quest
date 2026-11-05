@@ -1,0 +1,86 @@
+{
+  "id": "quest_first_guide",
+  "name": "Quest · 初见引航员",
+  "type": "sequence",
+  "priority": 10,
+  "entries": [
+    {
+      "id": "quest_guide_01",
+      "name": "quest_guide_welcome",
+      "type": "spoken",
+      "criteria": [],
+      "modifiers": [],
+      "triggers": ["quest_guide_02"],
+      "speaker": "quest_guide_speaker",
+      "text": "<#E0F7FA>欢迎来到<gradient:#89F7FE:#C4B5FD>悠梦星辰</gradient>。浩瀚星海之中，一座属于你的家园正在等待。",
+      "duration": 1800
+    },
+    {
+      "id": "quest_guide_02",
+      "name": "quest_guide_journal",
+      "type": "spoken",
+      "criteria": [],
+      "modifiers": [],
+      "triggers": ["quest_guide_03"],
+      "speaker": "quest_guide_speaker",
+      "text": "<#E0F7FA>屏幕右侧的<#89F7FE>任务栏<#E0F7FA>会显示当前目标与进度。输入<#78FFD6>/quest<#E0F7FA>可以查看章节和任务，也能开启任务追踪。",
+      "duration": 1800
+    },
+    {
+      "id": "quest_guide_03",
+      "name": "quest_guide_island",
+      "type": "spoken",
+      "criteria": [],
+      "modifiers": [],
+      "triggers": ["quest_guide_04"],
+      "speaker": "quest_guide_speaker",
+      "text": "<#E0F7FA>你可以<#78FFD6>创建自己的空岛<#E0F7FA>，也可以接受好友邀请，加入空岛一起经营。第一章会陪你掌握家园的基础运作。",
+      "duration": 1800
+    },
+    {
+      "id": "quest_guide_04",
+      "name": "quest_guide_machines",
+      "type": "spoken",
+      "criteria": [],
+      "modifiers": [],
+      "triggers": ["quest_guide_05"],
+      "speaker": "quest_guide_speaker",
+      "text": "<#E0F7FA>入岛后跟随任务放置<#89F7FE>生成器<#E0F7FA>、存入燃料，再学习收集器与绑定工具。任务完成后，奖励会自动发放。",
+      "duration": 1800
+    },
+    {
+      "id": "quest_guide_05",
+      "name": "quest_guide_departure",
+      "type": "spoken",
+      "criteria": [],
+      "modifiers": [],
+      "triggers": ["quest_guide_complete"],
+      "speaker": "quest_guide_speaker",
+      "text": "<#E0F7FA>准备好了吗？交谈结束后，再次<#FFD700>右键我<#E0F7FA>即可打开空岛面板。愿你的第一束星光，从这里启航。",
+      "duration": 1800
+    },
+    {
+      "id": "quest_guide_complete",
+      "name": "quest_guide_complete",
+      "type": "console_run_command",
+      "criteria": [],
+      "modifiers": [],
+      "triggers": [],
+      "command": {
+        "_kind": "backed",
+        "ref": "quest_guide_context_command",
+        "data": {
+          "key": {
+            "case": "entry",
+            "value": {
+              "ref": "quest_guide_callback_argument",
+              "keyClass": "com.typewritermc.basic.entries.command.arguments.StringArgumentContextKeys",
+              "key": "VALUE"
+            }
+          },
+          "default": ""
+        }
+      }
+    }
+  ]
+}

@@ -35,7 +35,7 @@ class ChapterResourcesTest {
         val profiles=NoticeFiles.parse(yaml("提示.yml"))
         for(event in listOf("task-complete","chapter-complete")) {
             val p=profiles.getValue(event)
-            assertTrue(p.chat); assertFalse(p.title); assertFalse(p.actionBar); assertNull(p.sound)
+            assertTrue(p.chat); assertFalse(p.title); assertFalse(p.actionBar); assertEquals("minecraft:entity.player.levelup",p.sound)
         }
         val disabled=yaml("提示.yml")
         NoticeFiles.events.forEach { event -> listOf("chat","action-bar","title","sound-enabled").forEach { disabled.set("$event.$it",false) } }

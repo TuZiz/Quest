@@ -85,6 +85,7 @@ class IntroductionTest {
         val raw=Files.readString(Path.of("src/main/resources/引导.yml"))
         fun parse(value: String) = IntroductionSettings.parse(YamlConfiguration().apply { loadFromString(value) })
         assertEquals("新人",parse(raw).npcId)
+        assertEquals("quest_guide_01",parse(raw).typewriterEntryId)
         for(value in listOf(raw.replace("120","0"),raw.replace("120","'120'"),raw.replace("sky_awakening","bad/id"),raw.replace("enabled: true","enabled: 'true'"))) {
             assertThrows(IllegalArgumentException::class.java) { parse(value) }
         }
@@ -121,4 +122,27 @@ class IntroductionTest {
         ResourceUpgrade.appendLanguage(file,bundled)
         assertEquals(once,Files.readString(file))
     }
+    @Test fun `menu wording upgrade preserves customized fields comments CRLF and progress keys`() {
+        val file=directory.resolve("lang/zh_cn.yml")
+        Files.createDirectories(file.parent)
+        val original="schema-version: 1\n# 保留注释\nintroduction:\n"+
+            "  task-name: '<#FFD700>我的自定义任务'\n"+
+            "  objective: '<#E0F7FA>与大厅引航员交谈'\n"+
+            "  complete: '<#A8FF78>我的自定义完成提示'\n"+
+            "other:\n  objective: '<#E0F7FA>与大厅引航员交谈'\n"
+        Files.writeString(file,original.replace("\n","\r\n"))
+        ym.quest.config.IntroductionMenuTextUpgrade.migrate(directory)
+        val once=Files.readString(file)
+        val y=YamlConfiguration().apply { loadFromString(once) }
+        assertTrue(once.contains("\r\n"))
+        assertTrue(once.contains("# 保留注释"))
+        assertEquals("<#FFD700>我的自定义任务",y.getString("introduction.task-name"))
+        assertEquals("<#A8FF78>我的自定义完成提示",y.getString("introduction.complete"))
+        assertEquals(language().getString("introduction.objective"),y.getString("introduction.objective"))
+        assertEquals("<#E0F7FA>与大厅引航员交谈",y.getString("other.objective"))
+        assertEquals(original.replace("\n","\r\n"),Files.readString(directory.resolve(".migrations/introduction-menu-v1/lang.before")))
+        ym.quest.config.IntroductionMenuTextUpgrade.migrate(directory)
+        assertEquals(once,Files.readString(file))
+    }
+
 }

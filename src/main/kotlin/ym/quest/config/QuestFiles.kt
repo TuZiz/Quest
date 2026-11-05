@@ -61,11 +61,16 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             checkNotNull(plugin.getResource(path)) { "Missing tutorial resource $path" }.bufferedReader(Charsets.UTF_8).use { it.readText() }
         }
         RetiredHomeGrowthUpgrade.migrate(plugin.dataFolder.toPath())
+        ObjectiveLineBreakUpgrade.migrate(plugin.dataFolder.toPath())
+        IslandEntryHintUpgrade.migrate(plugin.dataFolder.toPath())
+        TutorialWordingUpgrade.migrate(plugin.dataFolder.toPath())
+        TrialCombatUpgrade.migrate(plugin.dataFolder.toPath())
         ResourceUpgrade.appendLanguage(plugin.dataFolder.toPath().resolve("lang/zh_cn.yml"),
             checkNotNull(plugin.getResource("lang/zh_cn.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
         TabTextUpgrade.migrate(plugin.dataFolder.toPath(),
             checkNotNull(plugin.getResource("lang/zh_cn.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
         SidebarTextUpgrade.migrate(plugin.dataFolder.toPath())
+        IntroductionMenuTextUpgrade.migrate(plugin.dataFolder.toPath())
         fun yaml(name: String): YamlConfiguration {
             val text = Files.readString(plugin.dataFolder.toPath().resolve(name))
             return YamlConfiguration().apply {
@@ -97,10 +102,10 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             require(chapters.any { it.id == introduction.chapterId }) { "引导.yml:chapter-id=${introduction.chapterId} missing chapter" }
             require(quests.none { it.id == introduction.taskId }) { "引导.yml:task-id=${introduction.taskId} conflicts with shared quest" }
         }
-        listOf("task-name","objective","confirm","complete","fallback-confirm","interrupted","no-dialogue","help","npc-unavailable","actionbar").forEach {
+        listOf("task-name","objective","complete","interrupted","no-dialogue","help","npc-unavailable","actionbar").forEach {
             require(language.isString("introduction.$it")) { "lang/zh_cn.yml:introduction.$it missing" }
         }
-        listOf("dialogue","hints").forEach { key ->
+        listOf("hints").forEach { key ->
             val value = language.get("introduction.$key")
             require(value is List<*> && value.isNotEmpty() && value.all { it is String && it.isNotBlank() }) { "lang/zh_cn.yml:introduction.$key expected nonempty text list" }
         }

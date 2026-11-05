@@ -3,6 +3,7 @@ package ym.quest.tutorial
 import cn.genlite.api.GenliteQuestApi
 import cn.genlite.gui.MenuSession
 import org.bukkit.entity.Player
+import org.bukkit.entity.Enemy
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
@@ -21,8 +22,12 @@ class TutorialActions(private val plugin: JavaPlugin, private val service: Quest
     private val integrations: Integrations, private val changed: (List<ProgressChange>) -> Unit,
     private val failure: (Throwable) -> Unit, private val worlds: () -> Set<String>) : Listener, AutoCloseable {
     private var closed=false
+    private val combatKills=CombatKillWindow()
     private val mythic=MythicCombat(plugin) { player,entity,identity ->
-        if(entity.world.name in worlds() && player.hasPermission("quest.use")) record(player.uniqueId,"combat.kill:$identity")
+        if(entity.world.name in worlds() && player.hasPermission("quest.use")) {
+            record(player.uniqueId,"combat.kill:$identity")
+            if(combatKills.accept(entity.uniqueId,entity is Enemy,true)) record(player.uniqueId,"combat.kill:hostile")
+        }
     }
     init { plugin.server.pluginManager.registerEvents(this,plugin) }
     private fun record(player: UUID,metric: String) {
@@ -55,6 +60,7 @@ class TutorialActions(private val plugin: JavaPlugin, private val service: Quest
         if(e.entity.world.name !in worlds() || !player.hasPermission("quest.use")) return
         // Bukkit's actual killer attribution includes player projectiles; uncredited/environment-only deaths are excluded.
         record(player.uniqueId,"combat.kill:minecraft:${e.entity.type.key.key}")
+        if(combatKills.accept(e.entity.uniqueId,e.entity is Enemy,false)) record(player.uniqueId,"combat.kill:hostile")
     }
-    override fun close() { closed=true;mythic.close();HandlerList.unregisterAll(this) }
+    override fun close() { closed=true;mythic.close();combatKills.clear();HandlerList.unregisterAll(this) }
 }

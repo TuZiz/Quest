@@ -1,7 +1,7 @@
 name: Quest
 version: '${project.version}'
 main: ym.quest.Quest
-api-version: '26.3'
+api-version: '26.2'
 folia-supported: false
 authors:
   - ymxc

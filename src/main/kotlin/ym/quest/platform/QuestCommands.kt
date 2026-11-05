@@ -12,8 +12,16 @@ class QuestCommands(private val text: TextRenderer, private val service: QuestSe
                     private val integrations: Integrations, private val thread: GameThread,
                     private val delivery: MailboxDelivery, private val open: (Player) -> Unit,
                     private val reload: (CommandSender) -> Unit, private val failure: (Throwable) -> Unit,
+                    private val dialogueComplete: (UUID,UUID) -> Unit = { _,_ -> },
                     private val guide: (Player,String) -> Unit = { player,_ -> text.send(player,"unavailable") }) : CommandExecutor, TabCompleter {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        if(args.firstOrNull()=="_typewriter-complete") {
+            if(sender !is ConsoleCommandSender) { text.send(sender,"no-permission");return true }
+            if(args.size!=3) { failure(IllegalArgumentException("Typewriter completion expects player UUID and session token"));return true }
+            try { dialogueComplete(UUID.fromString(args[1]),UUID.fromString(args[2])) }
+            catch(e: IllegalArgumentException) { failure(e) }
+            return true
+        }
         if(args.isEmpty()) {
             if(!sender.hasPermission("quest.use")) text.send(sender,"no-permission")
             else if(sender is Player) open(sender) else text.send(sender,"player-only")
@@ -79,7 +87,7 @@ class QuestCommands(private val text: TextRenderer, private val service: QuestSe
         if(!sender.hasPermission("quest.use")) return emptyList()
         val choices = when {
             args.size == 1 -> listOf("help","guide") + if(sender.hasPermission("quest.admin")) listOf("reload","admin") else emptyList()
-            args.size == 2 && args[0] == "guide" -> listOf("skip","replay","finish")
+            args.size == 2 && args[0] == "guide" -> listOf("skip","replay")
             !sender.hasPermission("quest.admin") -> emptyList()
             args[0] != "admin" -> emptyList()
             else -> when(args.size) { 2 -> listOf("reload","reset","debug","resolve")

@@ -212,6 +212,6 @@ class TabQuestProjectionTest {
         assertFalse(layout.getBoolean("scoreboard.enabled"))
         assertFalse(layout.getBoolean("bossbar.enabled"))
         assertTrue(layout.getBoolean("components.minimessage-support"))
-        assertEquals("1| ",layout.getStringList("layout.layouts.quest-and-players.fixed-slots").first())
+        assertEquals("1|%quest_line_1%",layout.getStringList("layout.layouts.quest-and-players.fixed-slots").first())
     }
 }

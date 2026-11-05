@@ -17,7 +17,7 @@ objectives:
     type: 'genlite.pickup'
     resource: 'minecraft:cobblestone'
     target: 16
-    description: '<#E2E8F0>拾取生成器产出的 <#78FFD6>16</#78FFD6> 个圆石'
+    description: '<#E2E8F0>拾取生成器产出的<newline><#78FFD6>16</#78FFD6> 个圆石'
 
 rewards:
   - item: 'genlite:timber_generator'  # 木材生成器

@@ -16,7 +16,7 @@ objectives:
   - id: 'experience'
     type: 'genlite.mode'
     target: 1
-    description: '<#E2E8F0>在生成器面板中切换一次 <#78FFD6>产出模式</#78FFD6>'
+    description: '<#E2E8F0>打开生成器面板<newline>切换一次 <#78FFD6>产出模式</#78FFD6>'
 
 unlock-when:
   'genlite.bind': 1

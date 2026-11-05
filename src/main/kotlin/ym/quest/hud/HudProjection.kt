@@ -8,6 +8,16 @@ import ym.quest.text.TextRenderer
 /** Immutable read-only projection; never counts progress or distributes rewards. */
 class HudProjection(private val text: TextRenderer, private val width: Int) {
     private val plain=PlainTextComponentSerializer.plainText()
+    /** No island has a shared journal yet. Display its configured membership goal without counting it. */
+    fun beforeIsland(quests: List<QuestDefinition>, chapters: List<ChapterDefinition>,
+        tracked: String? = null, autoTracking: Boolean = true): Map<String,String>? {
+        val quest=quests.firstOrNull { it.category==QuestCategory.MAIN && it.objectives.any { objective -> objective.type=="island.member" } }
+            ?: return null
+        val membership=quest.objectives.filter { it.type=="island.member" }
+        val view=QuestView(quest,QuestStatus.ACTIVE,membership.map { ObjectiveProgress(it,0) })
+        val chapterViews=chapters.filter { quest.id in it.quests }.map { ChapterView(it,ChapterStatus.ACTIVE,0,false) }
+        return projectGrouped(JournalView(listOf(view),chapterViews),tracked,autoTracking)
+    }
     fun label(value: String): String = plain.serialize(text.render(value)).trim().trimStart('✦','◆','▪',' ')
     fun clip(value: String, limit: Int = width): String {
         val points=label(value).replace('\n',' ').codePoints().toArray()
@@ -22,7 +32,7 @@ class HudProjection(private val text: TextRenderer, private val width: Int) {
             append("..")
         }
     }
-    @JvmOverloads fun project(view: JournalView, tracked: String? = null, autoTracking: Boolean = true, personal: JournalView? = null): Map<String,String>? {
+    @JvmOverloads fun project(view: JournalView, tracked: String? = null, autoTracking: Boolean = true, personal: JournalView? = null, objectiveLines: Int = 2): Map<String,String>? {
         val journal=if(personal==null) view else JournalView((personal.quests+view.quests).distinctBy { it.definition.id },personal.chapters+view.chapters)
         val quest=ym.quest.preferences.TrackingSelection.select(journal,ym.quest.preferences.DisplayPreferences(autoTracking=autoTracking,trackedQuest=tracked)) ?: return null
         val chapter=journal.chapters.firstOrNull { quest.definition.id in it.definition.quests }
@@ -31,9 +41,10 @@ class HudProjection(private val text: TextRenderer, private val width: Int) {
         val values=mutableMapOf("category" to label(text.language.getString("journal.category-${quest.definition.category}")!!),"chapter" to clip(chapter?.definition?.name ?: ""),"task" to clip(quest.definition.name),
             "objective" to clip(objective.objective.description),"current" to current.toString(),
             "target" to objective.objective.target.toString(),"progress-text" to "$current / ${objective.objective.target}")
-        // Reserve six half-width units for the server-configured objective label.
-        val objectives=HudTextLines(width-6).lines(text.render(objective.objective.description),2)
-        repeat(2) { values["objective-${it+1}"]=objectives.getOrElse(it) { "" } }
+        // Only the first row has the server-configured objective label; continuation rows use full width.
+        val objectives=HudTextLines(width,firstLineWidth=width-6,keepWords=true)
+            .lines(text.render(objective.objective.description),objectiveLines)
+        repeat(objectiveLines) { values["objective-${it+1}"]=objectives.getOrElse(it) { "" } }
         val hints=quest.definition.description.filter { label(it).isNotBlank() }
         val source=hints.mapIndexed { index,hint ->
             Component.text("${index+1}. ").append(text.render(hint))
@@ -51,13 +62,14 @@ class HudProjection(private val text: TextRenderer, private val width: Int) {
             ?: active.firstOrNull { it.definition.category==category }
         val main=selected(QuestCategory.MAIN);val side=selected(QuestCategory.SIDE)
         if(main==null && side==null) return null
-        fun details(q: QuestView?)=q?.let { project(journal.copy(quests=listOf(it)),it.definition.id,false) }
+        fun details(q: QuestView?)=q?.let { project(journal.copy(quests=listOf(it)),it.definition.id,false,objectiveLines=if(it.definition.category==QuestCategory.MAIN) 3 else 2) }
         val m=details(main);val s=details(side)
         val mainDone=journal.quests.filter { it.definition.category==QuestCategory.MAIN }.let { qs -> qs.isNotEmpty() && qs.all { it.status==QuestStatus.COMPLETE || it.status==QuestStatus.CLAIMED } }
         val values=mutableMapOf("category" to label(text.language.getString("journal.category-MAIN")!!),
             "chapter" to (m?.get("chapter") ?: clip(journal.chapters.firstOrNull()?.definition?.name ?: "")),
             "task" to (m?.get("task") ?: label(text.language.getString(if(mainDone) "tab-groups.main-done" else "tab.waiting")!!)),
             "objective-1" to m?.get("objective-1").orEmpty(),"objective-2" to m?.get("objective-2").orEmpty(),
+            "objective-3" to m?.get("objective-3").orEmpty(),
             "progress-text" to m?.get("progress-text").orEmpty(),
             "side-category" to label(text.language.getString("journal.category-SIDE")!!),
             "side-task" to (s?.get("task") ?: label(text.language.getString("tab-groups.side-empty")!!)),

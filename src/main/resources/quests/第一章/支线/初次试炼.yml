@@ -3,21 +3,21 @@ schema-version: 2
 id: 'first_trial'
 scope: 'island'
 category: 'side'
-name: '<gradient:#78FFD6:#A8FF78>✦ 初次试炼</gradient>'
+name: '<gradient:#78FFD6:#A8FF78>前往石址击杀三只生物</gradient>'
 icon: 'minecraft:iron_sword'
 
 description:
-  - '<#94A3B8>星海之外，并不只有宁静的家园。'
-  - '<#94A3B8>探索未知之前，请先握紧手中的剑。'
+  - '<#94A3B8>前往石址击杀三只生物'
+  - '<#94A3B8>任意敌对生物或 MythicMobs 怪物均计入进度。'
   - ''
   - '<#64748B>▪ 支线试炼（不影响主线进度）'
 
 objectives:
   - id: 'experience'
     type: 'combat.kill'
-    resource: 'minecraft:zombie'
+    resource: 'hostile'
     target: 3
-    description: '<#E2E8F0>亲自击杀 <#78FFD6>3</#78FFD6> 只僵尸'
+    description: '<#E2E8F0>前往石址击杀 <#78FFD6>3</#78FFD6> 只生物'
 
 rewards:
   - item: 'genlite:fuel'  # 普通燃料

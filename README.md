@@ -9,11 +9,11 @@
 
 当前本地依赖为服务端实际安装的 **Xerr 2.2.0**；HUD 继续使用 TabooLib Components。`Xerr/quest.yml` 可选 `color-map` 将目标/步骤中已有浅色 Components 文字映射为纸面可读颜色，未配置时保留原色。原始任务配置和玩家进度不变。
 
-Kotlin + Maven 的空岛团队任务插件。第一章顺序为「初见引航员 → 星海启航 → 安放生成器 → 能源启动 → 第一批资源」。交谈是 UUID 个人任务，无需先入岛；其余任务按空岛共享。入岛发生成器，实际放置后才发燃料。任务奖励与章节奖励默认完成后自动发放，奖励每岛一次。
+Kotlin + Maven 的空岛团队任务插件。第一章顺序为「初见引航员 → 星海启航 → 安放生成器 → 能源启动 → 第一批资源」。首次 NPC 交互是 UUID 个人任务，无需先入岛；其余任务按空岛共享。入岛发生成器，实际放置后才发燃料。任务奖励与章节奖励默认完成后自动发放，奖励每岛一次。
 
 ## 构建与安装
 
-本次以本地实际项目为准：JDK **25**、Kotlin **2.3.10**、Maven **3.9.12**、Paper API **26.3.build.28-alpha**、CraftEngine **26.9.2**。本地 Genlite 的插件描述要求 Minecraft **26.3**，因此此联动包不能直接用于 26.2。Quest 使用普通 Paper 所有权线程模型，支持相应版本的 Purpur / Leaf，不声明 Folia 兼容。
+当前构建基线为 JDK **25**、Kotlin **2.3.10**、Maven **3.9.12**、Paper API **26.2.build.126-stable**、CraftEngine **26.9.2**。Quest 与配套 Genlite 的插件描述均声明 **26.2**，目标服务端为 **Purpur 26.2-2633**。Quest 使用普通 Paper 所有权线程模型，不声明 Folia 兼容；历史 26.3 验证不替代当前版本验证。
 
 需要本地完整的 DreamSkyblock、Genlite 源码，以及 CraftEngine JAR。默认使用与 Quest 同级的两个源码目录；DreamSkyblock 的 `libs/ArcMenu-3.0.1.jar`、`libs/PlaceholderAPI-2.12.3.jar` 仅用于编译。CraftEngine 的 Maven 依赖沿用真实本地插件 JAR，没有猜测线上坐标。
 
@@ -62,7 +62,7 @@ plugins/Quest/
 
 ## 默认玩法与物品证据
 
-0. 新玩家先右键 Adyeshach 编号为 `新人` 的已有 NPC。交谈前每秒显示 ActionBar「右键大厅中的引航员交谈｜查看右侧任务栏」，开启追踪后侧栏优先显示个人任务，不要求玩家拥有空岛。Typewriter 管理简短对话和蹲下确认；不可用时降级聊天确认。完成后再次右键 NPC 执行 DreamSkyblock 自身的 `home gui`，选择创建或加入空岛。已有空岛的老玩家免做此个人任务。
+0. 新玩家右键 Adyeshach 编号为 `新人` 的已有 NPC，立即打开 DreamSkyblock 的创建／加入空岛界面，不再播放对话。个人 `meet_guide` 记录沿用原 UUID 进度且不发团队奖励；`sky_start` 仍需实际创建或加入空岛才完成。已完成玩家再次交互打开空岛面板，已有空岛的老玩家保留免做机制。参见 [引航员交互说明](docs/Typewriter引导对话.md)。
 1. 创建/加入 DreamSkyblock 空岛，完成「星海启航」后自动发放 8 个面包、石镐，以及有条件的首台 `genlite:cobblestone_generator`。
 2. 在空岛放置生成器，完成「安放生成器」后自动获得 16 份 `genlite:fuel`。背包中的物品和 Genlite 待发机器不算放置；成功提交的机器历史可在重启后补读。
 3. 右键生成器打开管理面板，点击「燃料」进入燃料仓；Shift 点击背包燃料，或将燃料放入上方格子。成功存入至少 1 份后完成「能源启动」，自动获得各 2 个 `genlite:mechanical_parts` 和 `genlite:copper_coil`。打开燃料仓、取回燃料或存入失败均不推进任务。
@@ -77,9 +77,8 @@ plugins/Quest/
 | 指令 | 权限 | 作用 |
 |---|---|---|
 | `/quest` | `quest.use` | 任务中心，全部普通功能 |
-| `/quest guide skip` | `quest.use` | 跳过个人交谈，不发放团队奖励 |
-| `/quest guide replay` | `quest.use` | 完成后重新查看交谈 |
-| `/quest guide finish` | `quest.use` | 确认当前聊天降级引导，不可绕过尚未开始的交谈 |
+| `/quest guide skip` | `quest.use` | 跳过个人指引并打开空岛界面，不发团队奖励 |
+| `/quest guide replay` | `quest.use` | 打开空岛界面，不再播放对话 |
 | `/quest admin reload` | `quest.admin` | 异步读入并校验配置，失败保留当前有效配置 |
 | `/quest admin reset <空岛UUID> <任务ID>` | `quest.admin` | 重置该目标的累计基线，保留已领记录与待发奖励 |
 | `/quest admin debug [空岛UUID]` | `quest.admin` | 查看来源累计值、每任务进度和待发奖励 UUID；控制台需指定空岛 |
