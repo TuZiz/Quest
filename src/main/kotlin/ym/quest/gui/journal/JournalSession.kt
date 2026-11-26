@@ -6,7 +6,7 @@ import ym.quest.domain.*
 import ym.quest.preferences.DisplayPreferences
 import java.util.UUID
 
-enum class JournalPage(val file: String) { CHAPTERS("chapters"),TASKS("tasks"),SETTINGS("settings") }
+enum class JournalPage(val file: String) { CHAPTERS("chapters"),TASKS("tasks") }
 class JournalSession(val player: UUID,val home: UUID?,val screen: JournalPage,
     var category: QuestCategory = QuestCategory.MAIN,var chapter: String? = null,var page: Int = 0) : InventoryHolder {
     lateinit var menu: Inventory

@@ -15,25 +15,35 @@ import ym.dreamSkyblock.api.HomeMenuOpenedEvent
 import ym.quest.domain.QuestService
 import ym.quest.domain.ProgressChange
 import ym.quest.integration.Integrations
+import ym.quest.integration.CraftEngineItemProvider
 import java.util.UUID
 
 /** Paper main thread captures successful interactions; database mutations use the Quest IO owner. */
 class TutorialActions(private val plugin: JavaPlugin, private val service: QuestService,
     private val integrations: Integrations, private val changed: (List<ProgressChange>) -> Unit,
-    private val failure: (Throwable) -> Unit, private val worlds: () -> Set<String>) : Listener, AutoCloseable {
+    private val failure: (Throwable) -> Unit, private val customItems: CraftEngineItemProvider?, private val worlds: () -> Set<String>) : Listener, AutoCloseable {
     private var closed=false
     private val combatKills=CombatKillWindow()
-    private val mythic=MythicCombat(plugin) { player,entity,identity ->
+    private val mythic=MythicCombat(plugin) { player,entity,identity,drops ->
         if(entity.world.name in worlds() && player.hasPermission("quest.use")) {
+            if(entity.world.name=="lost_altar" && customItems!=null) {
+                drops.forEach { stack ->
+                    val id=customItems.id(stack)
+                    if(stack.amount>0 && id in setOf("genlite:mechanical_parts","genlite:gear")) {
+                        record(player.uniqueId,"combat.stone-loot:$id",stack.amount.toLong())
+                    }
+                }
+            }
             record(player.uniqueId,"combat.kill:$identity")
             if(combatKills.accept(entity.uniqueId,entity is Enemy,true)) record(player.uniqueId,"combat.kill:hostile")
         }
     }
     init { plugin.server.pluginManager.registerEvents(this,plugin) }
-    private fun record(player: UUID,metric: String) {
+    private fun record(player: UUID,metric: String,amount: Long = 1) {
         if(closed) return
         val island=integrations.island(player) ?: return
-        service.record(island.id.toString(),metric,1,integrations.facts(island.id)).whenComplete { events,error ->
+        (if(metric.startsWith("combat.")) service.recordPersonal(island.id.toString(),player.toString(),metric,amount)
+         else service.record(island.id.toString(),metric,amount,integrations.facts(island.id))).whenComplete { events,error ->
             if(error!=null) failure(error) else if(!closed) changed(events)
         }
     }

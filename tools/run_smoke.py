@@ -30,7 +30,7 @@ with log.open('w',encoding='utf-8') as output:
         passed='QUEST_SMOKE_PASSED' in text and 'QUEST_SMOKE_FAILED' not in text
         print('SMOKE: '+('passed' if passed else 'failed; inspect '+str(log)),flush=True)
         if process.poll() is None:
-            config=server/'plugins/Quest/quests/星海启航.yml'
+            config=server/'plugins/Quest/quests/第一章/主1-01 星海启航.yml'
             original=config.read_text(encoding='utf-8')
             try:
                 config.write_text('schema-version: 2\nid: [\n',encoding='utf-8')

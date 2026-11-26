@@ -42,10 +42,10 @@ plugins/Quest/
   chapters/第一章·星海初醒.yml
   提示.yml
   引导.yml
-  quests/第一章/星海启航.yml
-  quests/第一章/放置生成器.yml
-  quests/第一章/能源启动.yml
-  quests/第一章/第一批资源.yml
+  quests/第一章/主1-01 星海启航.yml
+  quests/第一章/主1-02 安放生成器.yml
+  quests/第一章/主1-03 能源启动.yml
+  quests/第一章/主1-04 第一批资源.yml
   gui/chapters.yml
   gui/tasks.yml
   gui/settings.yml
@@ -106,7 +106,7 @@ plugins/Quest/
 
 任务、章节、`gui/chapters.yml` 及 `提示.yml` 使用 `schema-version: 2`，其余资源保持 1，SQLite 使用 `user_version=5`，保留 UUID 个人交谈与显示偏好；原任务、奖励和 HUD 偏好数据保留。升级边界见 [UPGRADE.md](UPGRADE.md)。加载前校验完整任务与章节 DAG、重复 ID、缺失引用、目标、菜单及物品；reload 失败保留上一份有效运行配置。
 
-`quests/` 按章节建立子文件夹（默认 `quests/第一章/`），递归加载，一个文件一个任务；不再配置 `prerequisites`。`chapters/` 一个文件一个章节，文件名可使用中文，引用始终使用稳定 ID。默认是 `chapters/第一章·星海初醒.yml`：
+`quests/` 按章节建立子文件夹（默认 `quests/第一章/`），递归加载，一个文件一个任务。第一章默认文件按 `主1-01 星海启航.yml` 和 `支1-01 能源物流.yml` 的格式编号。初见引航员是 `引导.yml` 中的个人前置引导，在任务清单中记为「主1-00」。任务进度使用 YAML 内的任务 ID，章节顺序和前置条件由章节文件的 `tasks` 定义。`chapters/` 一个文件一个章节，文件名可使用中文，引用始终使用稳定 ID。默认是 `chapters/第一章·星海初醒.yml`：
 
 ```yaml
 schema-version: 2
@@ -169,3 +169,11 @@ HUD 使用 [TabooLib Components](https://iplugin.hiusers.com/docs/invero/text/ta
 
 新版会将已知的旧TAB操作提示迁移为右侧任务栏提示，修改前原文保存于 `.migrations/sidebar-text-v1/lang.before`，保留其他文案、未知字段和中文注释。顶部完成通知的布局、材质和字号保持现状。服务端调整入口为 `Xerr/quest.yml` 与 `Xerr/core/layout/quest_tracker.yml`；本次素材制作脚本仅在 `Xerr/design/quest-sidebar-v2`。
 任务设置支持服务端专用 `item-on` / `item-off` 成对配置，根据追踪、提示、声音状态选择物品；`pack-only: true` 可隐藏未加载资源包时的透明点击区域。未加载资源包时仍使用配置的原版 `item`。此功能不修改三个开关的业务或保存方式。当前服务端卡片美术、模型、字体及制作/验证脚本仅保存在 CraftEngine 的 `resources/quest-settings-cards` 和 `design/quest-settings-cards`，Quest 源码及 JAR 不包含这些资产。
+
+## ItemHub 品质奖励（2026-11-16）
+
+`itemhub:星芽:短剑` 沿用初次试炼现有奖励配置，无需更换ID。ItemHubItemProvider的build走不抽取的previewItem，菜单、章节预览和AutomaticRewards可用性检查不生成实际品质；reward走createRandomItem。普通物品/材料保持原创建路径。旧ItemHub未提供品质API时仍可使用旧createItem，但不能保证新装备品质功能，正式服须配套更新。
+
+MailboxDelivery只在实际发放准备时调用ItemFactory.reward，每件不可堆叠装备独立生成。入包的品质、成色和属性由ItemHub PDC保存，名称与Lore使用同一快照。背包满或状态变化导致未发放的准备结果可被丢弃；WAITING邮箱条目仍按ID/数量存储，并不是固定的物品字节快照。原WAITING→SENDING→DELIVERED状态协议保持；不确定SENDING不盲目重发，已经发放的任务不补发第二把。
+
+名称显示原生像素品质框，Lore首行显示实际品质与成色，格式配置在ItemHub/qualities.yml的lore-quality。此更新不改任务条件、材料、数据库schema或既有领取状态。

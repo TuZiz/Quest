@@ -82,24 +82,22 @@ class TabQuestBridge(private val plugin: JavaPlugin, private val service: QuestS
             if(bindings.put(id, home) != home) publish(api, id, states.getValue("loading"))
             homes += home
         }
-        homes.forEach { home ->
-            if(home in pending) return@forEach
-            val ticket = Any(); pending[home] = ticket
-            service.journal(home.toString()).whenComplete { journal, error -> thread.run {
-                if(closed || pending[home] !== ticket) return@run
-                pending.remove(home)
+        bindings.toMap().forEach { (id,home) ->
+            if(id in pending) return@forEach
+            val connection=plugin.server.getPlayer(id) ?: return@forEach
+            val ticket=Any(); pending[id]=ticket
+            service.journal(home.toString(),id.toString()).whenComplete { journal,error -> thread.run {
+                if(closed || pending[id] !== ticket) return@run
+                pending.remove(id)
+                val player=plugin.server.getPlayer(id)
+                if(player !== connection || !connection.isOnline || !connection.hasPermission("quest.use") || integrations.island(id)?.id!=home || personalLines(connection)!=null) return@run
                 if(!plugin.server.pluginManager.isPluginEnabled("TAB")) return@run
-                val currentApi = connect(activeApi() ?: return@run)
-                val lines = if(error != null) {
-                    if(failed.add(home)) plugin.logger.log(Level.WARNING, "TAB quest journal failed; island=$home; progress retained", error)
+                val currentApi=connect(activeApi() ?: return@run)
+                val lines=if(error!=null) {
+                    if(failed.add(home)) plugin.logger.log(Level.WARNING,"TAB journal failed; player=$id; island=$home",error)
                     states.getValue("error")
                 } else { failed.remove(home); projection.project(journal) }
-                // Membership, permission, player connection and ownership are rechecked after IO.
-                bindings.filterValues { it == home }.keys.toList().forEach { id ->
-                    val player = plugin.server.getPlayer(id)
-                    if(player?.isOnline == true && player.hasPermission("quest.use") && integrations.island(id)?.id == home && personalLines(player) == null)
-                        publish(currentApi, id, lines)
-                }
+                publish(currentApi,id,lines)
             } }
         }
         failed.retainAll(homes)

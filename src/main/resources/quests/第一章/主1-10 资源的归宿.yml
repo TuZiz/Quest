@@ -1,0 +1,18 @@
+schema-version: 2
+id: 'first_extract'
+scope: 'island'
+category: 'main'
+name: '<gradient:#78FFD6:#A8FF78>资源的归宿</gradient>'
+icon: 'minecraft:chest'
+description:
+  - '<#94A3B8>右键物流核心，点击中央仓库领取自动化成果。'
+  - '<#94A3B8>也可使用 /genlite warehouse 打开中央仓库。'
+  - '<#64748B>需成功取至背包或光标，取消或失败不计入。'
+objectives:
+  - id: 'experience'
+    type: 'genlite.extract'
+    target: 8
+    description: '<#E2E8F0>从中央仓库成功取出<newline><#78FFD6>8</#78FFD6> 个资源'
+rewards:
+  - item: 'genlite:fuel'
+    amount: 8

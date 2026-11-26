@@ -43,11 +43,11 @@ class ResourcesTest {
         assertNull(text.clickEvent())
         val evidence=Path.of("target/verification/components.json"); Files.createDirectories(evidence.parent)
         val samples=JsonArray()
-        val values=listOf("quest","status","page","pages","info","amount","description","objectives","rewards","reward","progress","target","chapter","mode","notifications","heading","name","next","value","objective","completed","total","hint","step","category","tracking","percent","hud-mode","auto","sound","index").associateWith {
+        val values=listOf("quest","status","page","pages","info","amount","description","objectives","rewards","reward","progress","target","chapter","mode","notifications","heading","name","next","value","objective","completed","total","hint","step","category","tracking","percent","hud-mode","auto","sound","index","setting","state","scope").associateWith {
             renderer.render("<#7DD3FC>实际动态参数")
         }
-        assertEquals(setOf("chapters.yml","tasks.yml","settings.yml"),Files.list(root.resolve("gui")).use { paths -> paths.map { it.fileName.toString() }.toList().toSet() })
-        for(name in listOf("lang/zh_cn.yml","gui/chapters.yml","gui/tasks.yml","gui/settings.yml","chapters/第一章·星海初醒.yml","quests/第一章/能源启动.yml","quests/第一章/星海启航.yml","quests/第一章/放置生成器.yml","quests/第一章/第一批资源.yml","quests/第一章/支线/初次试炼.yml")) {
+        assertEquals(setOf("chapters.yml","tasks.yml"),Files.list(root.resolve("gui")).use { paths -> paths.map { it.fileName.toString() }.toList().toSet() })
+        for(name in listOf("lang/zh_cn.yml","gui/chapters.yml","gui/tasks.yml","chapters/第一章·星海初醒.yml","quests/第一章/主1-03 能源启动.yml","quests/第一章/主1-01 星海启航.yml","quests/第一章/主1-02 安放生成器.yml","quests/第一章/主1-04 第一批资源.yml","quests/第一章/支线/支1-04 石址试炼.yml")) {
             val yaml=YamlConfiguration().apply { loadFromString(Files.readString(this@ResourcesTest.root.resolve(name))) }
             fun record(path: String, value: Any?) {
                 when(value) {

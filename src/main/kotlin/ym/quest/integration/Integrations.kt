@@ -16,11 +16,13 @@ class Integrations(private val plugin: JavaPlugin, private val service: QuestSer
     private val listeners = mutableListOf<Listener>()
     private var initial = false
     private var warnedDream = false; private var warnedGen = false
-    private val seen = ConcurrentHashMap<String,Long>()
+    private val seen = GenliteCounterTracker()
     private val placed = ConcurrentHashMap.newKeySet<UUID>()
+    private val warehouse = PlayerVaultWithdrawals(plugin)
     @Volatile private var closed = false
     fun discover() {
         if(closed) return
+        warehouse.discover()
         val pm = plugin.server.pluginManager
         if(islands == null && pm.isPluginEnabled("DreamSkyblock")) try {
             plugin.server.servicesManager.load(ym.dreamSkyblock.api.DreamSkyblockApi::class.java)?.let { api ->
@@ -51,12 +53,33 @@ class Integrations(private val plugin: JavaPlugin, private val service: QuestSer
     fun island(player: UUID) = islands?.takeIf { it.ready() }?.byMember(player)
     fun allowed(home: UUID, player: UUID) = islands?.canClaim(home,player) == true
     fun facts(home: UUID): Map<String,Long> = buildMap {
+        val withdrawal=warehouse.snapshot(home)
         islands?.byId(home)?.let { put("island.member",1);put("island.value",it.value) }
         service.definitions.flatMap { it.objectives }.filter { it.type.startsWith("combat.") || it.type=="island.inspect" || it.type=="genlite.inspect" || production?.ready()==true && it.type.startsWith("genlite.") }.forEach { put(it.metric,0L) }
         if(production?.ready() == true) islands?.byId(home)?.let { island ->
             put("genlite.placed",if(production!!.hasPlacedGenerator(island)) 1L else 0L)
         }
         production?.takeIf { it.ready() }?.counters()?.forEach { (key,n) -> if(key.startsWith("$home|")) put(key.substringAfter('|'),n) }
+        applyWithdrawals(withdrawal,this)
+    }
+    private fun applyWithdrawals(snapshot: PlayerVaultWithdrawals.Snapshot, values: MutableMap<String,Long>) {
+        if(!snapshot.available) values.keys.removeIf { it=="genlite.extract" || it.startsWith("genlite.extract:") }
+        else if(snapshot.total!=null && production?.ready()==true) {
+            values.putIfAbsent("genlite.extract",0L)
+            values[ym.quest.storage.WarehouseProgressFacts.source]=snapshot.total
+        }
+    }
+    private fun warehouseCounters(raw: Map<String,Long>): Map<String,Long> = buildMap {
+        putAll(raw)
+        islands?.takeIf { it.ready() }?.all()?.forEach { island ->
+            val prefix="${island.id}|"
+            val snapshot=warehouse.snapshot(island.id)
+            if(!snapshot.available) keys.removeIf { it.startsWith(prefix+"genlite.extract") }
+            else if(snapshot.total!=null && production?.ready()==true) {
+                putIfAbsent(prefix+"genlite.extract",0L)
+                put(prefix+ym.quest.storage.WarehouseProgressFacts.source,snapshot.total)
+            }
+        }
     }
     fun syncIsland(home: UUID) {
         if(closed || islands?.byId(home) == null) return
@@ -65,10 +88,13 @@ class Integrations(private val plugin: JavaPlugin, private val service: QuestSer
     @Synchronized private fun acceptCounters(counters: Map<String,Long>) {
         if(closed || islands?.ready() != true) return
         val homes = mutableSetOf<UUID>()
-        counters.forEach { (key,n) ->
-            val old = seen[key]
-            if(old == null || n > old) { homes += UUID.fromString(key.substringBefore('|')); seen[key]=n }
-            else if(n < old) plugin.logger.severe("Genlite counter rollback: $key=$n < $old; progress frozen until counter recovers; restore Quest and Genlite from same backup")
+        warehouseCounters(counters).forEach { (key,n) ->
+            val old = seen.previous(key)
+            when(seen.accept(key,n)) {
+                GenliteCounterTracker.Result.CHANGED -> homes += UUID.fromString(key.substringBefore('|'))
+                GenliteCounterTracker.Result.ROLLBACK -> plugin.logger.severe("Genlite counter rollback: $key=$n < $old; progress frozen until counter recovers; restore Quest and Genlite from same backup")
+                GenliteCounterTracker.Result.UNCHANGED -> Unit
+            }
         }
         homes.forEach { home ->
             if(islands?.byId(home) == null) return@forEach
@@ -80,5 +106,5 @@ class Integrations(private val plugin: JavaPlugin, private val service: QuestSer
         }
     }
     fun refresh() { initial=false; seen.clear(); placed.clear(); discover() }
-    override fun close() { closed=true; listeners.forEach { HandlerList.unregisterAll(it) }; listeners.clear(); islands=null; production=null; seen.clear(); placed.clear() }
+    override fun close() { closed=true; listeners.forEach { HandlerList.unregisterAll(it) }; listeners.clear(); islands=null; production=null; warehouse.close(); seen.clear(); placed.clear() }
 }

@@ -14,7 +14,8 @@ class AutomaticRewards(private val plugin: JavaPlugin, private val service: Ques
                        private val customId: (org.bukkit.inventory.ItemStack) -> String?,
                        private val delivery: MailboxDelivery, private val thread: GameThread,
                        private val failure: (Throwable) -> Unit, initial: RewardSettings,
-                       private val active: () -> Boolean = { true }) : AutoCloseable {
+                       private val active: () -> Boolean = { true },
+                       private val personal: Boolean = false) : AutoCloseable {
     private var settings = initial
     private var closed = false
     private var generation = 0
@@ -32,19 +33,22 @@ class AutomaticRewards(private val plugin: JavaPlugin, private val service: Ques
         val recovery=elapsed >= settings.retryTicks
         if(recovery) elapsed=0
         if(!recovery && requested.isEmpty()) return
-        if(integrations.production?.ready() != true) return
+        if(!personal && integrations.production?.ready() != true) return
         plugin.server.onlinePlayers.sortedBy { it.uniqueId.toString() }.mapNotNull { player ->
             integrations.island(player.uniqueId)?.let { it.id to player }
-        }.groupBy({ it.first },{ it.second }).forEach { (home,players) ->
+        }.groupBy({ if(personal) it.second.uniqueId else it.first },{ it.second }).forEach { (key,players) ->
+            val home=integrations.island(players.first().uniqueId)!!.id
             val player = players.firstOrNull { valid(it,home) } ?: return@forEach
-            if(!recovery && home !in requested) return@forEach
-            if(!pending.add(home)) return@forEach
-            requested.remove(home)
+            if(!recovery && key !in requested) return@forEach
+            if(!pending.add(key)) return@forEach
+            requested.remove(key)
             val epoch = generation
             try {
-                val candidates = service.definitions.map { it.id to it.rewards } + service.chapters.map { "chapter:${it.id}" to it.rewards }
+                val candidates = service.definitions.filter { (it.scope==ym.quest.domain.ProgressScope.PERSONAL)==personal }.map { it.id to it.rewards } +
+                    if(personal) emptyList() else service.chapters.map { "chapter:${it.id}" to it.rewards }
                 val eligible = candidates.filter { (_,rewards) -> rewards.all { reward ->
                     try { items.build(reward.item,player); true }
+                    catch(_: RewardProviderNotReady) { false } // A future recovery tick rechecks eligibility.
                     catch(e: Exception) { if(unavailable.add(reward.item)) failure(e); false }
                 } }.map { it.first }.toSet()
                 val island = integrations.island(player.uniqueId)!!
@@ -52,14 +56,15 @@ class AutomaticRewards(private val plugin: JavaPlugin, private val service: Ques
                 val hasGenerator = integrations.production?.hasGenerator(island) == true || island.members.any { id ->
                     plugin.server.getPlayer(id)?.inventory?.storageContents?.any { it != null && customId(it) in starters } == true
                 }
-                service.claimCompleted(home.toString(),player.uniqueId.toString(),integrations.facts(home),hasGenerator,eligible,limit=1)
+                (if(personal) service.claimPersonalCompleted(home.toString(),player.uniqueId.toString(),eligible)
+                 else service.claimCompleted(home.toString(),player.uniqueId.toString(),integrations.facts(home),hasGenerator,eligible,limit=1))
                     .whenComplete { _,error -> thread.run {
                         if(closed || epoch != generation) return@run
-                        if(error != null) { pending.remove(home); failure(error); return@run }
-                        if(!valid(player,home)) { pending.remove(home); return@run }
-                        delivery.collect(player,home,quiet=true) { if(epoch == generation) pending.remove(home) }
+                        if(error != null) { pending.remove(key); failure(error); return@run }
+                        if(!valid(player,home)) { pending.remove(key); return@run }
+                        delivery.collect(player,home,quiet=true,personal=personal) { if(epoch == generation) pending.remove(key) }
                     } }
-            } catch(e: Exception) { pending.remove(home); failure(e) }
+            } catch(e: Exception) { pending.remove(key); failure(e) }
         }
     }
     fun reload(next: RewardSettings) { generation++; pending.clear(); requested.clear(); unavailable.clear(); elapsed=0; settings=next }

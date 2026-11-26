@@ -65,6 +65,27 @@ class Database(private val file: Path, private val log: Logger) : AutoCloseable 
         catch(e: Throwable) { c.rollback(); throw e }
         finally { c.autoCommit = true }
     }
+    /** Database executor only; include committed WAL data in the pre-migration snapshot. */
+    fun snapshotOnce(name: String) {
+        require(name.matches(Regex("[a-z0-9-]+")))
+        val c=checkNotNull(connection)
+        check(c.autoCommit) { "Database snapshot must run outside a transaction" }
+        val folder=file.parent.resolve("backups"); java.nio.file.Files.createDirectories(folder)
+        val destination=folder.resolve("$name.db")
+        if(java.nio.file.Files.exists(destination)) return
+        val temp=folder.resolve("$name.tmp.db")
+        try {
+            java.nio.file.Files.deleteIfExists(temp)
+            c.createStatement().use { it.execute("VACUUM INTO '${temp.toAbsolutePath().toString().replace("'","''")}'") }
+            DriverManager.getConnection("jdbc:sqlite:$temp").use { backup ->
+                backup.createStatement().use { s -> s.executeQuery("PRAGMA quick_check").use { result ->
+                    check(result.next() && result.getString(1)=="ok") { "SQLite snapshot integrity check failed: $temp" }
+                } }
+            }
+            java.nio.file.Files.move(temp,destination,java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+        } catch(e: Exception) { throw IllegalStateException("Quest database snapshot failed: $destination; personal-scope migration aborted",e) }
+        finally { java.nio.file.Files.deleteIfExists(temp) }
+    }
     @Synchronized fun closeAsync(): CompletableFuture<Unit> {
         closing?.let { return it }
         closed = true

@@ -8,7 +8,7 @@ class IntroductionJournal(private val settings: IntroductionSettings, private va
     fun quest(done: Boolean): QuestView {
         val objective = Objective("talk","personal.npc",1,null,text.language.getString("introduction.objective")!!)
         val definition = QuestDefinition(settings.taskId,text.language.getString("introduction.task-name")!!,
-            text.language.getStringList("introduction.hints"),"minecraft:book",emptyList(),listOf(objective),emptyList())
+            text.language.getStringList("introduction.hints"),"minecraft:book",emptyList(),listOf(objective),emptyList(),scope=ProgressScope.PERSONAL)
         return QuestView(definition,if(done) QuestStatus.COMPLETE else QuestStatus.ACTIVE,listOf(ObjectiveProgress(objective,if(done) 1 else 0)))
     }
     fun decorate(journal: JournalView, done: Boolean): JournalView {

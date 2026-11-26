@@ -28,10 +28,12 @@ public final class QuestSmoke extends JavaPlugin {
                 if(quest==null || !quest.isEnabled()) throw new AssertionError("Quest disabled");
                 var runtime=field(quest,"runtime");
                 var items=(ItemFactory)field(runtime,"items");
-                for(String id:List.of("genlite:fuel","genlite:mechanical_parts","genlite:copper_coil","genlite:cobblestone_generator","genlite:basic_upgrade_unit")) {
+                for(String id:List.of("genlite:fuel","genlite:mechanical_parts","genlite:gear","genlite:copper_coil","genlite:cobblestone_generator","genlite:basic_upgrade_unit")) {
                     ItemStack item=items.build(id,null);
                     if(!id.equals(String.valueOf(CraftEngineItems.getCustomItemId(item)))) throw new AssertionError("Wrong identity: "+id);
                     if(item.isEmpty()) throw new AssertionError("Empty custom item "+id);
+                    if(!item.isSimilar(CraftEngineItems.byId(id).buildBukkitItem()))
+                        throw new AssertionError("Reward differs from current CraftEngine item: "+id);
                     getLogger().info("ITEM_OK "+id);
                 }
                 var integrations=(ym.quest.integration.Integrations)field(runtime,"integrations");

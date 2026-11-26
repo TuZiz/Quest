@@ -10,7 +10,7 @@ import java.nio.file.Path
 
 class TutorialUpgradeTest {
     @TempDir lateinit var root: Path
-    private fun resource(path: String)=Files.readString(Path.of("src/main/resources/$path"))
+    private fun resource(path: String)=Files.readString(Path.of("src/main/resources",ym.quest.config.QuestTaskFiles.bundled(path)))
     private fun put(path: String,raw: String) {val p=root.resolve(path);Files.createDirectories(p.parent);Files.writeString(p,raw)}
     @Test fun `adds thirteen tasks with independent branches while preserving old customized rewards comments and database bytes`() {
         val legacy=resource(ChapterConfigUpgrade.defaultFile).substringBefore("  - quest: first_harvest")+"rewards:\n  - item: minecraft:emerald\n    amount: 9\n# 中文用户注释\nunknown: '保留'\n"
@@ -30,6 +30,16 @@ class TutorialUpgradeTest {
         assertEquals(10,QuestTaskFiles.files(root.resolve("quests")).size)
         val once=Files.readString(root.resolve(ChapterConfigUpgrade.defaultFile));TutorialUpgrade.migrate(root,::resource)
         assertEquals(once,Files.readString(root.resolve(ChapterConfigUpgrade.defaultFile)))
+
+        repeat(2) { StoneSiteMaterialsUpgrade.migrate(root) { resource(StoneSiteMaterialsUpgrade.resourcePath) } }
+        val upgraded=Files.readString(root.resolve(ChapterConfigUpgrade.defaultFile))
+        val next=ChapterFiles.parse(YamlConfiguration().apply { loadFromString(upgraded) })
+        assertEquals(listOf("first_trial"),next.taskRequirements["stone_site_materials"])
+        assertTrue("stone_site_materials" in next.optionalQuests)
+        assertEquals(ch.requiredQuests,next.requiredQuests)
+        assertEquals(ch.rewards,next.rewards)
+        assertTrue(upgraded.contains("# 中文用户注释"))
+        assertEquals(resource(StoneSiteMaterialsUpgrade.resourcePath),Files.readString(root.resolve(StoneSiteMaterialsUpgrade.resourcePath)))
     }
     @Test fun `conflicting new task path aborts before publishing chapter or any task`() {
         put(ChapterConfigUpgrade.defaultFile,resource(ChapterConfigUpgrade.defaultFile))

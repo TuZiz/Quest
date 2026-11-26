@@ -13,7 +13,7 @@ import java.util.Properties
 class ChapterConfigUpgradeTest {
     @TempDir lateinit var root: Path
     // Historical v1/v2 fixtures deliberately retain the pre-placement graph.
-    private val bundled get() = Files.readString(Path.of("src/main/resources/${ChapterConfigUpgrade.defaultFile}"))
+    private val bundled get() = Files.readString(Path.of("src/main/resources/${ChapterConfigUpgrade.defaultFile}")).replace("\r\n","\n")
         .replace("  - quest: place_generator\n    requires:\n      - sky_start\n", "")
         .replace("      - place_generator", "      - sky_start")
         .substringBefore("  - quest: first_harvest") + "rewards:\n  - item: minecraft:diamond\n    amount: 2\n"
@@ -23,7 +23,7 @@ class ChapterConfigUpgradeTest {
     private fun migrate() = ChapterConfigUpgrade.migrate(root,bundled)
     private fun tasks() {
         for((id,required) in listOf("sky_start" to null,"first_fuel" to "sky_start","first_resources" to "first_fuel")) {
-            val original=Files.readString(Path.of("src/main/resources/quests/第一章/${ResourceUpgrade.questNames.getValue(id)}.yml"))
+            val original=Files.readString(Path.of("src/main/resources",ym.quest.config.QuestTaskFiles.bundled("quests/第一章/${ResourceUpgrade.questNames.getValue(id)}.yml")))
             put("quests/$id.yml",original.replace("schema-version: 2","schema-version: 1")+"\n# 自定义注释\nunknown: 保留\n"+
                 (required?.let { "prerequisites: # 前置行尾注释\n  # 前置注释\n  - $it # 条目注释\n" } ?: ""))
         }

@@ -10,7 +10,7 @@ import java.nio.file.Path
 
 class ChapterResourcesTest {
     @TempDir lateinit var root: Path
-    private fun yaml(file: String) = YamlConfiguration().apply { loadFromString(Files.readString(Path.of("src/main/resources/$file"))) }
+    private fun yaml(file: String) = YamlConfiguration().apply { loadFromString(Files.readString(Path.of("src/main/resources",ym.quest.config.QuestTaskFiles.bundled(file)))) }
     @Test fun `resource layout migration preserves custom content is idempotent and rejects conflicts`() {
         val paths=mapOf("章节.yml" to "chapters/章节.yml")
         paths.keys.forEach { name ->

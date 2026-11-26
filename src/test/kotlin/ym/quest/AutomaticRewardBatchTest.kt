@@ -42,4 +42,21 @@ class AutomaticRewardBatchTest {
         assertEquals(HudMode.OFF,DisplayPreferences().mode)
         assertFalse(DisplayPreferences().autoTracking)
     }
+    @Test fun `completed task remains claimable when an unavailable reward provider becomes ready`() {
+        val db=Database(root.resolve("provider-retry.db"),Logger.getAnonymousLogger())
+        db.open().await()
+        try {
+            val service=QuestService(db)
+            val reward=Reward("itemhub:星芽:短剑",1)
+            val quest=QuestDefinition("trial","初次试炼",emptyList(),"minecraft:book",emptyList(),
+                listOf(Objective("member","island.member",1,null,"入岛")),listOf(reward))
+            service.configure(listOf(quest)).await()
+            service.sync("home",mapOf("island.member" to 1)).await()
+            assertTrue(service.claimCompleted("home","member",emptyMap(),false,emptySet(),1).await().isEmpty())
+            assertTrue(service.mailbox("home").await().isEmpty())
+            assertEquals(listOf("trial"),service.claimCompleted("home","member",emptyMap(),false,setOf("trial"),1).await())
+            assertEquals(reward.item,service.mailbox("home").await().single().item)
+            assertTrue(service.claimCompleted("home","member",emptyMap(),false,setOf("trial"),1).await().isEmpty())
+        } finally { db.closeAsync().await() }
+    }
 }

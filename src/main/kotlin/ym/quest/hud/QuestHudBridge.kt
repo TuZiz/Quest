@@ -67,6 +67,7 @@ class QuestHudBridge(private val plugin: JavaPlugin, private val service: QuestS
         val groups=mutableMapOf<UUID,MutableList<Session>>()
         plugin.server.onlinePlayers.filter(::allowed).forEach { player ->
             val s=session(player)
+            if (externalTracker(player)) { s.tracker=null; return@forEach }
             val prefs=preferences(player)
             if(prefs==null || prefs.mode==HudMode.OFF) { s.tracker=null;return@forEach }
             val home=integrations.island(player.uniqueId)?.id
@@ -82,29 +83,31 @@ class QuestHudBridge(private val plugin: JavaPlugin, private val service: QuestS
             }
             groups.getOrPut(home) { mutableListOf() }.add(s)
         }
-        groups.forEach { (home,targets) ->
-            if(home in pending) return@forEach
-            val ticket=Any(); pending[home]=ticket
-            service.journal(home.toString()).whenComplete { view,error -> thread.run {
-                if(closed || pending[home] !== ticket) return@run
-                pending.remove(home)
-                if(error != null) { failed("journal:$home",error); targets.filter(::valid).forEach { it.tracker=null }; return@run }
-                failures.remove("journal:$home")
-                targets.filter { valid(it) && it.home == home && integrations.island(it.player.uniqueId)?.id == home }
-                    .forEach { s -> val prefs=preferences(s.player)
-                        val intro=personal(s.player)
-                        s.tracker=if(prefs==null || prefs.mode==HudMode.OFF || (intro!=null && intro.quests.isEmpty())) null
-                            else projection.projectGrouped(view,prefs.trackedQuest,prefs.autoTracking,intro)
-                    }
+        groups.forEach { (home,targets) -> targets.forEach target@ { s ->
+            val id=s.player.uniqueId
+            if(id in pending) return@target
+            val ticket=Any(); pending[id]=ticket
+            service.journal(home.toString(),id.toString()).whenComplete { view,error -> thread.run {
+                if(closed || pending[id] !== ticket) return@run
+                pending.remove(id)
+                if(!valid(s) || s.home!=home || integrations.island(id)?.id!=home) return@run
+                if(error!=null) { failed("journal:$id",error); s.tracker=null; return@run }
+                failures.remove("journal:$id")
+                val prefs=preferences(s.player); val intro=personal(s.player)
+                s.tracker=if(prefs==null || prefs.mode==HudMode.OFF || (intro!=null && intro.quests.isEmpty())) null
+                    else projection.projectGrouped(view,prefs.trackedQuest,prefs.autoTracking,intro)
             } }
-        }
+        } }
+    }
+
+    private fun externalTracker(player: Player) = player.getMetadata("xaryhub-farm-sidebar").any {
+        it.owningPlugin?.name == "XaryHub" && it.asBoolean()
     }
     private fun draw(s: Session) {
         val home=integrations.island(s.player.uniqueId)?.id
         if(s.home != home) { clear(s); s.home=home; return }
         val prefs=preferences(s.player)
-        val values=if(prefs?.mode==HudMode.ALWAYS) s.tracker else null
-        if(prefs?.notifications!=true) s.queue.clear()
+        val values=if(!externalTracker(s.player) && prefs?.mode==HudMode.ALWAYS) s.tracker else null
         if(values == null) {
             if(s.rendered != null || renderer.present(s.player,TRACKER)) renderer.remove(s.player,TRACKER)
             s.rendered=null
@@ -120,13 +123,13 @@ class QuestHudBridge(private val plugin: JavaPlugin, private val service: QuestS
         s.notice=frame
     }
     fun notify(player: Player, home: UUID, changes: List<ProgressChange>) {
-        if(!allowed(player) || preferences(player)?.notifications!=true || integrations.island(player.uniqueId)?.id != home) return
+        if(!allowed(player) || integrations.island(player.uniqueId)?.id != home) return
         val s=session(player)
         if(s.home != home) { clear(s); s.home=home }
         projection.completion(changes,service.definitions,service.chapters).forEach(s.queue::offer)
     }
     fun personalComplete(player: Player, id: String, name: String) {
-        if(allowed(player) && preferences(player)?.notifications==true) session(player).queue.offer(projection.notice("personal:$id",name,false))
+        if(allowed(player)) session(player).queue.offer(projection.notice("personal:$id",name,false))
     }
     private fun clear(s: Session) {
         s.queue.clear(); s.tracker=null; s.rendered=null; s.notice=null

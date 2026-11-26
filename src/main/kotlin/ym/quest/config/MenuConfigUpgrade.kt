@@ -16,7 +16,7 @@ object MenuConfigUpgrade {
             require(retired.none { Files.exists(root.resolve(it)) }) { "gui/: retired menu restored after $migration; originals preserved; move it outside gui/" }
             return
         }
-        val paths=listOf("gui/chapters.yml","gui/tasks.yml","gui/settings.yml")+retired
+        val paths=listOf("gui/chapters.yml","gui/tasks.yml")+retired
         val originals=paths.associateWith { path -> root.resolve(path).takeIf(Files::exists)?.let(Files::readString) }
         originals.forEach { (path,raw) -> if(raw!=null) {
             val y=parse(path,raw)
@@ -29,8 +29,7 @@ object MenuConfigUpgrade {
             .firstNotNullOfOrNull { originals[it] } ?: bundled.getValue("tasks")
         val next=mapOf(
             "gui/chapters.yml" to prepare(chapterSource,true,bundled.getValue("chapters")),
-            "gui/tasks.yml" to prepare(taskSource,false,bundled.getValue("tasks")),
-            "gui/settings.yml" to (originals["gui/settings.yml"] ?: bundled.getValue("settings")))
+            "gui/tasks.yml" to prepare(taskSource,false,bundled.getValue("tasks")))
         next.forEach { (path,raw) ->
             val y=parse(path,raw)
             require(y.getInt("schema-version")==if(path=="gui/chapters.yml") 2 else 1) { "$path:schema-version=${y.get("schema-version")} invalid migration output; original preserved" }

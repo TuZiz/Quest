@@ -22,24 +22,29 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
     private val defaults = listOf("config.yml","lang/zh_cn.yml",
         "quests/星海启航.yml","quests/能源启动.yml","quests/第一批资源.yml",
         "提示.yml","奖励.yml","gui/chapters.yml","tab.yml","引导.yml",
-        "gui/tasks.yml","gui/settings.yml")
+        "gui/tasks.yml")
     fun load(): Settings {
         QuestTaskFiles.recover(plugin.dataFolder.toPath())
+        QuestFileNumbering.recover(plugin.dataFolder.toPath())
         NoticeConfigUpgrade.migrate(plugin.dataFolder.toPath())
         ResourceUpgrade.relocateLayout(plugin.dataFolder.toPath())
-        MenuConfigUpgrade.migrate(plugin.dataFolder.toPath(),listOf("chapters","tasks","settings").associateWith { name ->
+        MenuConfigUpgrade.migrate(plugin.dataFolder.toPath(),listOf("chapters","tasks").associateWith { name ->
             checkNotNull(plugin.getResource("gui/$name.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() }
         })
+        RetireSettingsMenu.migrate(plugin.dataFolder.toPath())
         ResourceUpgrade.renameQuests(plugin.dataFolder.toPath())
         ResourceUpgrade.updateProgressionText(plugin.dataFolder.toPath())
         val chapterDefault = checkNotNull(plugin.getResource(ChapterConfigUpgrade.defaultFile)).bufferedReader(Charsets.UTF_8).use { it.readText() }
         ChapterConfigUpgrade.migrate(plugin.dataFolder.toPath(),chapterDefault)
         defaults.forEach { name ->
-            val file = plugin.dataFolder.toPath().resolve(name)
-            val existingTask=name.startsWith("quests/") && QuestTaskFiles.files(plugin.dataFolder.toPath().resolve("quests")).any { it.fileName==file.fileName }
+            val bundled = QuestTaskFiles.bundled(name)
+            val file = plugin.dataFolder.toPath().resolve(bundled)
+            val legacyName = name.substringAfterLast('/')
+            val existingTask = name.startsWith("quests/") &&
+                QuestTaskFiles.files(plugin.dataFolder.toPath().resolve("quests")).any { it.fileName.toString() == legacyName }
             if(!Files.exists(file) && !existingTask) {
                 Files.createDirectories(file.parent)
-                checkNotNull(plugin.getResource(QuestTaskFiles.bundled(name))) { "Missing bundled $name" }.use { Files.copy(it,file) }
+                checkNotNull(plugin.getResource(bundled)) { "Missing bundled $name" }.use { Files.copy(it,file) }
             }
         }
         if(ChapterConfigUpgrade.files(plugin.dataFolder.toPath().resolve("chapters")).isEmpty()) {
@@ -53,18 +58,29 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         CategoryButtonUpgrade.migrate(plugin.dataFolder.toPath(),checkNotNull(plugin.getResource("gui/chapters.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
         QuestTaskFiles.groupFirstChapter(plugin.dataFolder.toPath())
         TutorialUpgrade.migrate(plugin.dataFolder.toPath()) { path ->
-            checkNotNull(plugin.getResource(path)) { "Missing tutorial resource $path" }.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            checkNotNull(plugin.getResource(QuestTaskFiles.bundled(path))) { "Missing tutorial resource $path" }.bufferedReader(Charsets.UTF_8).use { it.readText() }
         }
         TutorialLevelTwoUpgrade.migrate(plugin.dataFolder.toPath())
         TutorialRpgRewardsUpgrade.migrate(plugin.dataFolder.toPath())
         TutorialCurrencyUpgrade.migrate(plugin.dataFolder.toPath()) { path ->
-            checkNotNull(plugin.getResource(path)) { "Missing tutorial resource $path" }.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            checkNotNull(plugin.getResource(QuestTaskFiles.bundled(path))) { "Missing tutorial resource $path" }.bufferedReader(Charsets.UTF_8).use { it.readText() }
         }
         RetiredHomeGrowthUpgrade.migrate(plugin.dataFolder.toPath())
         ObjectiveLineBreakUpgrade.migrate(plugin.dataFolder.toPath())
         IslandEntryHintUpgrade.migrate(plugin.dataFolder.toPath())
         TutorialWordingUpgrade.migrate(plugin.dataFolder.toPath())
         TrialCombatUpgrade.migrate(plugin.dataFolder.toPath())
+        TrialRewardUpgrade.migrate(plugin.dataFolder.toPath())
+        StoneSiteMaterialsUpgrade.migrate(plugin.dataFolder.toPath()) {
+            checkNotNull(plugin.getResource(QuestTaskFiles.bundled(StoneSiteMaterialsUpgrade.resourcePath))).bufferedReader(Charsets.UTF_8).use { it.readText() }
+        }
+        StarterFoodUpgrade.migrate(plugin.dataFolder.toPath())
+        LogisticsTutorialUpgrade.migrate(plugin.dataFolder.toPath()) { path ->
+            checkNotNull(plugin.getResource(QuestTaskFiles.bundled(path))) { "Missing logistics resource $path" }.bufferedReader(Charsets.UTF_8).use { it.readText() }
+        }
+        PersonalScopeUpgrade.migrate(plugin.dataFolder.toPath())
+        SilverCoinCommentUpgrade.migrate(plugin.dataFolder.toPath())
+        QuestFileNumbering.migrate(plugin.dataFolder.toPath())
         ResourceUpgrade.appendLanguage(plugin.dataFolder.toPath().resolve("lang/zh_cn.yml"),
             checkNotNull(plugin.getResource("lang/zh_cn.yml")).bufferedReader(Charsets.UTF_8).use { it.readText() })
         TabTextUpgrade.migrate(plugin.dataFolder.toPath(),
@@ -118,7 +134,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
         listOf("personal","shared","task-complete","chapter-complete","task-detail","chapter-detail","next","help").forEach {
             require(language.isString("hud.$it")) { "lang/zh_cn.yml:hud.$it missing" }
         }
-        val journalMenus=listOf("chapters","tasks","settings").associateWith { id ->
+        val journalMenus=listOf("chapters","tasks").associateWith { id ->
             yaml("gui/$id.yml").also {
                 validateMenu("gui/$id.yml",it)
                 if(id!="settings") require(it.isString("reward-format")) { "gui/$id.yml:reward-format missing" }
@@ -136,7 +152,7 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             ?: error("$file:$key=${s.get(key)} expected nonblank string")
         val id = text(y,"id")
         require(id.matches(Regex("[a-z0-9_-]+"))) { "$file:id=$id invalid" }
-        require(y.getString("scope") == "island") { "$file:scope=${y.get("scope")} only island is implemented" }
+        require(y.getString("scope") in setOf("island","personal")) { "$file:scope=${y.get("scope")} expected island/personal" }
         require(!y.contains("prerequisites")) { "$file:prerequisites forbidden in schema 2; configure chapters/*.yml tasks.requires" }
         if(y.contains("rewards")) require(y.get("rewards") is List<*>) { "$file:rewards=${y.get("rewards")} expected list" }
         val objectives = y.getMapList("objectives").map { raw ->
@@ -167,11 +183,12 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             require((value is Int || value is Long) && (value as Number).toLong()>0) { "$file:unlock-when.$metric=$value expected positive integer" }
             (value as Number).toLong()
         }
-        return QuestDefinition(id,text(y,"name"),y.getStringList("description"),text(y,"icon"),emptyList(),objectives,rewards,QuestCategory.valueOf(category.uppercase()),unlock)
+        return QuestDefinition(id,text(y,"name"),y.getStringList("description"),text(y,"icon"),emptyList(),objectives,rewards,QuestCategory.valueOf(category.uppercase()),unlock,ProgressScope.valueOf(y.getString("scope")!!.uppercase()))
     }
     companion object {
-        val requiredMessages = listOf("reward-delivered","reward-delivered-item","reward-delivered-separator","no-permission","unavailable","no-island","loading","error","busy","claimed","not-complete","inventory-full","uncertain","delivered","progress","complete","reloaded","reset","usage","debug","resolved","player-only","reward-line","objective-line","status.LOCKED","status.ACTIVE","status.COMPLETE","status.CLAIMED","chapter-progress","chapter-reward-status") +
-            listOf("command-help.player","command-help.admin")
+        val requiredMessages = listOf("task-tracking-tip","task-scope.ISLAND","task-scope.PERSONAL","task-scope.suffix","task-scope.island-name","task-scope.island-complete","reward-delivered","reward-delivered-item","reward-delivered-separator","no-permission","unavailable","no-island","loading","error","busy","claimed","not-complete","inventory-full","uncertain","delivered","progress","complete","reloaded","reset","usage","debug","resolved","player-only","reward-line","objective-line","status.LOCKED","status.ACTIVE","status.COMPLETE","status.CLAIMED","chapter-progress","chapter-reward-status") +
+            listOf("command-help.player","command-help.admin") +
+            listOf("usage","loading","saved","hud").map { "preference-command.$it" }
         fun validateGraph(quests: List<QuestDefinition>) {
             val byId = quests.associateBy { it.id }
             require(quests.isNotEmpty() && byId.size == quests.size) { "quests/: empty or duplicate quest IDs" }
@@ -185,6 +202,11 @@ class QuestFiles(private val plugin: JavaPlugin, private val conditions: Conditi
             byId.keys.forEach(::visit)
         }
         fun validateMenu(file: String, y: YamlConfiguration) {
+            try {
+                ym.quest.gui.journal.JournalCardLayout.parse(y)
+                ym.quest.gui.journal.ChapterCardPreviews.validate(y)
+            }
+            catch(e: IllegalArgumentException) { throw IllegalArgumentException("$file:${e.message}",e) }
             if(y.contains("empty-slots")) {
                 val filler=y.getString("empty-slots")
                 require(filler?.length==1 && y.isString("components.$filler.item") &&

@@ -1,0 +1,30 @@
+schema-version: 2
+id: 'logistics_supply'
+scope: 'island'
+category: 'side'
+name: '<#FFB75E>✦ <gradient:#FFB75E:#FFF6B7>能源物流</gradient>'
+icon: 'genlite:fuel'
+
+description:
+  - '<#64748B>━━━━━━━━━━━━━━━'
+  - '<#94A3B8>使用副本材料将 <#78FFD6>物流核心 <#94A3B8>升至 <#FFF6B7>Lv.2 <#94A3B8>以解锁燃料仓。'
+  - '<#94A3B8>向核心放入 <#FFB75E>普通燃料 <#94A3B8>即可为已绑定的生成器统一供能。'
+  - ''
+  - '<#64748B>▪ <#94A3B8>供能机制：生产时直接消耗核心能量，不转入生成器燃料仓'
+  - '<#64748B>▪ <#94A3B8>能量转化：每个 <#FFB75E>普通燃料 <#94A3B8>默认提供 <#A8FF78>8 <#94A3B8>点能量'
+  - '<#64748B>▪ <#94A3B8>任务性质：<#FFF6B7>支线试炼 <#64748B>（不影响主线进度）'
+
+objectives:
+  - id: 'upgrade'
+    type: 'genlite.level'
+    resource: 'resource_collector'
+    target: 2
+    description: '<#94A3B8>├─ <#E2E8F0>将 <#78FFD6>物流核心 <#E2E8F0>升至 <#FFF6B7>Lv.2'
+  - id: 'supply'
+    type: 'genlite.energy'
+    target: 1
+    description: '<#94A3B8>└─ <#E2E8F0>通过物流核心供能消耗 <#A8FF78>1 <#E2E8F0>点能量'
+
+rewards:
+  - item: 'genlite:fuel'  # 普通燃料 [煤炭级]
+    amount: 16

@@ -1,0 +1,25 @@
+schema-version: 2
+id: 'stone_site_materials'
+scope: 'personal'
+category: 'side'
+name: '<#78FFD6>✦ <gradient:#78FFD6:#A8FF78>石址寻材</gradient>'
+icon: 'genlite:mechanical_parts'
+
+description:
+  - '<#64748B>━━━━━━━━━━━━━━━'
+  - '<#94A3B8>在 <#78FFD6>石址 <#94A3B8>区域清剿怪物，从它们身上搜集'
+  - '<#94A3B8>机器制造与升级所需的 <#FFF6B7>铁片 <#94A3B8>和 <#FFB75E>铁环<#94A3B8>。'
+  - ''
+  - '<#64748B>▪ <#94A3B8>性质：<#FFF6B7>支线试炼 <#64748B>（不影响主线进度）'
+
+objectives:
+  - id: 'iron_parts'
+    type: 'combat.stone-loot'
+    resource: 'genlite:mechanical_parts'
+    target: 4
+    description: '<#94A3B8>├─ <#E2E8F0>击杀掉落 <#A8FF78>4 <#E2E8F0>个 <#FFF6B7>铁片'
+  - id: 'iron_rings'
+    type: 'combat.stone-loot'
+    resource: 'genlite:gear'
+    target: 2
+    description: '<#94A3B8>└─ <#E2E8F0>击杀掉落 <#A8FF78>2 <#E2E8F0>个 <#FFB75E>铁环'

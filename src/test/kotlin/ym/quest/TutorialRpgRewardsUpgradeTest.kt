@@ -26,12 +26,16 @@ class TutorialRpgRewardsUpgradeTest {
         val next=Files.readString(root.resolve(ChapterConfigUpgrade.defaultFile))
         assertFalse(next.contains("minecraft:diamond"));assertTrue(next.contains("genlite:mechanical_parts"))
     }
-    @Test fun `every bundled first chapter reward uses registered custom item namespaces`() {
+    @Test fun `every bundled first chapter reward uses registered custom items or starter food`() {
         val paths=QuestTaskFiles.files(Path.of("src/main/resources/quests/第一章"))+listOf(Path.of("src/main/resources/${ChapterConfigUpgrade.defaultFile}"))
         paths.forEach { path ->
             val raw=Files.readString(path);val y=YamlConfiguration().apply {loadFromString(raw)}
-            assertTrue(y.getMapList("rewards").isNotEmpty())
-            assertTrue(y.getMapList("rewards").all {(it["item"] as String).substringBefore(':') in setOf("genlite","currency")},path.toString())
+            assertTrue(y.getMapList("rewards").isNotEmpty() || y.getString("id")=="stone_site_materials")
+            val food=when(y.getString("id")) { "sky_start" -> "minecraft:bread"; "first_trial" -> "minecraft:baked_potato"; else -> null }
+            assertTrue(y.getMapList("rewards").all {
+                (it["item"] as String).substringBefore(':') in setOf("genlite","currency","itemhub") ||
+                    (it["item"]==food && it["amount"]==8)
+            },path.toString())
         }
     }
 }

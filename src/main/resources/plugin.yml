@@ -6,8 +6,10 @@ folia-supported: false
 authors:
   - ymxc
 softdepend:
+  - ItemHub
   - DreamSkyblock
   - Genlite
+  - PlayerVault
   - CraftEngine
   - TAB
   - Adyeshach

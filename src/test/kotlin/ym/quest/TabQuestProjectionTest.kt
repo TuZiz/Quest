@@ -30,7 +30,7 @@ class TabQuestProjectionTest {
         listOf(Objective("produce","genlite.produce",target,"minecraft:cobblestone","<#E0F7FA>生成器实际生产原石")),emptyList())
 
     @Test fun `fuel task retains compact objective above the independent side section`() {
-        val fuel = YamlConfiguration().apply { loadFromString(Files.readString(Path.of("src/main/resources/quests/第一章/能源启动.yml"))) }
+        val fuel = YamlConfiguration().apply { loadFromString(Files.readString(Path.of("src/main/resources/quests/第一章/主1-03 能源启动.yml"))) }
         val objective = fuel.getMapList("objectives").single()
         val q = QuestDefinition(fuel.getString("id")!!, fuel.getString("name")!!, fuel.getStringList("description"),
             fuel.getString("icon")!!, emptyList(), listOf(Objective(objective["id"].toString(), objective["type"].toString(),
@@ -145,12 +145,16 @@ class TabQuestProjectionTest {
             QuestView(q,QuestStatus.ACTIVE,listOf(ObjectiveProgress(q.objectives.single(),0)))
         }
         val branches=tasks.filter { it.definition.category==QuestCategory.SIDE }
-        assertEquals(3,branches.size)
+        assertEquals(5,branches.size)
         fun compact(value: String)=value.filterNot(Char::isWhitespace)
-        tasks.filter { it.definition.category==QuestCategory.MAIN }.forEach { main ->
-            val lines=projection.project(JournalView(listOf(main)+branches,listOf(ChapterView(chapter,ChapterStatus.ACTIVE,0,false))))
+        // Supply unlocks after stone-site materials; its prerequisites cannot also remain active.
+        val earlier=branches.filter {it.definition.id!="logistics_supply"}
+        val branchSets=listOf("first_trial","stone_site_materials").map { hidden -> earlier.filter { it.definition.id!=hidden } }+
+            listOf(branches.filter {it.definition.id !in setOf("first_trial","stone_site_materials")})
+        tasks.filter { it.definition.category==QuestCategory.MAIN }.forEach { main -> branchSets.forEach { active ->
+            val lines=projection.project(JournalView(listOf(main)+active,listOf(ChapterView(chapter,ChapterStatus.ACTIVE,0,false))))
             val visible=compact(plain(lines))
-            (listOf(main)+branches).forEach { q ->
+            (listOf(main)+active).forEach { q ->
                 val description=compact(plain(listOf(q.definition.objectives.single().description)))
                 assertTrue(visible.contains(description),"${main.definition.id}: missing ${q.definition.id}: $visible")
             }
@@ -159,7 +163,7 @@ class TabQuestProjectionTest {
             lines.drop(heading+1).map { plain(listOf(it)) }.filter { it.isNotBlank() && !it.startsWith("▪") }.forEach {
                 assertTrue(it.startsWith("  "),it)
             }
-        }
+        } }
     }
 
     @Test fun `team journal read projection neither completes nor claims rewards`() {

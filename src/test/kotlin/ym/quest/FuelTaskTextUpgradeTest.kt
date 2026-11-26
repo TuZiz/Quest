@@ -12,7 +12,7 @@ class FuelTaskTextUpgradeTest {
     @TempDir lateinit var root: Path
     private fun yaml(raw: String)=YamlConfiguration().apply { loadFromString(raw) }
     @Test fun `existing fuel instructions migrate without resetting targets rewards or custom fields`() {
-        val current=Files.readString(Path.of("src/main/resources/quests/第一章/能源启动.yml"))
+        val current=Files.readString(Path.of("src/main/resources/quests/第一章/主1-03 能源启动.yml"))
         // Exercise the actual historical wording even when today's defaults change style.
         val old=current.replace(Regex("(?s)description:\\n.*?\\nobjectives:"),
             "description:\n  - '<#E2E8F0>点击<#FDE68A><bold>「燃料」</bold><#E2E8F0><newline>   放入燃料即可'\n\nobjectives:")

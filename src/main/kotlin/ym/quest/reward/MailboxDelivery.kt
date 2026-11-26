@@ -18,14 +18,20 @@ class MailboxDelivery(private val service: QuestService, private val integration
     private val sending = mutableSetOf<String>()
     fun isSending(id: String) = id in sending
     private var closed = false
-    fun collect(player: Player, home: UUID, quiet: Boolean = false, done: () -> Unit = {}) {
+    fun collect(player: Player, home: UUID, quiet: Boolean = false, personal: Boolean? = null, done: () -> Unit = {}) {
         if(closed || !busy.add(player.uniqueId)) { if(!quiet) text.send(player,"busy"); done(); return }
         val receipts = RewardReceipts(text)
         val finish = {
             receipts.tasks().forEach { notify(player,it,receipts) }
             done()
         }
-        service.mailbox(home.toString()).whenComplete { parcels,error -> thread.run {
+        val owner=ym.quest.domain.PersonalQuests.owner(player.uniqueId.toString())
+        val mailbox=when(personal) {
+            true -> service.mailbox(owner)
+            false -> service.mailbox(home.toString())
+            null -> service.mailbox(home.toString()).thenCombine(service.mailbox(owner)) { shared,individual -> shared+individual }
+        }
+        mailbox.whenComplete { parcels,error -> thread.run {
             if(error != null) { busy.remove(player.uniqueId); failure(error); if(!quiet) text.send(player,"error"); finish(); return@run }
             if(!valid(player,home)) { busy.remove(player.uniqueId); finish(); return@run }
             if(!quiet && parcels.any { it.phase == "SENDING" }) text.send(player,"uncertain")
@@ -38,8 +44,14 @@ class MailboxDelivery(private val service: QuestService, private val integration
     private fun next(player: Player,home: UUID,parcels: List<Parcel>,quiet: Boolean,receipts: RewardReceipts,done: () -> Unit) {
         val parcel = parcels.firstOrNull()
         if(parcel == null || !valid(player,home)) { busy.remove(player.uniqueId); done(); return }
-        val stacks = try { split(items.build(parcel.item,player),parcel.amount) }
-        catch(e: Exception) { busy.remove(player.uniqueId); failure(e); if(!quiet) text.send(player,"unavailable"); done(); return }
+        val stacks = try { items.reward(parcel.item,parcel.amount,player) }
+        catch(e: Exception) {
+            busy.remove(player.uniqueId)
+            if(e !is RewardProviderNotReady) failure(e)
+            if(!quiet) text.send(player,"unavailable")
+            done()
+            return
+        }
         val planned = plan(player.inventory.storageContents,stacks)
         if(planned == null) { busy.remove(player.uniqueId); if(!quiet) text.send(player,"inventory-full"); done(); return }
         sending += parcel.id

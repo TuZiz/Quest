@@ -25,7 +25,7 @@ class TabQuestProjection(private val text: TextRenderer, private val width: Int)
     fun project(journal: JournalView): List<String> {
         val main=journal.quests.filter { it.definition.category==QuestCategory.MAIN }
         val quest=main.firstOrNull { it.status==QuestStatus.ACTIVE }
-        val lines=mutableListOf(mini.serialize(text.format("tab-groups.main-heading")))
+        val lines=mutableListOf(heading("main",quest?.definition?.scope ?: ym.quest.domain.ProgressScope.ISLAND))
         if(quest==null) {
             val key=if(main.isNotEmpty() && main.all { it.status==QuestStatus.COMPLETE || it.status==QuestStatus.CLAIMED })
                 "tab-groups.main-done" else "tab.waiting"
@@ -51,7 +51,7 @@ class TabQuestProjection(private val text: TextRenderer, private val width: Int)
         if(side.isEmpty()) sideLines+=mini.serialize(text.format("tab-groups.side-empty"))
         else side.forEach { q ->
             val objective=q.progress.firstOrNull { it.progress<it.objective.target } ?: q.progress.firstOrNull()
-            val values=TextRenderer.values("quest" to label(q.definition.name),"progress" to (objective?.progress ?: 0),"target" to (objective?.objective?.target ?: 0))
+            val values=TextRenderer.values("quest" to label(q.definition.name)+" · "+label(text.language.getString("task-scope.${q.definition.scope}")!!),"progress" to (objective?.progress ?: 0),"target" to (objective?.objective?.target ?: 0))
             sideLines+=styledWrap.lines(text.format("tab-groups.side-entry",values),2).map(mini::serialize)
             if(objective!=null) sideLines+=styledWrap.lines(text.format("tab-groups.side-objective",mapOf("objective" to text.render(objective.objective.description))),2).map(mini::serialize)
             else sideLines+=""
@@ -65,6 +65,8 @@ class TabQuestProjection(private val text: TextRenderer, private val width: Int)
         return pad(result.take(LINE_COUNT))
     }
 
+    private fun heading(category: String, scope: ym.quest.domain.ProgressScope) = mini.serialize(text.format("tab-groups.$category-heading")
+        .append(text.format("task-scope.suffix",mapOf("scope" to text.format("task-scope.$scope")))))
     private fun raw(value: String) = plain.serialize(text.render(value)).trim()
     private fun label(value: String) = raw(value).trimStart('✦', '▪', ' ')
     private fun line(key: String, vararg values: Pair<String, Any>) = mini.serialize(text.format("tab.$key", TextRenderer.values(*values)))

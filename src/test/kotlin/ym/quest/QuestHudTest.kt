@@ -18,7 +18,7 @@ class QuestHudTest {
     private val chapter=ChapterDefinition("first","第一章 · 星海初醒","minecraft:book",emptyList(),1,emptyList(),listOf("stone"),emptyList())
     @Test fun `completed conversation continues with configured membership goal before island exists`() {
         val y=YamlConfiguration().apply {
-            loadFromString(Files.readString(Path.of("src/main/resources/quests/第一章/星海启航.yml")))
+            loadFromString(Files.readString(Path.of("src/main/resources/quests/第一章/主1-01 星海启航.yml")))
         }
         val raw=y.getMapList("objectives").single()
         val membership=Objective(raw["id"].toString(),raw["type"].toString(),(raw["target"] as Number).toLong(),null,raw["description"].toString())
@@ -31,7 +31,7 @@ class QuestHudTest {
             // The old personal task remains selected, while automatic tracking advances to the next goal.
             val result=p.beforeIsland(definitions,listOf(nextChapter),"first_meeting",true)!!
             assertEquals("星海启航",result["task"])
-            assertEquals("主线任务",result["category"])
+            assertEquals("主线任务 · 空岛",result["category"])
             assertEquals("0 / 1",result["progress-text"])
             assertTrue(result.getValue("objective-1").contains("创建或加入"))
             assertFalse(result.values.any { it.contains("领取") || it.contains("到账") })
@@ -56,18 +56,39 @@ class QuestHudTest {
         val side=QuestView(quest.copy(id="trial",name="初次试炼",category=QuestCategory.SIDE),QuestStatus.ACTIVE,listOf(ObjectiveProgress(objective,2)))
         val view=JournalView(listOf(side,main),listOf(ChapterView(chapter,ChapterStatus.ACTIVE,0,false)))
         val result=projection().projectGrouped(view,"trial",false)!!
-        assertEquals("主线任务",result["category"])
+        assertEquals("主线任务 · 空岛",result["category"])
         assertEquals("第一批资源",result["task"])
         assertEquals("8 / 32",result["progress-text"])
-        assertEquals("支线任务",result["side-category"])
+        assertEquals("支线任务 · 空岛",result["side-category"])
         assertEquals("初次试炼",result["side-task"])
         assertEquals("2 / 32",result["side-progress-text"])
         assertTrue(result.getValue("side-objective-1").contains("让生成器生产圆石"))
         assertFalse(result.keys.any { it.startsWith("hint-") })
         val finished=projection().projectGrouped(view.copy(quests=listOf(side,main.copy(status=QuestStatus.CLAIMED))))!!
-        assertTrue(finished.getValue("task").contains("当前主线章节已全部完成"))
+        assertEquals("当前主线章节已全部完成。",finished.getValue("task"))
         assertEquals("初次试炼",finished["side-task"])
         assertEquals("",finished["objective-1"])
+    }
+    @Test fun `last quest completion retains grouped tracker after completion toast expires`() {
+        val main=QuestView(quest,QuestStatus.CLAIMED,listOf(ObjectiveProgress(objective,32)))
+        val side=main.copy(definition=quest.copy(id="materials",category=QuestCategory.SIDE))
+        val view=JournalView(listOf(main,side),listOf(ChapterView(chapter,ChapterStatus.COMPLETE,1,true)))
+        val p=projection()
+        val queue=HudNoticeQueue(HudSettings(taskTicks=40,fadeTicks=6))
+        queue.offer(p.notice("materials",side.definition.name,false))
+        assertNotNull(queue.frame(0))
+        val before=p.projectGrouped(view,"materials",true)!!
+        assertEquals("当前主线章节已全部完成。",before["task"])
+        assertEquals("暂无进行中的支线任务。",before["side-task"])
+        assertEquals("",before["progress-text"])
+        assertEquals("",before["side-progress-text"])
+        assertNull(queue.frame(40))
+        assertEquals(before,p.projectGrouped(view,"materials",true))
+        assertNull(p.projectGrouped(JournalView(emptyList(),emptyList())))
+    }
+    @Test fun `locked next task retains waiting state instead of hiding enabled tracker`() {
+        val view=JournalView(listOf(QuestView(quest,QuestStatus.LOCKED,listOf(ObjectiveProgress(objective,0)))),emptyList())
+        assertTrue(projection().projectGrouped(view)!!.getValue("task").contains("等待"))
     }
     @Test fun `explicit tracking can select shared task while personal introduction is active`() {
         val shared=JournalView(listOf(QuestView(quest,QuestStatus.ACTIVE,listOf(ObjectiveProgress(objective,0)))),listOf(ChapterView(chapter,ChapterStatus.ACTIVE,0,false)))
@@ -77,7 +98,7 @@ class QuestHudTest {
         assertEquals("第一批资源",projection().project(shared,"stone",false,personal)!!["task"])
         assertNull(projection().project(shared,"removed",false,personal))
         val side=shared.copy(quests=listOf(shared.quests.single().copy(definition=quest.copy(category=QuestCategory.SIDE))))
-        assertEquals("支线任务",projection().project(side)!!["category"])
+        assertEquals("支线任务 · 空岛",projection().project(side)!!["category"])
     }
     @Test fun `projection clamps counters selects active objective and removes duplicate TAB guidance`() {
         val view=JournalView(listOf(QuestView(quest,QuestStatus.ACTIVE,listOf(ObjectiveProgress(objective,64)))),listOf(ChapterView(chapter,ChapterStatus.ACTIVE,0,false)))
@@ -146,7 +167,7 @@ class QuestHudTest {
     }
     @Test fun `real level and generator phrases stay whole at server width`() {
         fun active(path: String, category: QuestCategory): QuestView {
-            val y=YamlConfiguration().apply { loadFromString(Files.readString(Path.of("src/main/resources/quests/第一章/$path.yml"))) }
+            val y=YamlConfiguration().apply { loadFromString(Files.readString(Path.of("src/main/resources",ym.quest.config.QuestTaskFiles.bundled("quests/第一章/$path.yml")))) }
             val raw=y.getMapList("objectives").single()
             val goal=objective.copy(description=raw["description"].toString())
             return QuestView(quest.copy(id=y.getString("id")!!,category=category,objectives=listOf(goal)),QuestStatus.ACTIVE,listOf(ObjectiveProgress(goal,0)))
@@ -178,7 +199,7 @@ class QuestHudTest {
         assertEquals("中".repeat(9)+"..",limited.single())
     }
     @Test fun `membership entry hints remain complete in three main rows with independent side region`() {
-        val raw=YamlConfiguration().apply { loadFromString(Files.readString(Path.of("src/main/resources/quests/第一章/星海启航.yml"))) }
+        val raw=YamlConfiguration().apply { loadFromString(Files.readString(Path.of("src/main/resources/quests/第一章/主1-01 星海启航.yml"))) }
         val description=raw.getMapList("objectives").single()["description"].toString()
         val goal=objective.copy(type="island.member",target=1,description=description)
         val main=QuestView(quest.copy(objectives=listOf(goal)),QuestStatus.ACTIVE,listOf(ObjectiveProgress(goal,0)))

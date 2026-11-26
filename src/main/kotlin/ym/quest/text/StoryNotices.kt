@@ -22,7 +22,7 @@ class StoryNotices(private val text: TextRenderer, var profiles: Map<String,Noti
         }
         events.forEach { event ->
             val p = profiles.getValue(event)
-            val values = mapOf("quest" to text.render(quest?.name ?: ""),"chapter" to text.render(chapter?.name ?: ""))
+            val values = mapOf("quest" to (if(quest?.scope==ProgressScope.ISLAND) text.format("task-scope.island-name",mapOf("quest" to text.render(quest.name))) else text.render(quest?.name ?: "")),"chapter" to text.render(chapter?.name ?: ""))
             if(p.chat) {
                 text.send(player,"notices.$event.message",values)
                 if(event == "chapter-start") chapter!!.story.forEach { player.sendMessage(text.render(it,values)) }

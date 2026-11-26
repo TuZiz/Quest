@@ -14,6 +14,8 @@ class Quest : JavaPlugin() {
     private lateinit var database: Database
     private lateinit var thread: GameThread
     private var runtime: QuestRuntime? = null
+    fun sidebarData(player: org.bukkit.entity.Player): java.util.concurrent.CompletableFuture<Map<String,String>> =
+        runtime?.sidebarData(player) ?: java.util.concurrent.CompletableFuture.completedFuture(emptyMap())
     override fun onEnable() {
         thread = GameThread(this)
         database = Database(dataFolder.toPath().resolve("data/quest.db"),logger)

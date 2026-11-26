@@ -28,15 +28,15 @@ class JournalTest {
         } }.await();db.closeAsync().await()
         db=Database(file,Logger.getAnonymousLogger());db.open().await()
         var store=DisplayPreferenceStore(db)
-        assertEquals(DisplayPreferences(HudMode.ALWAYS,true,notifications=false,trackedQuest="active"),store.load(first).await())
+        assertEquals(DisplayPreferences(HudMode.ALWAYS,true,notifications=true,trackedQuest="active"),store.load(first).await())
         assertEquals(DisplayPreferences(),store.load(second).await())
-        assertEquals(HudMode.OFF,store.load(second).await().mode)
-        assertFalse(store.load(second).await().autoTracking)
+        assertEquals(HudMode.ALWAYS,store.load(second).await().mode)
+        assertTrue(store.load(second).await().autoTracking)
         val changed=DisplayPreferences(HudMode.OFF,false,false,false,"active")
         store.save(first,changed).await();store.save(second,DisplayPreferences(trackedQuest="other")).await()
         db.closeAsync().await();db=Database(file,Logger.getAnonymousLogger());db.open().await();store=DisplayPreferenceStore(db)
         try {
-            assertEquals(changed,store.load(first).await())
+            assertEquals(changed.copy(notifications=true,sound=true),store.load(first).await())
             assertEquals(DisplayPreferences(trackedQuest="other"),store.load(second).await())
             db.submit { db.transaction { c ->
                 assertEquals(5L,c.number("PRAGMA user_version"))
@@ -63,7 +63,7 @@ class JournalTest {
         s.category=QuestCategory.SIDE;s.chapter="side"
         assertEquals(listOf("other"),JournalNavigation.tasks(view,s).map { it.definition.id })
         s.chapter=null;assertTrue(JournalNavigation.tasks(view,s).isEmpty())
-        assertEquals(3,JournalPage.entries.size)
+        assertEquals(2,JournalPage.entries.size)
     }
     @Test fun `manual tracking never follows completed locked or removed tasks and auto advances`() {
         val view=view()

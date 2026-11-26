@@ -5,34 +5,35 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import ym.quest.config.MenuConfigUpgrade
+import ym.quest.config.RetireSettingsMenu
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Properties
 
 class MenuConfigUpgradeTest {
     @TempDir lateinit var root: Path
-    private val defaults get()=listOf("chapters","tasks","settings").associateWith { Files.readString(Path.of("src/main/resources/gui/$it.yml")) }
+    private val defaults get()=listOf("chapters","tasks").associateWith { Files.readString(Path.of("src/main/resources/gui/$it.yml")) }
     private fun put(path: String,raw: String) { val file=root.resolve(path);Files.createDirectories(file.parent);Files.writeString(file,raw) }
     private fun read(path: String)=Files.readString(root.resolve(path))
     private fun menuNames()=Files.list(root.resolve("gui")).use { paths -> paths.map { it.fileName.toString() }.toList().toSet() }
-    private fun migrate()=MenuConfigUpgrade.migrate(root,defaults)
+    private fun migrate() { MenuConfigUpgrade.migrate(root,defaults);RetireSettingsMenu.migrate(root) }
     private fun yaml(raw: String)=YamlConfiguration().apply { loadFromString(raw) }
     private fun oldInstall(): Map<String,String> {
         val home="# 保留当前章节自定义注释\n"+defaults.getValue("chapters").replace("schema-version: 2","schema-version: 1")+"\ncustom-home: '保留主页未知字段'\n"
         val tasks="# 保留任务列表自定义注释\n"+defaults.getValue("tasks").replace(Regex("点击[^'\\r\\n]*HUD[^'\\r\\n]*"),"点击查看；未解锁任务也可阅读。")+"\ncustom-tasks: '保留任务未知字段'\n"
         return mapOf("gui/home.yml" to home,"gui/chapters.yml" to defaults.getValue("chapters").replace("schema-version: 2","schema-version: 1"),
             "gui/journal-chapters.yml" to defaults.getValue("chapters").replace("schema-version: 2","schema-version: 1"),
-            "gui/journal-tasks.yml" to tasks,"gui/main.yml" to tasks,"gui/task.yml" to tasks,"gui/settings.yml" to defaults.getValue("settings"))
+            "gui/journal-tasks.yml" to tasks,"gui/main.yml" to tasks,"gui/task.yml" to tasks,"gui/settings.yml" to Files.readString(Path.of("src/test/resources/legacy-settings.yml")))
             .also { files -> files.forEach { (path,raw) -> put(path,raw) } }
     }
-    @Test fun `fresh install exports exactly three menus and repeat migration is byte stable`() {
-        migrate();assertEquals(setOf("chapters.yml","tasks.yml","settings.yml"),menuNames())
+    @Test fun `fresh install exports exactly two menus and repeat migration is byte stable`() {
+        migrate();assertEquals(setOf("chapters.yml","tasks.yml"),menuNames())
         val first=defaults.keys.associateWith { read("gui/$it.yml") };migrate()
         first.forEach { (name,raw) -> assertEquals(raw,read("gui/$name.yml")) }
     }
-    @Test fun `seven files collapse to current three with comments unknown fields and full originals retained`() {
+    @Test fun `seven files collapse to current two with comments unknown fields and full originals retained`() {
         val original=oldInstall();migrate()
-        assertEquals(setOf("chapters.yml","tasks.yml","settings.yml"),menuNames())
+        assertEquals(setOf("chapters.yml","tasks.yml"),menuNames())
         assertEquals(2,yaml(read("gui/chapters.yml")).getInt("schema-version"))
         assertEquals("保留主页未知字段",yaml(read("gui/chapters.yml")).getString("custom-home"))
         assertTrue(read("gui/chapters.yml").contains("# 保留当前章节自定义注释"))
@@ -53,7 +54,7 @@ class MenuConfigUpgradeTest {
         Files.delete(root.resolve(".migrations/menus-v3/complete"))
         put("gui/home.yml",original.getValue("gui/home.yml"))
         migrate();assertFalse(Files.exists(root.resolve("gui/home.yml")))
-        assertEquals(3,menuNames().size)
+        assertEquals(2,menuNames().size)
     }
     @Test fun `recovery refuses concurrent target edits before retiring restored source`() {
         val original=oldInstall();migrate();Files.delete(root.resolve(".migrations/menus-v3/complete"))
@@ -65,7 +66,7 @@ class MenuConfigUpgradeTest {
     @Test fun `future schemas and invalid selected actions fail before modifying any menu`() {
         val original=oldInstall();put("gui/home.yml",original.getValue("gui/home.yml").replace("schema-version: 1","schema-version: 99"))
         assertThrows(IllegalArgumentException::class.java) { migrate() };assertEquals(7,menuNames().size)
-        put("gui/home.yml",original.getValue("gui/home.yml").replace("action: 'settings'","action: 'unsupported-action'"))
+        put("gui/home.yml",original.getValue("gui/home.yml").replace("action: 'category-cycle'","action: 'unsupported-action'"))
         assertThrows(IllegalArgumentException::class.java) { migrate() };assertEquals(7,menuNames().size)
         assertFalse(Files.exists(root.resolve(".migrations/menus-v3/plan.properties")))
     }

@@ -124,7 +124,10 @@ class IntroductionRuntime(private val plugin: JavaPlugin, db: Database, private 
             s.saving=false
             if(error != null) { log(s,"save outcome=$outcome",error); text.send(s.player,"error"); return@run }
             s.done=true
-            if(outcome != IntroductionOutcome.LEGACY) text.send(s.player,"introduction.complete")
+            if(outcome != IntroductionOutcome.LEGACY) {
+                text.send(s.player,"introduction.complete")
+                text.send(s.player,"task-tracking-tip")
+            }
             if(outcome == IntroductionOutcome.DONE) completed(s.player,settings.taskId,text.language.getString("introduction.task-name")!!)
         } }
     }

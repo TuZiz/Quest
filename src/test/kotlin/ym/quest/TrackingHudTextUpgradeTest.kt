@@ -24,7 +24,7 @@ class TrackingHudTextUpgradeTest {
     }
     @Test fun `custom wording is unchanged`() {
         Files.createDirectories(root.resolve("gui"))
-        val custom=Files.readString(Path.of("src/main/resources/gui/settings.yml"))
+        val custom=Files.readString(Path.of("src/test/resources/legacy-settings.yml"))
             .replace("关闭时保留已选任务；追踪任务会自动开启。","自定义显示说明。")
         Files.writeString(root.resolve("gui/settings.yml"),custom)
         TrackingHudTextUpgrade.migrate(root)
@@ -32,7 +32,7 @@ class TrackingHudTextUpgradeTest {
     }
     @Test fun `legacy settings lose automatic tracking button and preserve other components`() {
         Files.createDirectories(root.resolve("gui"))
-        val old=Files.readString(Path.of("src/main/resources/gui/settings.yml"))
+        val old=Files.readString(Path.of("src/test/resources/legacy-settings.yml"))
             .replace("  H N S  "," H A N S ")+"\n  A:\n    item: 'minecraft:compass'\n    action: 'toggle-auto'\n    name: '自动追踪'\n"
         Files.writeString(root.resolve("gui/settings.yml"),old)
         TrackingHudTextUpgrade.migrate(root)

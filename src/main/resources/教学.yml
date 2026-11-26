@@ -5,3 +5,5 @@ combat:
     - 'world'
     - 'world_nether'
     - 'world_the_end'
+    # 石址常驻刷怪地图（Dungeon farming.yml 的 world）。
+    - 'lost_altar'

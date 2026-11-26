@@ -13,6 +13,29 @@ import java.util.logging.Logger
 class HudPreferenceStoreTest {
     @TempDir lateinit var root: Path
     private fun <T> CompletableFuture<T>.await(): T = get(10,TimeUnit.SECONDS)
+    @Test fun `legacy disabled notices and sound are ignored while tracking remains independently persisted`() {
+        val db=Database(root.resolve("display.db"),Logger.getAnonymousLogger())
+        db.open().await()
+        try {
+            val player=UUID.randomUUID()
+            db.submit { db.transaction { c ->
+                c.update("INSERT INTO hud_preferences VALUES(?,?,?,?)",player.toString(),"OFF",0,"task")
+                c.update("INSERT INTO journal_options VALUES(?,?,?)",player.toString(),0,0)
+            } }.await()
+            val store=ym.quest.preferences.DisplayPreferenceStore(db)
+            val loaded=store.load(player).await()
+            assertTrue(loaded.notifications);assertTrue(loaded.sound)
+            assertEquals(ym.quest.preferences.HudMode.OFF,loaded.mode)
+            assertEquals("task",loaded.trackedQuest)
+            val saved=store.save(player,loaded.copy(mode=ym.quest.preferences.HudMode.ALWAYS,autoTracking=true,notifications=false,sound=false)).await()
+            assertTrue(saved.notifications);assertTrue(saved.sound)
+            assertEquals(saved,store.load(player).await())
+            db.submit { db.transaction { c ->
+                assertEquals(1,c.number("SELECT notifications FROM hud_preferences WHERE player=?",player.toString()))
+                assertEquals(1,c.number("SELECT sound FROM journal_options WHERE player=?",player.toString()))
+            } }.await()
+        } finally { db.closeAsync().await() }
+    }
     @Test fun `v2 upgrade is additive preferences persist by UUID and migration is idempotent`() {
         val file=root.resolve("quest.db");val first=UUID.randomUUID();val second=UUID.randomUUID()
         var db=Database(file,Logger.getAnonymousLogger());db.open().await()

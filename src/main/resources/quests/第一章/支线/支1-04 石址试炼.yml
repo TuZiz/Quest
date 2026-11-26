@@ -1,0 +1,27 @@
+# 第一章教学；数量、物品及奖励可配置。事件目标仅解锁后计数。
+schema-version: 2
+id: 'first_trial'
+scope: 'personal'
+category: 'side'
+name: '<#78FFD6>✦ <gradient:#78FFD6:#A8FF78>前往石址击杀三只生物</gradient>'
+icon: 'minecraft:iron_sword'
+
+description:
+  - '<#64748B>━━━━━━━━━━━━━━━'
+  - '<#94A3B8>握紧武器前往 <#78FFD6>石址 <#94A3B8>区域，清理游荡的'
+  - '<#94A3B8>敌对生物以熟悉基础战斗技巧。'
+  - ''
+  - '<#64748B>▪ <#94A3B8>性质：<#FFF6B7>支线试炼 <#64748B>（不影响主线进度）'
+
+objectives:
+  - id: 'experience'
+    type: 'combat.kill'
+    resource: 'hostile'
+    target: 3
+    description: '<#94A3B8>▸ <#E2E8F0>前往 <#78FFD6>石址 <#E2E8F0>击杀 <#A8FF78>3 <#E2E8F0>只敌对生物'
+
+rewards:
+  - item: 'itemhub:星芽:短剑'      # ItemHub 星芽短剑
+    amount: 1
+  - item: 'minecraft:baked_potato'  # 探索食物补给
+    amount: 8

@@ -20,7 +20,7 @@ objectives:
     description: '<#E2E8F0>将圆石生成器升至<newline><#78FFD6>Lv.2</#78FFD6>'
 
 rewards:
-  - item: 'genlite:resource_collector'  # 普通收集器
+  - item: 'genlite:resource_collector'  # 物流核心
     amount: 1
   - item: 'genlite:binding_tool'  # 绑定工具
     amount: 1

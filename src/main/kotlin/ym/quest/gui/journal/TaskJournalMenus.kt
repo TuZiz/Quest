@@ -43,7 +43,7 @@ class TaskJournalMenus(private val plugin: JavaPlugin,private val service: Quest
     }
     private fun valid(player: Player,s: JournalSession)=!closed && player.isOnline && sessions[player.uniqueId]===s &&
         player.openInventory.topInventory.holder===s && player.hasPermission("quest.use") && integrations.island(player.uniqueId)?.id==s.home
-    private fun journal(s: JournalSession): CompletableFuture<JournalView> = s.home?.let { service.journal(it.toString()) }
+    private fun journal(s: JournalSession): CompletableFuture<JournalView> = s.home?.let { service.journal(it.toString(),s.player.toString()) }
         ?: CompletableFuture.completedFuture(JournalView(service.definitions.map { q ->
             QuestView(q,QuestStatus.LOCKED,q.objectives.map { ObjectiveProgress(it,0) })
         },service.chapters.map { ChapterView(it,ChapterStatus.LOCKED,0,false) }))
@@ -84,7 +84,6 @@ class TaskJournalMenus(private val plugin: JavaPlugin,private val service: Quest
                     s.dirty=false;s.preferences=current
                 } else refresh(player,s)
             }
-            action=="settings" -> open(player,JournalPage.SETTINGS,s.category)
             action=="home" -> open(player,category=s.category)
             action=="back" -> open(player,category=s.category)
             action=="close" -> player.closeInventory()
@@ -96,12 +95,6 @@ class TaskJournalMenus(private val plugin: JavaPlugin,private val service: Quest
             }
             action=="refresh" -> { s.dirty=true;refresh(player,s) }
             action.startsWith("track:") -> track(player,s,action.substringAfter(':'))
-            action.startsWith("toggle-") -> preferences.update(player,{ value -> when(action) {
-                "toggle-hud", "toggle-auto" -> value.copy(mode=if(value.mode==HudMode.OFF) HudMode.ALWAYS else HudMode.OFF,autoTracking=value.mode==HudMode.OFF)
-                "toggle-notices" -> value.copy(notifications=!value.notifications)
-                "toggle-sound" -> value.copy(sound=!value.sound)
-                else -> value
-            } }) { success -> if(valid(player,s)) { text.send(player,if(success) "journal.saved" else "error");s.dirty=true;refresh(player,s) } }
         }
     }
     private fun track(player: Player,s: JournalSession,id: String) {

@@ -13,8 +13,10 @@ class QuestCommands(private val text: TextRenderer, private val service: QuestSe
                     private val delivery: MailboxDelivery, private val open: (Player) -> Unit,
                     private val reload: (CommandSender) -> Unit, private val failure: (Throwable) -> Unit,
                     private val dialogueComplete: (UUID,UUID) -> Unit = { _,_ -> },
+                    private val display: DisplayPreferenceCommands? = null,
                     private val guide: (Player,String) -> Unit = { player,_ -> text.send(player,"unavailable") }) : CommandExecutor, TabCompleter {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        if(display?.handle(sender,args)==true) return true
         if(args.firstOrNull()=="_typewriter-complete") {
             if(sender !is ConsoleCommandSender) { text.send(sender,"no-permission");return true }
             if(args.size!=3) { failure(IllegalArgumentException("Typewriter completion expects player UUID and session token"));return true }
@@ -39,7 +41,7 @@ class QuestCommands(private val text: TextRenderer, private val service: QuestSe
                 else if(args.size != 1) text.send(sender,"command-help.admin") else reload(sender)
             } else {
                 if(!sender.hasPermission("quest.use")) text.send(sender,"no-permission")
-                else { text.send(sender,"command-help.player"); if(sender.hasPermission("quest.admin")) text.send(sender,"command-help.admin") }
+                else { text.send(sender,"command-help.player"); text.send(sender,"preference-command.usage"); if(sender.hasPermission("quest.admin")) text.send(sender,"command-help.admin") }
             }
             return true
         }
@@ -91,8 +93,8 @@ class QuestCommands(private val text: TextRenderer, private val service: QuestSe
             !sender.hasPermission("quest.admin") -> emptyList()
             args[0] != "admin" -> emptyList()
             else -> when(args.size) { 2 -> listOf("reload","reset","debug","resolve")
-            4 -> if(args[1] == "reset") service.definitions.map { it.id } else if(args[1] == "resolve") listOf("delivered","retry") else emptyList()
+            4 -> if(args[1] == "reset") service.definitions.filter { it.scope==ym.quest.domain.ProgressScope.ISLAND }.map { it.id } else if(args[1] == "resolve") listOf("delivered","retry") else emptyList()
             else -> emptyList() } }
-        return choices.filter { it.startsWith(args.lastOrNull() ?: "") }
+        return (choices.filter { it.startsWith(args.lastOrNull() ?: "") } + display?.complete(sender,args).orEmpty()).distinct()
     }
 }

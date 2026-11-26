@@ -25,3 +25,5 @@ rewards:
     amount: 1
     # 已有机器历史、待发机器或在线队员持有首台机器时，不再发放。
     unless-generator-exists: true
+  - item: 'minecraft:bread'  # 起步食物
+    amount: 8

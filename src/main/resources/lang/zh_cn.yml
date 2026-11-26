@@ -1,12 +1,12 @@
 # ==========================================================================
 #                       Quest 任务系统 · 全局语言配置
 # --------------------------------------------------------------------------
-# 视觉规范：延续全服「星辰冰蓝」统一色系，基于 MiniMessage 渲染
+# 视觉规范：延续全服「星辰冰蓝」与「现代冷灰」统一色系，基于 MiniMessage 渲染
 # 核心色板：
-#   - 主题冰蓝: <#89F7FE> ~ <#67E8F9>   | 辅助浅蓝: <#C2E9FB>
-#   - 达成翠绿: <#A8FF78> ~ <#78FFD6>   | 辉煌暖金: <#FFD700> ~ <#FFB75E>
+#   - 主题冰蓝: <#89F7FE> ~ <#38BDF8>   | 辅助浅蓝: <#C2E9FB>
+#   - 达成翠绿: <#A8FF78> ~ <#78FFD6>   | 辉煌暖金: <#FFF6B7> ~ <#FFB75E>
 #   - 警示珊瑚: <#FF6B6B>               | 典雅星紫: <#C4B5FD>
-#   - 正文冰白: <#E0F7FA> ~ <#E2E8F0>   | 次要灰蓝: <#94A3B8> ~ <#7F8C8D>
+#   - 正文亮白: <#E2E8F0> ~ <#E0F7FA>   | 次要灰蓝: <#94A3B8> ~ <#64748B>
 # ==========================================================================
 
 schema-version: 1
@@ -14,20 +14,27 @@ schema-version: 1
 # ── 任务日志与个人显示偏好 (GUI 交互文案) ────────────────────────────────
 journal:
   loading: '<#89F7FE>⏳ <#C2E9FB>正在读取任务日志…'
-  empty: '<#94A3B8>▪ 此分类下暂无已配置的任务。'
-  browse: '<#94A3B8>💡 悬停查看详情，点击切换章节或追踪任务。'
-  no-selection: '<#94A3B8>暂无选中任务'
-  tracked: '<#89F7FE>✦ 正在追踪'
-  not-tracked: '<#94A3B8>▪ 未追踪'
-  track-unavailable: '<#FFB75E>⚠ <#E0F7FA>当前仅支持追踪进行中的任务，请重新选择。'
-  saved: '<#A8FF78>✔ <#E0F7FA>显示偏好设置已保存。'
-  enabled: '<#A8FF78>● 开启'
-  disabled: '<#94A3B8>○ 关闭'
-  mode-ALWAYS: '<#89F7FE>✦ 常驻显示'
-  mode-OFF: '<#94A3B8>○ 隐藏关闭'
-  category-MAIN: '<gradient:#89F7FE:#C4B5FD><bold>✦ 主线任务</bold></gradient>'
-  category-SIDE: '<gradient:#A8FF78:#78FFD6><bold>✦ 支线任务</bold></gradient>'
-  category-SPECIAL: '<gradient:#C4B5FD:#F472B6><bold>✦ 特殊任务</bold></gradient>'
+  empty: '<#64748B>▪ <#94A3B8>此分类下暂无已配置的任务。'
+  browse: '<#89F7FE>💡 <#94A3B8>悬停查看详情，点击切换章节或追踪任务。'
+  no-selection: '<#64748B>暂无选中任务'
+  tracked: '<#78FFD6>✦ 正在追踪'
+  not-tracked: '<#64748B>○ <#94A3B8>未追踪'
+  track-unavailable: '<#FFB75E>⚠ <#E2E8F0>当前仅支持追踪 <#89F7FE>进行中 <#E2E8F0>的任务，请重新选择。'
+  saved: '<#A8FF78>✔ <#E2E8F0>显示偏好设置已保存。'
+  enabled: '<#A8FF78>● 已开启'
+  disabled: '<#64748B>○ <#94A3B8>已关闭'
+  mode-ALWAYS: '<#78FFD6>✦ 常驻显示'
+  mode-OFF: '<#64748B>○ <#94A3B8>隐藏关闭'
+  category-MAIN: '<#89F7FE>✦ <gradient:#89F7FE:#C4B5FD><bold>主线任务</bold></gradient>'
+  category-SIDE: '<#78FFD6>✦ <gradient:#78FFD6:#A8FF78><bold>支线任务</bold></gradient>'
+  category-SPECIAL: '<#C4B5FD>✦ <gradient:#C4B5FD:#F472B6><bold>特殊任务</bold></gradient>'
+
+# ── 个人显示指令，与偏好菜单共用玩家设置 ───────────────────────────────
+preference-command:
+  usage: '<#FFB75E>✦ <#E2E8F0>指令用法：<#FFF6B7>/quest hud <on|off|toggle>'
+  loading: '<#FFB75E>⏳ <#E2E8F0>个人显示设置暂不可用，请稍后重试。'
+  saved: '<#A8FF78>✔ <#E2E8F0><setting>：<state> <#94A3B8>（设置已保存）'
+  hud: '<#89F7FE>任务追踪面板'
 
 # ── HUD 动态文案 (布局、字体与贴图由服务端 Xerr 文件夹控制) ──────────────
 hud:
@@ -43,101 +50,101 @@ hud:
 # ── TAB 栏与侧边任务追踪面板 ──────────────────────────────────────────────
 tab:
   loading: '<#89F7FE>⏳ <#C2E9FB>正在同步空岛任务数据…'
-  no-island: '<#FFD700>✦ 下一步：<#E0F7FA>创建或加入空岛以开启任务旅程。'
-  no-permission: '<#FFB75E>✖ 暂无任务查看权限。'
-  unavailable: '<#FFB75E>⏳ 空岛服务尚未就绪，请稍候。'
-  error: '<#FF6B6B>⚠ 任务数据暂无法读取，稍后将自动重试。'
-  done: '<#A8FF78>✦ <bold>当前阶段任务已全部达成</bold><#E0F7FA>，继续建设你的空岛吧！'
-  waiting: '<#C2E9FB>⏳ 正在等待下一项任务解锁…'
+  no-island: '<#FFB75E>✦ 下一步：<#E2E8F0>创建或加入空岛以开启任务旅程。'
+  no-permission: '<#FF6B6B>✖ <#E2E8F0>暂无任务查看权限。'
+  unavailable: '<#FFB75E>⏳ <#E2E8F0>空岛服务尚未就绪，请稍候。'
+  error: '<#FF6B6B>⚠ <#E2E8F0>任务数据暂无法读取，稍后将自动重试。'
+  done: '<#A8FF78>✦ <bold>当前阶段任务已全部达成</bold><#E2E8F0>，继续建设你的空岛吧！'
+  waiting: '<#89F7FE>⏳ <#C2E9FB>正在等待下一项任务解锁…'
   state-line: '<#C2E9FB><value>'
-  chapter-line: '<#94A3B8>  <chapter>'
-  quest-line: '<#C2E9FB>▪ <quest> <#67E8F9><progress><#7F8C8D>/<#89F7FE><target>'
-  objective-line: '<#94A3B8>  目标：<#E2E8F0><objective>'
-  progress-line: '<#94A3B8>进度  <#67E8F9><bold><progress></bold> <#7F8C8D>/ <#89F7FE><target>'
-  objectives-line: '<#94A3B8>已达成  <#67E8F9><bold><completed></bold> <#7F8C8D>/ <#89F7FE><total>'
-  hint-line: '<#67E8F9><bold><step>.</bold> <#E2E8F0><hint>'
-  shared-line: '<#94A3B8>🔗 空岛成员共享任务进度'
+  chapter-line: '<#64748B>▪ <#94A3B8><chapter>'
+  quest-line: '<#89F7FE>▸ <#E2E8F0><quest> <#A8FF78><progress><#64748B>/<#89F7FE><target>'
+  objective-line: '<#64748B>  └─ <#94A3B8>目标：<#E2E8F0><objective>'
+  progress-line: '<#64748B>  ├─ <#94A3B8>进度：<#A8FF78><bold><progress></bold> <#64748B>/ <#89F7FE><target>'
+  objectives-line: '<#64748B>  └─ <#94A3B8>达成：<#A8FF78><bold><completed></bold> <#64748B>/ <#89F7FE><total>'
+  hint-line: '<#89F7FE><bold><step>.</bold> <#E2E8F0><hint>'
+  shared-line: '<#64748B>🔗 <#94A3B8>空岛成员共享任务进度'
 
 # ── TAB 上下固定分区 (主线与支线独立显示) ────────────────────────────────
 tab-groups:
-  main-heading: '<gradient:#89F7FE:#C4B5FD><bold>✦ 主线任务</bold></gradient>'
-  main-done: '<#86EFAC>✔ 当前主线章节已全部完成。'
-  side-heading: '<gradient:#FDE68A:#FDBA74><bold>✦ 支线任务</bold></gradient>'
-  side-empty: '<#94A3B8>▪ 暂无进行中的支线任务。'
-  side-entry: '<#FDE68A>▪ <quest> <#67E8F9><progress><#7F8C8D>/<#89F7FE><target>'
-  side-objective: '<#94A3B8>  目标：<#E2E8F0><objective>'
+  main-heading: '<#89F7FE>✦ <gradient:#89F7FE:#C4B5FD><bold>主线任务</bold></gradient>'
+  main-done: '<#A8FF78>✔ <#E2E8F0>当前主线章节已全部完成。'
+  side-heading: '<#78FFD6>✦ <gradient:#78FFD6:#A8FF78><bold>支线任务</bold></gradient>'
+  side-empty: '<#64748B>▪ <#94A3B8>暂无进行中的支线任务。'
+  side-entry: '<#78FFD6>▸ <#E2E8F0><quest> <#A8FF78><progress><#64748B>/<#89F7FE><target>'
+  side-objective: '<#64748B>  └─ <#94A3B8>目标：<#E2E8F0><objective>'
 
 # ── 全局自动化与奖励交付提示 ──────────────────────────────────────────────
-automatic-rewards: '<#89F7FE>💡 任务进度自动追踪，<#A8FF78>达成后奖励自动派发<#89F7FE>，无需手动打开菜单领取。'
-reward-delivered: '<#A8FF78>✔ <#78FFD6><quest> <#E0F7FA>奖励已到账：<rewards>'
-reward-delivered-item: '<item> <#FDE68A>×<amount>'
-reward-delivered-separator: '<#94A3B8>、'
+automatic-rewards: '<#89F7FE>💡 <#94A3B8>任务进度自动追踪，<#A8FF78>达成后奖励自动派发<#94A3B8>，无需手动领取。'
+reward-delivered: '<#A8FF78>✔ <#78FFD6><quest> <#E2E8F0>奖励已到账：<rewards>'
+reward-delivered-item: '<item> <#FFF6B7>×<amount>'
+reward-delivered-separator: '<#64748B>、'
 
-# ── 错误与限制提示 (柔和珊瑚红 #FF6B6B + 冰晶白 #E0F7FA) ─────────────────
-no-permission: '<#FF6B6B>✖ <#E0F7FA>抱歉，你没有使用此功能的权限。'
-unavailable: '<#FF6B6B>✖ <#E0F7FA>相关组件或物品数据尚未就绪，请稍后再试。'
-error: '<#FF6B6B>✖ <#E0F7FA>操作未能完成，请联系管理员核查 Quest 运行日志。'
-player-only: '<#FF6B6B>✖ <#E0F7FA>该操作仅限玩家在游戏内执行。'
+# ── 错误与限制提示 (珊瑚红 #FF6B6B + 亮灰白 #E2E8F0) ─────────────────────
+no-permission: '<#FF6B6B>✖ <#E2E8F0>抱歉，你没有使用此功能的权限。'
+unavailable: '<#FF6B6B>✖ <#E2E8F0>相关组件或物品数据尚未就绪，请稍后再试。'
+error: '<#FF6B6B>✖ <#E2E8F0>操作未能完成，请联系管理员核查 Quest 运行日志。'
+player-only: '<#FF6B6B>✖ <#E2E8F0>该操作仅限玩家在游戏内执行。'
 
-# ── 警告与状态提示 (暖金 #FFB75E / 冰蓝 #89F7FE + 冰晶白 #E0F7FA) ────────
-no-island: '<#FFB75E>⚠ <#E0F7FA>请先创建或加入一个专属家园空岛。'
+# ── 警告与状态提示 (暖金 #FFB75E / 冰蓝 #89F7FE + 亮灰白 #E2E8F0) ────────
+no-island: '<#FFB75E>⚠ <#E2E8F0>请先创建或加入一个专属家园空岛。'
 loading: '<#89F7FE>⏳ <#C2E9FB>正在读取家园任务数据，请稍候…'
-busy: '<#FFB75E>⏳ <#E0F7FA>操作正在处理中，请勿频繁点击。'
-not-complete: '<#FFB75E>✖ <#E0F7FA>该任务尚未完成、奖励已领取，或当前状态不支持此操作。'
-inventory-full: '<#FFB75E>⚠ <#E0F7FA>背包空间不足！奖励已妥善暂存，清理空位后将自动补发。'
-uncertain: '<#FFB75E>⚠ <#E0F7FA>存在待核对的异常奖励，请联系管理员执行 <#FFF9C4>/quest admin debug <#E0F7FA>核实。'
+busy: '<#FFB75E>⏳ <#E2E8F0>操作正在处理中，请勿频繁点击。'
+not-complete: '<#FFB75E>✖ <#E2E8F0>该任务尚未完成、奖励已领取，或当前状态不支持此操作。'
+inventory-full: '<#FFB75E>⚠ <#E2E8F0>背包空间不足！奖励已妥善暂存，清理空位后将自动补发。'
+uncertain: '<#FFB75E>⚠ <#E2E8F0>存在待核对的异常奖励，请联系管理员执行 <#FFF6B7>/quest admin debug <#E2E8F0>核实。'
 
-# ── 成功与进度提示 (薄荷绿 #A8FF78 / 冰蓝 #89F7FE + 冰晶白 #E0F7FA) ──────
-claimed: '<#A8FF78>✔ <#E0F7FA>任务奖励正在自动派发中…'
-delivered: '<#A8FF78>✔ <#E0F7FA>任务奖励已成功发放至你的背包！'
+# ── 成功与进度提示 (薄荷绿 #A8FF78 / 冰蓝 #89F7FE + 亮灰白 #E2E8F0) ──────
+claimed: '<#A8FF78>✔ <#E2E8F0>任务奖励正在自动派发中…'
+delivered: '<#A8FF78>✔ <#E2E8F0>任务奖励已成功发放至你的背包！'
 progress: '<#89F7FE>✦ <#C2E9FB>任务进度更新：<#FFFFFF><quest>'
-complete: '<#A8FF78>✦ <#E0F7FA>任务达成：<#78FFD6><bold><quest></bold><#E0F7FA>！奖励已自动发放。'
+complete: '<#A8FF78>✦ <#E2E8F0>任务达成：<#78FFD6><bold><quest></bold><#E2E8F0>！奖励已自动发放。'
 
 # ── 管理与调试反馈 ────────────────────────────────────────────────────────
-reloaded: '<#A8FF78>✔ <#E0F7FA>Quest 任务系统配置文件已成功重载。'
-reset: '<#A8FF78>✔ <#E0F7FA>任务进度已重置 <#94A3B8>（历史领奖记录已保留，防止重复刷取奖励）。'
-usage: '<#FFB75E>✦ <#E0F7FA>指令用法：<#FFF9C4>/quest admin <reload | reset 〈空岛UUID〉 〈任务ID〉 | debug [空岛UUID] | resolve 〈奖励UUID〉 delivered|retry>'
-debug: '<#89F7FE>ℹ <#E0F7FA><info>'
-resolved: '<#A8FF78>✔ <#E0F7FA>异常奖励核对结果已成功保存至审计记录。'
+reloaded: '<#A8FF78>✔ <#E2E8F0>Quest 任务系统配置文件已成功重载。'
+reset: '<#A8FF78>✔ <#E2E8F0>任务进度已重置 <#64748B>（历史领奖记录已保留，防止重复刷取奖励）。'
+usage: '<#FFB75E>✦ <#E2E8F0>指令用法：<#FFF6B7>/quest admin <reload | reset 〈空岛UUID〉 〈任务ID〉 | debug [空岛UUID] | resolve 〈奖励UUID〉 delivered|retry>'
+debug: '<#89F7FE>ℹ <#E2E8F0><info>'
+resolved: '<#A8FF78>✔ <#E2E8F0>异常奖励核对结果已成功保存至审计记录。'
 
 # ── GUI 面板条目格式与状态标签 ────────────────────────────────────────────
-reward-line: ' <#FFB75E>▪ <#FFE0B2>奖励数量：<#FFD700><bold><amount></bold>'
-objective-line: ' <#89F7FE>▪ <#E0F7FA><description>  <#A8FF78><progress><#7F8C8D>/<#89F7FE><target>'
+reward-line: '  <#FFB75E>▪ <#94A3B8>奖励数量：<#FFF6B7><bold><amount></bold>'
+objective-line: '  <description> <#64748B>┃ <#A8FF78><progress><#64748B>/<#89F7FE><target>'
 
 status:
-  LOCKED: '<#7F8C8D>🔒 未解锁'
-  ACTIVE: '<#89F7FE>⏳ 进行中'
+  LOCKED: '<#64748B>🔒 <#94A3B8>未解锁'
+  ACTIVE: '<#89F7FE>● 进行中'
   COMPLETE: '<#A8FF78>✦ 已完成'
-  CLAIMED: '<#90A4AE>✔ 已领取'
+  CLAIMED: '<#64748B>✔ <#94A3B8>已领取'
 
 chapter-status:
-  LOCKED: '<#7F8C8D>🔒 未解锁'
-  ACTIVE: '<#89F7FE>⏳ 进行中'
+  LOCKED: '<#64748B>🔒 <#94A3B8>未解锁'
+  ACTIVE: '<#89F7FE>● 进行中'
   COMPLETE: '<#A8FF78>✔ 已完成'
 
-chapter-progress: ' <#89F7FE>▪ <#C2E9FB>章节进度：<#A8FF78><bold><progress></bold><#7F8C8D>/<#89F7FE><target>'
-chapter-reward-status: ' <#FFB75E>▪ <#FFE0B2>章节奖励：<status>'
+chapter-progress: '  <#64748B>├─ <#94A3B8>章节进度：<#A8FF78><bold><progress></bold><#64748B>/<#89F7FE><target>'
+chapter-reward-status: '  <#64748B>└─ <#94A3B8>章节奖励：<status>'
 
 # ── 屏幕 Title 与聊天播报通知 ─────────────────────────────────────────────
 notices:
   chapter-start:
-    message: '<#FFB75E>✦ <#E0F7FA>新章节已开启：<#FFD700><bold><chapter></bold>'
-    title: '<#FFB75E>✦ <gradient:#FFD700:#FDE68A><bold><chapter></bold></gradient> <#FFB75E>✦'
-    subtitle: '<#89F7FE>▪ <#E0F7FA>新的空岛旅程正式开启'
+    message: '<#FFB75E>✦ <#E2E8F0>新章节已开启：<#FFF6B7><bold><chapter></bold>'
+    title: '<#FFB75E>✦ <gradient:#FFD700:#FFF6B7><bold><chapter></bold></gradient> <#FFB75E>✦'
+    subtitle: '<#89F7FE>▪ <#E2E8F0>新的空岛旅程正式开启'
   task-start:
-    message: '<#89F7FE>✦ <#E0F7FA>新任务已解锁：<#78FFD6><quest>'
-    title: '<#89F7FE>✦ <#E0F7FA><bold><quest></bold> <#89F7FE>✦'
-    subtitle: '<#C2E9FB>▪ 新的目标已解锁'
+    message: '<#89F7FE>✦ <#E2E8F0>新任务已解锁：<#78FFD6><quest>'
+    title: '<#89F7FE>✦ <#E2E8F0><bold><quest></bold> <#89F7FE>✦'
+    subtitle: '<#94A3B8>▪ <#C2E9FB>新的目标已解锁'
   task-complete:
-    message: '<#A8FF78>✔ <#E0F7FA>任务完成：<#FFD700><quest><#E0F7FA>，奖励已自动发放。'
+    message: '<#A8FF78>✔ <#E2E8F0>任务完成：<#FFF6B7><quest><#E2E8F0>，奖励已自动发放。'
     title: '<#A8FF78>✦ <gradient:#A8FF78:#78FFD6><bold>任 务 完 成</bold></gradient> <#A8FF78>✦'
-    subtitle: '<#FFD700><quest>'
+    subtitle: '<#FFF6B7><quest>'
   next-task:
-    message: '<#89F7FE>▶ <#E0F7FA>下一阶段任务已解锁：<#78FFD6><quest>'
-    title: '<#89F7FE>✦ <#E0F7FA><bold><quest></bold> <#89F7FE>✦'
-    subtitle: '<#C2E9FB>▪ 新的目标已就绪，继续前进吧'
+    message: '<#89F7FE>▸ <#E2E8F0>下一阶段任务已解锁：<#78FFD6><quest>'
+    title: '<#89F7FE>✦ <#E2E8F0><bold><quest></bold> <#89F7FE>✦'
+    subtitle: '<#94A3B8>▪ <#C2E9FB>新的目标已就绪，继续前进吧'
   chapter-complete:
-    message: '<#FFB75E>🎉 <#E0F7FA>恭喜完成章节：<#FFD700><bold><chapter></bold><#E0F7FA>！章节大奖将自动发放。'
+    message: '<#FFB75E>🎉 <#E2E8F0>恭喜完成章节：<#FFF6B7><bold><chapter></bold><#E2E8F0>！章节大奖将自动发放。'
     title: '<#FFB75E>✦ <gradient:#FFD700:#FFB75E><bold>章 节 完 成</bold></gradient> <#FFB75E>✦'
     subtitle: '<#78FFD6>✦ <chapter> ✦'
 
@@ -145,25 +152,35 @@ notices:
 command-help:
   player: |-
     <#89F7FE>✦ <gradient:#89F7FE:#C2E9FB><bold>Quest 任务中心帮助</bold></gradient>
-    <click:run_command:'/quest'><hover:show_text:'<#89F7FE>点击立即打开任务面板'> <#89F7FE>▪ <#E0F7FA>/quest <#94A3B8>- 打开任务日志、章节总览与显示偏好</hover></click>
-    <click:run_command:'/quest help'><hover:show_text:'<#89F7FE>点击查看帮助详情'> <#89F7FE>▪ <#E0F7FA>/quest help <#94A3B8>- 查看指令说明（任务自动推进，奖励自动派发）</hover></click>
+    <click:run_command:'/quest'><hover:show_text:'<#89F7FE>▸ 点击立即打开任务面板'>  <#64748B>├─ <#89F7FE>/quest <#94A3B8>- 打开任务日志与章节总览</hover></click>
+    <click:run_command:'/quest help'><hover:show_text:'<#89F7FE>▸ 点击查看帮助详情'>  <#64748B>└─ <#89F7FE>/quest help <#94A3B8>- 查看指令说明（任务自动推进，奖励自动派发）</hover></click>
   admin: |-
-    <#FFB75E>✦ <gradient:#FFB75E:#FFD700><bold>Quest 管理员指令</bold></gradient>
-    <click:suggest_command:'/quest reload'> <#FFB75E>▪ <#FFF9C4>/quest reload <#94A3B8>- 重载任务系统配置</click>
-    <click:suggest_command:'/quest admin debug '> <#FFB75E>▪ <#FFF9C4>/quest admin debug [空岛UUID] <#94A3B8>- 诊断任务与奖励状态</click>
-    <click:suggest_command:'/quest admin reset '> <#FFB75E>▪ <#FFF9C4>/quest admin reset 〈空岛UUID〉 〈任务ID〉 <#94A3B8>- 重置指定任务进度</click>
-    <click:suggest_command:'/quest admin resolve '> <#FFB75E>▪ <#FFF9C4>/quest admin resolve 〈奖励UUID〉 delivered|retry <#94A3B8>- 核对并处理异常奖励</click>
+    <#FFB75E>✦ <gradient:#FFB75E:#FFF6B7><bold>Quest 管理员指令</bold></gradient>
+    <click:suggest_command:'/quest reload'>  <#64748B>├─ <#FFF6B7>/quest reload <#94A3B8>- 重载任务系统配置</click>
+    <click:suggest_command:'/quest admin debug '>  <#64748B>├─ <#FFF6B7>/quest admin debug [空岛UUID] <#94A3B8>- 诊断任务与奖励状态</click>
+    <click:suggest_command:'/quest admin reset '>  <#64748B>├─ <#FFF6B7>/quest admin reset 〈空岛UUID〉 〈任务ID〉 <#94A3B8>- 重置指定任务进度</click>
+    <click:suggest_command:'/quest admin resolve '>  <#64748B>└─ <#FFF6B7>/quest admin resolve 〈奖励UUID〉 delivered|retry <#94A3B8>- 核对并处理异常奖励</click>
 
 # ── 新手初见引航员引导 (独立个人任务，不影响团队结算) ────────────────────
 introduction:
-  actionbar: '<#FFD700>✦ 当前目标：<#E0F7FA>右键大厅中的「引航员」打开空岛界面 <#7F8C8D>｜ <#C2E9FB>留意右侧任务栏提示'
-  task-name: '<#FFD700>初见引航员'
-  objective: '<#E0F7FA>与大厅引航员交互，打开空岛界面'
+  actionbar: '<#FFF6B7>✦ 当前目标：<#E2E8F0>右键大厅中的「引航员」打开空岛界面 <#64748B>┃ <#89F7FE>留意右侧任务栏提示'
+  task-name: '<#FFF6B7>✦ 初见引航员'
+  objective: '<#E2E8F0>与大厅 <#78FFD6>引航员 <#E2E8F0>交互，打开空岛界面'
   hints:
-    - '<#C2E9FB>右键点击大厅中的 NPC「引航员」，直接打开创建或加入空岛界面'
-    - '<#C2E9FB>创建或加入空岛后，继续右侧任务栏中的经营教学'
-  complete: '<#A8FF78>✔ 已认识引航员！<#E0F7FA>请在空岛界面创建或加入空岛，继续星海启航任务。'
+    - '<#94A3B8>右键点击大厅中的 NPC <#78FFD6>「引航员」<#94A3B8>，直接打开创建或加入空岛界面'
+    - '<#94A3B8>创建或加入空岛后，继续右侧任务栏中的经营教学'
+  complete: '<#A8FF78>✔ 已认识引航员！<#E2E8F0>请在空岛界面创建或加入空岛，继续星海启航任务。'
   interrupted: '<#FFB75E>ℹ <#94A3B8>进度已保留，再次右键引航员即可打开空岛界面。'
-  no-dialogue: '<#94A3B8>▪ 引航员现在直接打开空岛界面，无需对话确认。'
-  npc-unavailable: '<#C2E9FB>💡 请右键大厅中的引航员打开空岛界面，也可使用 <#FFD700>/quest guide replay<#C2E9FB>。'
-  help: '<#FFD700>✦ 新手引导<newline><#E0F7FA>/quest guide replay <#94A3B8>- 打开空岛界面<newline><#E0F7FA>/quest guide skip <#94A3B8>- 跳过个人指引并打开空岛界面'
+  no-dialogue: '<#64748B>▪ <#94A3B8>引航员现在直接打开空岛界面，无需对话确认。'
+  npc-unavailable: '<#89F7FE>💡 <#E2E8F0>请右键大厅中的引航员打开空岛界面，也可使用 <#FFF6B7>/quest guide replay<#E2E8F0>。'
+  help: '<#FFF6B7>✦ 新手引导<newline>  <#64748B>├─ <#FFF6B7>/quest guide replay <#94A3B8>- 打开空岛界面<newline>  <#64748B>└─ <#FFF6B7>/quest guide skip <#94A3B8>- 跳过个人指引并打开空岛界面'
+# 只在标题处标记归属，不在每条目标中重复提示。
+task-scope:
+  ISLAND: '<#94A3B8>空岛'
+  PERSONAL: '<#94A3B8>个人'
+  suffix: '<#64748B> · <scope>'
+  island-name: '<#94A3B8>空岛 · <quest>'
+  island-complete: '<#A8FF78>空 岛 任 务 完 成'
+
+# 首次完成或跳过引航员引导后显示一次，不反复刷屏。
+task-tracking-tip: '<#89F7FE>✦ <#E2E8F0>右侧显示当前任务，完成后自动追踪下一项。<newline><#94A3B8>打开服务器菜单，点击右上角<#FDE68A>「设置」<#94A3B8>，可关闭<#89F7FE>任务追踪<#94A3B8>。'

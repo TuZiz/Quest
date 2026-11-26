@@ -10,7 +10,11 @@ object QuestTaskFiles {
     fun files(directory: Path): List<Path> = if(!Files.isDirectory(directory)) emptyList() else Files.walk(directory).use { paths ->
         paths.filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".yml") }.sorted().toList()
     }
-    fun bundled(path: String)=if(path.startsWith("quests/")) "$firstChapter/${path.substringAfterLast('/')}" else path
+    fun bundled(path: String): String {
+        val chapterPath = if (path.startsWith("quests/") && path.count { it == '/' } == 1)
+            "$firstChapter/${path.substringAfterLast('/')}" else path
+        return QuestFileNumbering.bundled(chapterPath)
+    }
     fun groupFirstChapter(root: Path) {
         val plan=ConfigMigrationPlan(root,"quest-folders-v1")
         if(plan.resume() || Files.exists(root.resolve(".migrations/quest-folders-v1/complete"))) return

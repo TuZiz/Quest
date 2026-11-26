@@ -41,7 +41,7 @@ object TutorialUpgrade {
         val old=YamlConfiguration().apply { loadFromString(before) }
         val template=YamlConfiguration().apply { loadFromString(resource(ChapterConfigUpgrade.defaultFile)) }
         val oldIds=old.getMapList("tasks").map { it["quest"] }.toSet()
-        val additions=template.getMapList("tasks").filter { it["quest"] !in oldIds }
+        val additions=template.getMapList("tasks").filter { it["quest"] !in oldIds && it["quest"] !in setOf(StoneSiteMaterialsUpgrade.taskId,"logistics_supply") }
         val lines=buildString { additions.forEach { task ->
             append("  - quest: '").append(task["quest"]).append("'\n")
             (task["requires"] as? List<*>)?.takeIf { it.isNotEmpty() }?.let { required ->

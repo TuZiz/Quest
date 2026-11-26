@@ -16,7 +16,7 @@ import java.util.logging.Logger
 class GeneratorPlacementTest {
     @TempDir lateinit var root: Path
     private fun <T> CompletableFuture<T>.await(): T = get(10,TimeUnit.SECONDS)
-    private val task get() = Files.readString(Path.of("src/main/resources/quests/第一章/放置生成器.yml"))
+    private val task get() = Files.readString(Path.of("src/main/resources/quests/第一章/主1-02 安放生成器.yml"))
     private fun put(name: String,raw: String) { val file=root.resolve(name); Files.createDirectories(file.parent); Files.writeString(file,raw) }
     private fun yaml(raw: String)=YamlConfiguration().apply { loadFromString(raw) }
     @Test fun `fresh and v1 installations both reach the four task shared graph`() {
@@ -31,16 +31,16 @@ class GeneratorPlacementTest {
         val fresh=root.resolve("fresh")
         Files.createDirectories(fresh.resolve("chapters"));Files.createDirectories(fresh.resolve("quests"))
         Files.writeString(fresh.resolve(ChapterConfigUpgrade.defaultFile),bundled)
-        Files.writeString(fresh.resolve("quests/星海启航.yml"),Files.readString(Path.of("src/main/resources/quests/第一章/星海启航.yml")))
+        Files.writeString(fresh.resolve("quests/星海启航.yml"),Files.readString(Path.of("src/main/resources/quests/第一章/主1-01 星海启航.yml")))
         repeat(2) { GeneratorPlacementUpgrade.migrate(fresh,task) }
         assertEquals(task,Files.readString(fresh.resolve(GeneratorPlacementUpgrade.taskFile)))
     }
     @Test fun `migration moves customized fuel reward preserves comments fields and is repeatable`() {
-        val chapter=Files.readString(Path.of("src/main/resources/${ChapterConfigUpgrade.defaultFile}"))
+        val chapter=Files.readString(Path.of("src/main/resources/${ChapterConfigUpgrade.defaultFile}")).replace("\r\n","\n")
             .replace("  - quest: place_generator\n    requires:\n      - sky_start\n", "")
             .replace("      - place_generator", "      - sky_start")
         put(ChapterConfigUpgrade.defaultFile,chapter+"\n# 自定义\ncustom: '保留'\n")
-        val starter=Files.readString(Path.of("src/main/resources/quests/第一章/星海启航.yml")).replace("\r\n","\n")
+        val starter=Files.readString(Path.of("src/main/resources/quests/第一章/主1-01 星海启航.yml")).replace("\r\n","\n")
             .replace("rewards:\n","rewards:\n  - item: genlite:fuel\n    amount: 24\n    # 自定义燃料\n")
         put("quests/星海启航.yml",starter)
         repeat(2) { GeneratorPlacementUpgrade.migrate(root,task) }

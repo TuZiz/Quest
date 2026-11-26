@@ -10,7 +10,7 @@ import java.nio.file.Path
 
 class TutorialCurrencyUpgradeTest {
     @TempDir lateinit var root: Path
-    private fun resource(path: String)=Files.readString(Path.of("src/main/resources/$path"))
+    private fun resource(path: String)=Files.readString(Path.of("src/main/resources",ym.quest.config.QuestTaskFiles.bundled(path)))
     private fun put(path: String,text: String) {val p=root.resolve(path);Files.createDirectories(p.parent);Files.writeString(p,text)}
     @Test fun `adds currency without duplicating entries or touching old reward data`() {
         put(ChapterConfigUpgrade.defaultFile,resource(ChapterConfigUpgrade.defaultFile))

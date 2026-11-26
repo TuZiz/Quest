@@ -21,7 +21,12 @@ object ObjectiveLineBreakUpgrade {
             val pair=wording[y.getString("id")] ?: return@mapNotNull null
             require(y.get("schema-version") in listOf(1,2)) { "$file:schema-version=${y.get("schema-version")} unsupported; objective wording preserved" }
             val descriptions=y.getMapList("objectives").mapNotNull { it["description"] as? String }
-            val variants=if(y.getString("id")=="first_resources") listOf(pair,pair.first.replace("原石","圆石") to pair.second.replace("原石","圆石")) else listOf(pair)
+            val variants=when(y.getString("id")) {
+                "first_resources" -> listOf(pair,pair.first.replace("原石","圆石") to pair.second.replace("原石","圆石"))
+                "first_transfer" -> listOf(pair,"通过物流核心自动入库 " to "通过物流核心自动入库<newline>")
+                "first_extract" -> listOf(pair,"从中央仓库成功取出 " to "从中央仓库成功取出<newline>")
+                else -> listOf(pair)
+            }
             val replacements=descriptions.mapNotNull { value ->
                 val match=variants.firstOrNull { value.startsWith("<#E2E8F0>${it.first}<#78FFD6>") && "<newline>" !in value }
                 match?.let { value to value.replace(it.first,it.second) }

@@ -31,20 +31,23 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     private val integrations = Integrations(plugin,service,::notify,::failure)
     private val notices = StoryNotices(text,settings.notices)
     private val custom = if(plugin.server.pluginManager.isPluginEnabled("CraftEngine")) CraftEngineItemProvider() else null
-    private val items = ItemFactory(listOfNotNull(custom))
-    private val delivery = MailboxDelivery(service,integrations,items,text,thread,::failure) { preferences.get(it)?.notifications != false }
+    private val items = ItemFactory(listOfNotNull(ym.quest.integration.ItemHubItemProvider(plugin),custom))
+    private val delivery = MailboxDelivery(service,integrations,items,text,thread,::failure) { true }
     private var introduction: IntroductionRuntime? = null
     private val preferences=PlayerDisplayPreferences(plugin,db,thread,::failure)
     private var tutorialWorlds=settings.tutorialWorlds
-    private val tutorial=ym.quest.tutorial.TutorialActions(plugin,service,integrations,::notify,::failure) { tutorialWorlds }
+    private val tutorial=ym.quest.tutorial.TutorialActions(plugin,service,integrations,::notify,::failure,custom) { tutorialWorlds }
     private val journal=TaskJournalMenus(plugin,service,integrations,items,text,thread,preferences,settings,::failure) { player,view -> introduction?.decorate(player,view) ?: view }
-    private val automatic = AutomaticRewards(plugin,service,integrations,items,{ custom?.id(it) },delivery,thread,::failure,settings.rewards) { !closed && !reloading }
+    private val automatic = AutomaticRewards(plugin,service,integrations,items,{ custom?.id(it) },delivery,thread,::failure,settings.rewards, { !closed && !reloading })
+    private val personalRewards = AutomaticRewards(plugin,service,integrations,items,{ custom?.id(it) },delivery,thread,::failure,settings.rewards, { !closed && !reloading },personal=true)
     private var reloading = false
     private var closed = false
     private var tabSettings = settings.tab
     private var tab: TabQuestBridge? = null
     private var hudSettings=settings.hud
     private var hud: QuestHudBridge? = null
+    private val boardData = ym.quest.hud.SidebarData(service,integrations,text,preferences::get) { introduction?.hudJournal(it) }
+    fun sidebarData(player: Player) = if(closed || reloading) java.util.concurrent.CompletableFuture.completedFuture(emptyMap()) else boardData.read(player)
     private val heartbeat = plugin.server.scheduler.runTaskTimer(plugin,Runnable { if(!closed) integrations.discover() },1,20)
     init {
         service.claimChanges = ::notify
@@ -56,14 +59,14 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
         val commands = QuestCommands(text,service,integrations,thread,delivery,{
             if(closed) text.send(it,"unavailable")
             else journal.open(it)
-        },::reload,::failure,dialogueComplete={ id,token ->
+        },::reload,::failure,display=DisplayPreferenceCommands(text,preferences::get,preferences::update),dialogueComplete={ id,token ->
             if(!closed && !reloading) introduction?.dialogueComplete(id,token)
         }) { player,action ->
             if(closed || reloading) text.send(player,"busy")
             else introduction?.command(player,action) ?: text.send(player,"unavailable")
         }
         plugin.getCommand("quest")!!.apply { setExecutor(commands); tabCompleter=commands }
-        plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=5; task/chapter YAML schema=2; quests=${settings.quests.size}; chapters=${settings.chapters.size}; introduction=${settings.introduction.enabled}; Paper ownership; Folia=false; journal=enabled")
+        plugin.logger.info("Quest ${plugin.pluginMeta.version}; Minecraft=${plugin.server.minecraftVersion}; Java=${System.getProperty("java.version")}; SQLite schema=5; task/chapter YAML schema=2; quests=${settings.quests.size}; personal=${settings.quests.count { it.scope==ProgressScope.PERSONAL }}; chapters=${settings.chapters.size}; introduction=${settings.introduction.enabled}; Paper ownership; Folia=false; journal=enabled")
         listOf("DreamSkyblock","Genlite","CraftEngine","TAB","Adyeshach","Typewriter","Xerr").forEach { id ->
             plugin.logger.info("Integration $id=${plugin.server.pluginManager.getPlugin(id)?.pluginMeta?.version ?: "missing"}")
         }
@@ -96,13 +99,20 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
         thread.run {
             if(closed) return@run
             changes.groupBy { it.home }.forEach { (home,list) ->
+                if(home.startsWith("player:")) {
+                    val member=UUID.fromString(home.removePrefix("player:"))
+                    if(list.any { it.completed }) personalRewards.completed(member)
+                    plugin.server.getPlayer(member)?.takeIf { it.hasPermission("quest.use") }?.let { player ->
+                        list.forEach { notices.send(player,it,service.definitions,service.chapters,true) }
+                        integrations.island(member)?.id?.let { island -> hud?.notify(player,island,list); journal.refreshHome(island) }
+                    }
+                    return@forEach
+                }
                 val id = UUID.fromString(home)
                 if(list.any { it.completed }) automatic.completed(id)
                 integrations.islands?.byId(id)?.members?.forEach { member ->
                     plugin.server.getPlayer(member)?.takeIf { it.hasPermission("quest.use") }?.let { player ->
-                        preferences.get(player)?.takeIf { it.notifications }?.let { pref ->
-                            list.forEach { notices.send(player,it,service.definitions,service.chapters,pref.sound) }
-                        }
+                        list.forEach { notices.send(player,it,service.definitions,service.chapters,true) }
                         hud?.notify(player,id,list)
                     }
                 }
@@ -131,7 +141,7 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
                 if(configureError != null) { failure(configureError); text.send(sender,"error"); return@run }
                 text.language=settings.language; notices.profiles=settings.notices; tutorialWorlds=settings.tutorialWorlds
                 journal.closeMenus(); journal.settings=settings
-                automatic.reload(settings.rewards); integrations.refresh(); configureIntroduction(settings); configureTab(settings.tab); configureHud(settings.hud); text.send(sender,"reloaded")
+                automatic.reload(settings.rewards); personalRewards.reload(settings.rewards); integrations.refresh(); configureIntroduction(settings); configureTab(settings.tab); configureHud(settings.hud); text.send(sender,"reloaded")
             } }
         } }
     }
@@ -148,6 +158,6 @@ class QuestRuntime(private val plugin: JavaPlugin, private val db: Database, pri
     }
     override fun close() {
         if(closed) return
-        closed=true; service.claimChanges = {}; heartbeat.cancel(); tutorial.close(); journal.close(); preferences.close(); hud?.close(); hud=null; tab?.close(); tab=null; introduction?.close(); introduction=null; automatic.close(); delivery.close(); integrations.close()
+        closed=true; service.claimChanges = {}; heartbeat.cancel(); tutorial.close(); journal.close(); preferences.close(); hud?.close(); hud=null; tab?.close(); tab=null; introduction?.close(); introduction=null; automatic.close(); personalRewards.close(); delivery.close(); integrations.close()
     }
 }

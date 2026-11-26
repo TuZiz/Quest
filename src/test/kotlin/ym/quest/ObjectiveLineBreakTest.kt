@@ -17,7 +17,7 @@ import java.nio.file.Path
 class ObjectiveLineBreakTest {
     @TempDir lateinit var root: Path
     private val names=listOf("第一批资源","收获的喜悦","自动化初体验","资源的归宿")
-    private fun resource(name: String)=Files.readString(Path.of("src/main/resources/quests/第一章/$name.yml"))
+    private fun resource(name: String)=Files.readString(Path.of("src/main/resources",ym.quest.config.QuestTaskFiles.bundled("quests/第一章/$name.yml")))
     private fun yaml(raw: String)=YamlConfiguration().apply { loadFromString(raw) }
 
     @Test fun `quantity and item stay together on second TAB and HUD objective rows`() {

@@ -1,0 +1,17 @@
+schema-version: 2
+id: 'first_collector'
+scope: 'island'
+category: 'main'
+name: '<gradient:#78FFD6:#A8FF78>物流的起点</gradient>'
+icon: 'genlite:resource_collector'
+description:
+  - '<#94A3B8>放置物流核心，再用绑定工具连接生成器。'
+  - '<#94A3B8>产物通过核心直接进入本岛中央仓库。'
+objectives:
+  - id: 'experience'
+    type: 'genlite.collector'
+    target: 1
+    description: '<#E2E8F0>在空岛放置 <#78FFD6>物流核心</#78FFD6>'
+rewards:
+  - item: 'currency:copper_coin'
+    amount: 3

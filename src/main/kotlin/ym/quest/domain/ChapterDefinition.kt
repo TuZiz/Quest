@@ -39,6 +39,11 @@ object ChapterGraph {
             val ch = owners[q.id]
             q.id to q.copy(prerequisites=if(ch == null) q.prerequisites else ch.taskRequirements[q.id].orEmpty())
         }
+        effective.values.forEach { q ->
+            require(q.scope!=ProgressScope.ISLAND || q.prerequisites.none { effective[it]?.scope==ProgressScope.PERSONAL }) { "quests/${q.id}: island task cannot require personal progress" }
+            require(q.scope!=ProgressScope.PERSONAL || q.objectives.all { it.type.startsWith("combat.") }) { "quests/${q.id}: personal scope currently supports combat objectives only" }
+        }
+        chapters.forEach { ch -> require(ch.requiredQuests.none { effective[it]?.scope==ProgressScope.PERSONAL }) { "${ch.sourceFile}: personal tasks must be optional; chapter rewards remain island shared" } }
         val visited = mutableSetOf<String>(); val active = mutableSetOf<String>(); val ordered = mutableListOf<QuestDefinition>()
         fun visit(node: String) {
             if(node in visited) return

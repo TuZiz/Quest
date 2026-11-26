@@ -29,11 +29,11 @@ class TutorialLevelTwoUpgradeTest {
     }
     @Test fun `bundled first chapter has copper silver rewards but no gold items or level above two`() {
         val paths=QuestTaskFiles.files(Path.of("src/main/resources/quests/第一章"))
-        assertEquals(13,paths.size)
+        assertEquals(15,paths.size)
         paths.forEach { path ->
             val y=YamlConfiguration().apply {loadFromString(Files.readString(path))}
             val rewards=y.getMapList("rewards")
-            assertTrue(rewards.isNotEmpty())
+            assertTrue(rewards.isNotEmpty() || y.getString("id")=="stone_site_materials")
             assertFalse(rewards.any {(it["item"] as String).startsWith("currency:")} && rewards.any {!(it["item"] as String).startsWith("currency:")})
             assertTrue(y.getMapList("rewards").none {it["item"] in setOf("currency:gold_coin","currency:gold_ingot")})
             y.getMapList("objectives").filter {it["type"]=="genlite.level"}.forEach {assertEquals(2,it["target"])}

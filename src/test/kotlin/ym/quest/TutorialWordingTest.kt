@@ -14,7 +14,7 @@ import java.nio.file.Path
 class TutorialWordingTest {
     @TempDir lateinit var root: Path
     private fun load(value: String)=YamlConfiguration().apply { loadFromString(value) }
-    private fun resource(path: String)=Files.readString(Path.of("src/main/resources/$path"))
+    private fun resource(path: String)=Files.readString(Path.of("src/main/resources",ym.quest.config.QuestTaskFiles.bundled(path)))
 
     @Test fun `default wording migration keeps amounts rewards custom fields comments and backups`() {
         val paths=listOf("quests/第一章/第一批资源.yml","quests/第一章/收获的喜悦.yml","quests/第一章/机械革新.yml",
